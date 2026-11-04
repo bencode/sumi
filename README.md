@@ -2,7 +2,7 @@
 
 sumi (墨, ink) lays out the diagrams and formulas people write in Markdown, Mermaid and LaTeX math, in pure Go. It stops at a scene: the laid-out picture as data, paths and lines of text at their final places. Your program draws the scene, natively on any backend or as SVG.
 
-> sumi is at 0.x and has only its base so far: the `scene` package and SVG output. Mermaid comes next, LaTeX after it. Its API may change in any 0.x release.
+> sumi is at 0.x. It has its base, the `scene` package and SVG output, and Mermaid's sequence diagrams. More of Mermaid comes next, LaTeX after it. Its API may change in any 0.x release.
 
 ## Example
 
@@ -19,7 +19,17 @@ s := &scene.Scene{Width: 120, Height: 60, Items: []scene.Item{
 out := svg.Render(s, scene.Light)
 ```
 
-`go run ./internal/preview` writes sample scenes as SVG, in the light and dark palettes, to `out/`.
+A Mermaid diagram is laid out from its source:
+
+```go
+s, err := mermaid.Layout("sequenceDiagram\nAlice->>Bob: Hello Bob", mermaid.Options{})
+if err != nil {
+	return err // a *mermaid.Error, with the line and column
+}
+out := svg.Render(s, scene.Dark)
+```
+
+`go run ./internal/preview` writes sample scenes, and Mermaid's own sequence test diagrams, as SVG in the light and dark palettes, to `out/`.
 
 ## License
 
