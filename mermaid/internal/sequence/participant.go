@@ -80,7 +80,7 @@ func participant(p *Participant, i int, y float64, foot bool, l layout) scene.It
 	if foot {
 		it.ID, it.Parent = "", p.ID
 	}
-	tb := measure(e.m, p.Label, e.c.actorFont)
+	tb := measure(e.m, e.labels[i], e.c.actorFont)
 	fs, n := tb.font.Size, float64(len(tb.lines))
 	t, tbox := tb.set(e.m, c-lk.dx, false, func(j int) float64 { return tb.middle(mid + float64(j)*fs - fs*(n-1)/2) })
 	it.Texts = []scene.Text{t}

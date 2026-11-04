@@ -116,10 +116,7 @@ func parseBlock(ts []syntax.Token, kind BlockKind) (Stmt, []syntax.Token, error)
 		if err != nil {
 			return nil, nil, err
 		}
-		lbl, err := label(rest.Pos, rest.Text)
-		if err != nil {
-			return nil, nil, err
-		}
+		lbl, _ := label(rest.Text) // a block's title is always wrapped
 		body, after, err := parseDocument(after, ends...)
 		if err != nil {
 			return nil, nil, err
@@ -142,10 +139,7 @@ func parseRect(ts []syntax.Token) (Stmt, []syntax.Token, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	text, err := label(rest.Pos, rest.Text)
-	if err != nil {
-		return nil, nil, err
-	}
+	text, _ := label(rest.Text) // a rect's line is its color
 	r := &Rect{}
 	if text != "" {
 		c, ok := syntax.Color(text)
@@ -181,9 +175,7 @@ func parseBox(ts []syntax.Token) (Stmt, []syntax.Token, error) {
 	if c, ok := syntax.Color(head); ok {
 		g.Fill, title = c, title[len(head):]
 	}
-	if g.Title, err = label(rest.Pos, title); err != nil {
-		return nil, nil, err
-	}
+	g.Title, g.Wrap = label(title)
 	s := &boxed{group: g}
 	for {
 		switch ts[0].Kind {

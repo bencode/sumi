@@ -13,6 +13,7 @@ type env struct {
 	ps     []*Participant
 	at     map[string]int // each participant's index
 	w, x   []float64      // the participants' widths and centers
+	labels []string       // the participants' labels as drawn
 	across across
 	parent string // the id of the innermost block
 }
@@ -108,9 +109,9 @@ func place(body []Stmt, s state, e env) ([]placed, state) {
 // text, then the rest of the text, the line below it.
 func placeMessage(msg *Message, s state, e env) ([]placed, state) {
 	s.n.msg++
+	mm := e.across.msgs[msg]
 	p := &pMessage{Message: msg, id: fmt.Sprintf("msg-%d", s.n.msg), parent: e.parent,
-		model: e.across.msgs[msg], top: s.y, text: measure(e.m, msg.Text, e.c.messageFont)}
-	mm := p.model
+		model: mm, top: s.y, text: measure(e.m, mm.text, e.c.messageFont)}
 	lh := p.text.h() / float64(max(len(p.text.lines), 1))
 	y := s.y + 10 + lh
 	off := p.text.h() - 10 + e.c.boxMargin
@@ -149,8 +150,8 @@ func placeMessage(msg *Message, s state, e env) ([]placed, state) {
 func placeNote(n *Note, s state, e env) ([]placed, state) {
 	s.n.note++
 	s.y += e.c.boxMargin
-	x, w := noteBox(n, e)
-	tb := measure(e.m, n.Text, e.c.noteFont)
+	x, w, text := noteBox(n, e)
+	tb := measure(e.m, text, e.c.noteFont)
 	h := tb.h() + 2*e.c.noteMargin
 	p := &pNote{Note: n, id: fmt.Sprintf("note-%d", s.n.note), parent: e.parent,
 		order: s.order, box: scene.Rect{X: x, Y: s.y, W: w, H: h}, text: tb}
