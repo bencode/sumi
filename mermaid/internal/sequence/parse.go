@@ -85,7 +85,7 @@ func parseStatement(ts []syntax.Token) (Stmt, []syntax.Token, error) {
 		return parseCreate(ts)
 	case kDestroy:
 		return parseDestroy(ts)
-	case kParOver, kMenu:
+	case kMenu:
 		return nil, nil, syntax.Unsupported(t.Pos, syntax.Describe(t))
 	}
 	if kind, ok := blockKinds[t.Kind]; ok {
@@ -94,8 +94,11 @@ func parseStatement(ts []syntax.Token) (Stmt, []syntax.Token, error) {
 	return nil, nil, syntax.Unexpected(t, "a statement")
 }
 
+// blockKinds are the blocks' keywords. par_over is a par: Mermaid draws it
+// as one, labeled par, as what would lay its sections over each other,
+// isLoopOverlap (sequenceRenderer.ts line 190), reads a field nothing sets.
 var blockKinds = map[syntax.Kind]BlockKind{
-	kLoop: Loop, kAlt: Alt, kOpt: Opt, kPar: Par, kCritical: Critical, kBreak: Break,
+	kLoop: Loop, kAlt: Alt, kOpt: Opt, kPar: Par, kParOver: Par, kCritical: Critical, kBreak: Break,
 }
 
 // separators are the keywords that start a block's next section.
@@ -105,7 +108,7 @@ var separators = map[BlockKind]syntax.Kind{Alt: kElse, Par: kAnd, Critical: kOpt
 //
 //	block = ( "loop" | "opt" | "break" ) REST document "end"
 //	      | "alt" REST document { "else" REST document } "end"
-//	      | "par" REST document { "and" REST document } "end"
+//	      | ( "par" | "par_over" ) REST document { "and" REST document } "end"
 //	      | "critical" REST document { "option" REST document } "end"
 func parseBlock(ts []syntax.Token, kind BlockKind) (Stmt, []syntax.Token, error) {
 	ends, want := []syntax.Kind{kEnd}, `"end"`

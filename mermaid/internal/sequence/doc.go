@@ -35,6 +35,7 @@
 //	block       = ( "loop" | "opt" | "break" ) REST document "end"
 //	            | "alt"      REST document { "else"   REST document } "end"
 //	            | "par"      REST document { "and"    REST document } "end"
+//	            | "par_over" REST document { "and"    REST document } "end"
 //	            | "critical" REST document { "option" REST document } "end" ;
 //	rect        = "rect" REST document "end" ;
 //	box         = "box" REST { NEWLINE | participant } "end" ;
@@ -47,7 +48,7 @@
 // read and the tokens left: Parse for diagram, parseDocument, parseStatement,
 // parseParticipant, parseCreate, parseDestroy, parseSignal, parseNote,
 // parseActivation, parseAutonumber, parseBlock, parseRect and parseBox.
-// Syntax Mermaid accepts that sumi does not yet, such as par_over, is
+// Syntax Mermaid accepts that sumi does not yet, such as links, is
 // refused with an error saying so. SETTINGS is @{...} after a
 // participant's name: JSON for its type and its alias.
 package sequence
