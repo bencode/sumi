@@ -7,7 +7,8 @@ import "math"
 // sequenceRenderer.ts lines 1488-1587), 0 where none does. Only messages
 // between neighbors, and notes, count; a message that passes over a
 // participant does not. The last participant's is from its messages to
-// itself.
+// itself. A text that asks to be wrapped is wrapped to the least width
+// less padding first.
 func needs(body []Stmt, e env) []float64 {
 	need := make([]float64, len(e.ps)) // need[i]: what falls between i and i+1
 	grow := func(i int, width float64) {
@@ -19,7 +20,8 @@ func needs(body []Stmt, e env) []float64 {
 		switch s := s.(type) {
 		case *Message:
 			from, to := e.at[s.From], e.at[s.To]
-			wd := measure(e.m, s.Text, e.c.messageFont).w + 2*e.c.wrapPadding
+			text := wrapIf(e.m, s.Wrap, s.Text, e.c.width-2*e.c.wrapPadding, e.c.messageFont)
+			wd := measure(e.m, text, e.c.messageFont).w + 2*e.c.wrapPadding
 			switch from {
 			case to:
 				grow(from, wd/2)
@@ -29,7 +31,8 @@ func needs(body []Stmt, e env) []float64 {
 				grow(from, wd)
 			}
 		case *Note:
-			wd := measure(e.m, s.Text, e.c.noteFont).w + 2*e.c.wrapPadding
+			text := wrapIf(e.m, s.Wrap, s.Text, e.c.width-2*e.c.wrapPadding, e.c.noteFont)
+			wd := measure(e.m, text, e.c.noteFont).w + 2*e.c.wrapPadding
 			noteGaps(s, e, wd, grow)
 		}
 	})
@@ -102,6 +105,7 @@ type msgModel struct {
 	startx, stopx float64 // the line's ends, shortened for heads and bars
 	from, to      float64 // the outer edges of both ends' lifelines or bars
 	width         float64
+	text          string // the text as drawn, wrapped to the line when it asks
 }
 
 // A blockSpan is a block's entry in calculateLoopBounds, which every
@@ -129,7 +133,7 @@ func measureAcross(body []Stmt, e env) across {
 			case *Rect: // not one of calculateLoopBounds' blocks
 				visit(s.Body)
 			case *Note:
-				x, w := noteBox(s, e)
+				x, w, _ := noteBox(s, e)
 				for _, sp := range spans {
 					sp.from, sp.to = min(sp.from, x), max(sp.to, x+w)
 					sp.width = max(sp.width, math.Abs(sp.from-sp.to)) - e.c.labelBoxWidth
@@ -235,8 +239,13 @@ func message(s *Message, open map[string][]float64, e env) msgModel {
 			mm.startx -= adjust(3)
 		}
 	}
-	text := measure(e.m, s.Text, e.c.messageFont).w + 2*e.c.wrapPadding
-	mm.width = max(text, math.Abs(mm.startx-mm.stopx)+2*e.c.wrapPadding, e.c.width)
+	span := math.Abs(mm.startx - mm.stopx)
+	mm.text = wrapIf(e.m, s.Wrap, s.Text, max(span+2*e.c.wrapPadding, e.c.width), e.c.messageFont)
+	var text float64 // a wrapped text is as wide as the line lets it be
+	if !s.Wrap {
+		text = measure(e.m, mm.text, e.c.messageFont).w + 2*e.c.wrapPadding
+	}
+	mm.width = max(text, span+2*e.c.wrapPadding, e.c.width)
 	return mm
 }
 
@@ -244,22 +253,39 @@ func message(s *Message, open map[string][]float64, e env) msgModel {
 // shortened for.
 func stick(h Head) bool { return h == StickTop || h == StickBottom }
 
-// noteBox is where a note's box starts and how wide it is (buildNoteModel).
-func noteBox(n *Note, e env) (x, w float64) {
+// noteBox is where a note's box starts, how wide it is and its text as
+// drawn (buildNoteModel, sequenceRenderer.ts lines 1700-1767). A note that
+// asks to be wrapped, and has a text, is as wide as the least width or its
+// participant, or beside one, its text wrapped to the least width; its text
+// is then drawn wrapped to its box, less padding.
+func noteBox(n *Note, e env) (x, w float64, text string) {
 	i, j := e.at[n.Of[0]], e.at[n.Of[len(n.Of)-1]]
 	left, wi, wj := e.x[i]-e.w[i]/2, e.w[i], e.w[j]
-	text := measure(e.m, n.Text, e.c.noteFont).w + 2*e.c.noteMargin
+	wrap := n.Wrap && n.Text != ""
+	t := measure(e.m, wrapIf(e.m, wrap, n.Text, e.c.width, e.c.noteFont), e.c.noteFont).w
+	pad := 2 * e.c.noteMargin
 	switch {
 	case n.Place == RightOf:
-		w = max(wi/2+wj/2, text)
-		return left + (wi+e.c.actorMargin)/2, w
+		w = max(wi/2+wj/2, t+pad)
+		if wrap {
+			w = max(e.c.width, t)
+		}
+		x = left + (wi+e.c.actorMargin)/2
 	case n.Place == LeftOf:
-		w = max(wi/2+wj/2, text)
-		return left - w + (wi-e.c.actorMargin)/2, w
+		w = max(wi/2+wj/2, t+pad)
+		if wrap {
+			w = max(e.c.width, t+pad)
+		}
+		x = left - w + (wi-e.c.actorMargin)/2
 	case i == j:
-		w = max(wi, e.c.width, text)
-		return left + (wi-w)/2, w
+		w = max(wi, e.c.width, t+pad)
+		if wrap {
+			w = max(e.c.width, wi)
+		}
+		x = left + (wi-w)/2
+	default:
+		w = math.Abs(e.x[i]-e.x[j]) + e.c.actorMargin
+		x = min(e.x[i], e.x[j]) - e.c.actorMargin/2
 	}
-	w = math.Abs(e.x[i]-e.x[j]) + e.c.actorMargin
-	return min(e.x[i], e.x[j]) - e.c.actorMargin/2, w
+	return x, w, wrapIf(e.m, wrap, n.Text, w-2*e.c.wrapPadding, e.c.noteFont)
 }

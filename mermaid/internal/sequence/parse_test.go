@@ -146,6 +146,18 @@ A->>C: x`, func() *Diagram {
 				Body:   []Stmt{msg("A", "C", "x", Message{Head: Arrow, Line: 13})},
 			}
 		}()},
+		{"wrap", `sequenceDiagram
+participant C as wrap:Z
+A->>B:wrap: x
+Note over A:nowrap: y
+loop wrap: t
+end`, &Diagram{
+			Participants: []*Participant{{ID: "C", Label: "Z", Wrap: true}, {ID: "A", Label: "A"}, {ID: "B", Label: "B"}},
+			Body: []Stmt{
+				msg("A", "B", "x", Message{Head: Arrow, Wrap: true, Line: 3}),
+				&Note{Place: Over, Of: []string{"A"}, Text: "y"},
+				&Block{Kind: Loop, Sections: []Section{{Label: "t"}}},
+			}}},
 		{"participant types", `sequenceDiagram
 participant D@{ "type": "database" }
 actor G@{ "type" : "boundary" }
@@ -268,7 +280,6 @@ participant A@{ "type": "databse" }`, `line 2:14: unknown participant type "data
 participant A@{ type: database }`, `line 2:14: @{...} that is not JSON is not supported yet`},
 		{"() and +", "sequenceDiagram\nA()->>+B: x", `line 2:7: unexpected "+", expected a participant's name`},
 		{"not a color", "sequenceDiagram\nrect rgb(1,2)\nend", `line 2:6: "rgb(1,2)" is not a color`},
-		{"wrap", "sequenceDiagram\nA->>B: wrap: x", `line 2:6: "wrap:" is not supported yet`},
 	}
 	for _, tt := range tests {
 		_, err := read(tt.src)

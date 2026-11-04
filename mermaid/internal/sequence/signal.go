@@ -37,12 +37,11 @@ func parseParticipant(ts []syntax.Token) (Stmt, []syntax.Token, error) {
 		if err != nil {
 			return nil, nil, err
 		}
-		if d.p.Label, err = label(a.Pos, a.Text); err != nil {
-			return nil, nil, err
+		text, wrap := label(a.Text)
+		if text == d.p.Label && alias != "" { // as names the participant itself
+			text = syntax.Decode(alias)
 		}
-		if strings.TrimSpace(a.Text) == id && alias != "" {
-			d.p.Label = syntax.Decode(alias)
-		}
+		d.p.Label, d.p.Wrap = text, wrap
 		d.alias, ts = true, rest
 	} else if alias != "" {
 		d.p.Label, d.alias = syntax.Decode(alias), true
@@ -113,7 +112,7 @@ func parseSignal(ts []syntax.Token) (Stmt, []syntax.Token, error) {
 		return nil, nil, err
 	}
 	m.To = strings.TrimSpace(to.Text)
-	if m.Text, ts, err = parseText(ts); err != nil {
+	if m.Text, m.Wrap, ts, err = parseText(ts); err != nil {
 		return nil, nil, err
 	}
 	_, ts, err = syntax.Expect(ts, syntax.Newline, "the end of the line")
@@ -167,7 +166,7 @@ func parseNote(ts []syntax.Token) (Stmt, []syntax.Token, error) {
 		ts = rest
 	}
 	var err error
-	if n.Text, ts, err = parseText(ts); err != nil {
+	if n.Text, n.Wrap, ts, err = parseText(ts); err != nil {
 		return nil, nil, err
 	}
 	_, ts, err = syntax.Expect(ts, syntax.Newline, "the end of the line")
@@ -216,26 +215,27 @@ func parseNum(s string) float64 {
 // parseText reads the text after a message's or a note's colon.
 //
 //	TEXT = ":" text
-func parseText(ts []syntax.Token) (string, []syntax.Token, error) {
+func parseText(ts []syntax.Token) (string, bool, []syntax.Token, error) {
 	t, ts, err := syntax.Expect(ts, kText, `":" and a text`)
 	if err != nil {
-		return "", nil, err
+		return "", false, nil, err
 	}
-	s, err := label(t.Pos, strings.TrimSpace(t.Text)[1:])
-	return s, ts, err
+	s, wrap := label(strings.TrimSpace(t.Text)[1:])
+	return s, wrap, ts, nil
 }
 
-// label is a text as Mermaid's parseMessage (sequenceDb.ts line 380) takes
-// it: trimmed, with its entity codes decoded and <br> kept for scene.Wrap. A
-// wrap: or nowrap: before it, which asks for the text to be wrapped or not,
-// is not supported yet.
-func label(p syntax.Pos, s string) (string, error) {
+// label is a text as Mermaid's parseMessage and extractWrap (sequenceDb.ts
+// lines 355-387) take it: trimmed, with its entity codes decoded and <br>
+// kept, and without a wrap: or nowrap: before it, which may follow a colon.
+// It tells whether the text asks to be wrapped: wrap: does; nowrap: does
+// not, as no text is wrapped unless it asks.
+func label(s string) (string, bool) {
 	s = strings.TrimSpace(s)
 	t := strings.TrimPrefix(s, ":")
 	for _, w := range []string{"wrap:", "nowrap:"} {
-		if strings.HasPrefix(t, w) {
-			return "", syntax.Unsupported(p, `"`+w+`"`)
+		if rest, ok := strings.CutPrefix(t, w); ok {
+			return syntax.Decode(strings.TrimSpace(rest)), w == "wrap:"
 		}
 	}
-	return syntax.Decode(s), nil
+	return syntax.Decode(s), false
 }

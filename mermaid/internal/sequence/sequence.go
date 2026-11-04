@@ -41,16 +41,18 @@ func arrange(d *Diagram, m scene.Measurer) layout {
 	for i, p := range d.Participants {
 		e.at[p.ID] = i
 	}
-	e.w = widths(d.Participants, m, e.c)
+	e.labels = labels(d.Participants, m, e.c)
+	e.c.height = actorHeight(d.Participants, e.labels, m, e.c)
+	e.w = widths(d.Participants, e.labels, m, e.c)
 	need := needs(d.Body, e)
-	margins := boxMargins(d, need, e)
-	lead, g := spread(d.Participants, gaps(need, e), margins, e.c)
+	fits := boxFits(d, need, e)
+	lead, g := spread(d.Participants, gaps(need, e), fits, e.c)
 	e.x = centers(e.w, g, lead)
 	e.across = measureAcross(d.Body, e)
-	top := boxTop(d.Groups, e)
+	top := boxTop(fits, e)
 	items, s := place(d.Body, state{y: top + e.c.height}, e)
 	l := layout{d: d, e: e, items: items, top: top, bottom: s.y + e.c.footerGap}
-	l.boxes = placeBoxes(l, margins)
+	l.boxes = placeBoxes(l, fits)
 	for _, b := range l.boxes {
 		l.bounds = union(l.bounds, b.model)
 	}

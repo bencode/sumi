@@ -59,14 +59,50 @@ func (tb textBlock) set(m scene.Measurer, x float64, left bool, base func(i int)
 	return t, box
 }
 
-// widths are the participants' widths: the least width, or wide enough for
-// the label and padding (calculateActorMargins, sequenceRenderer.ts).
-func widths(ps []*Participant, m scene.Measurer, c config) []float64 {
+// labels are the participants' labels as drawn, one that asks to be
+// wrapped broken to fit the least width less padding (calculateActorMargins,
+// sequenceRenderer.ts lines 1620-1628).
+func labels(ps []*Participant, m scene.Measurer, c config) []string {
+	out := make([]string, len(ps))
+	for i, p := range ps {
+		out[i] = wrapIf(m, p.Wrap, p.Label, c.width-2*c.wrapPadding, c.actorFont)
+	}
+	return out
+}
+
+// widths are the participants' widths: the least width for a wrapped
+// label, or else wide enough for the label and padding (lines 1633-1635).
+func widths(ps []*Participant, labels []string, m scene.Measurer, c config) []float64 {
 	w := make([]float64, len(ps))
 	for i, p := range ps {
-		w[i] = max(c.width, measure(m, p.Label, c.actorFont).w+2*c.wrapPadding)
+		w[i] = c.width
+		if !p.Wrap {
+			w[i] = max(c.width, measure(m, labels[i], c.actorFont).w+2*c.wrapPadding)
+		}
 	}
 	return w
+}
+
+// actorHeight is the height every participant has: the least height, or
+// the tallest wrapped label's, which Mermaid makes its conf.height (lines
+// 1643-1648 and 1074).
+func actorHeight(ps []*Participant, labels []string, m scene.Measurer, c config) float64 {
+	h := c.height
+	for i, p := range ps {
+		if p.Wrap {
+			h = max(h, measure(m, labels[i], c.actorFont).h())
+		}
+	}
+	return h
+}
+
+// wrapIf is s wrapped to maxWidth when wrap is set, and s itself when not:
+// each place Mermaid wraps a text checks the text's wrap first.
+func wrapIf(m scene.Measurer, wrap bool, s string, maxWidth, size float64) string {
+	if !wrap {
+		return s
+	}
+	return wrapLabel(m, s, maxWidth, size)
 }
 
 // wrapLabel breaks label into lines no wider than maxWidth, joined by <br/>,

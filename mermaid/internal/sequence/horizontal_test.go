@@ -48,3 +48,30 @@ func TestGaps(t *testing.T) {
 		}
 	}
 }
+
+// TestWrap checks what wrap: changes across and down. Wrapped to 130, a
+// word of 30 or 60 characters breaks into hyphenated lines of 13 and a
+// hyphen, 140 wide, as wrapLabel keeps the character that overflows: a
+// message's gap needs its widest line, 140, and padding, not 300; a
+// participant's five lines make every participant 75 tall, not 65.
+func TestWrap(t *testing.T) {
+	tests := []struct {
+		name, src string
+		got       func(layout) float64
+		want      float64
+	}{
+		{"a message's gap", "A->>B:wrap: " + strings.Repeat("x", 30),
+			func(l layout) float64 { return l.e.x[1] - l.e.x[0] }, 210},
+		{"a participant's height", "participant A as wrap: " + strings.Repeat("x", 60) + "\nparticipant B",
+			func(l layout) float64 { return l.e.c.height }, 75},
+	}
+	for _, tt := range tests {
+		d, err := read("sequenceDiagram\n" + tt.src)
+		if err != nil {
+			t.Fatalf("%s: %v", tt.name, err)
+		}
+		if got := tt.got(arrange(d, tenPx{})); got != tt.want {
+			t.Errorf("%s: %v, want %v", tt.name, got, tt.want)
+		}
+	}
+}

@@ -46,7 +46,7 @@ func participants(body []Stmt) ([]*Participant, []*Group, error) {
 			return
 		}
 		if alias {
-			old.Label, old.Shape = p.Label, p.Shape
+			old.Label, old.Shape, old.Wrap = p.Label, p.Shape, p.Wrap
 		}
 	}
 	var err error

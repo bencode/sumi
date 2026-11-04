@@ -20,6 +20,7 @@ type Participant struct {
 	Label string // what its box shows: its alias, or its ID; may hold <br>
 	Shape Shape
 	Group *Group // the box it is declared in, or nil
+	Wrap  bool   // wrap: before its label, to break the label to fit
 }
 
 // A Group is a box statement's frame around the participants declared in
@@ -27,6 +28,7 @@ type Participant struct {
 type Group struct {
 	Title string      // may hold <br>; empty when the line gives none
 	Fill  scene.Color // transparent when the line names no color
+	Wrap  bool        // wrap: before its title, to break the title to fit
 }
 
 // A Shape is how a participant is drawn: Mermaid's participant types
@@ -60,6 +62,7 @@ type Message struct {
 	CircleFrom bool   // () before the arrow: a central connection on From's lifeline
 	CircleTo   bool   // () after the arrow: one on To's
 	Back       bool   // the head is at From's end: /|-, \|-, //- and \\-
+	Wrap       bool   // wrap: before its text, to break the text to fit
 	Line       int
 }
 
@@ -82,6 +85,7 @@ type Note struct {
 	Place Place
 	Of    []string // one participant; for Over, one or two
 	Text  string
+	Wrap  bool // wrap: before its text, to break the text to fit
 }
 
 // A Place is where a note goes.
