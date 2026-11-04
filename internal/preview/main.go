@@ -1,8 +1,9 @@
 // Command preview writes hand-made scenes as SVG, in the light and dark
-// palettes, with an index.html showing them side by side: for looking at what
-// scene and svg draw.
+// palettes, with an index.html showing them side by side, and a
+// sequence.html of Mermaid's sequence test diagrams laid out: for looking at
+// what sumi draws.
 //
-//	go run ./internal/preview [-o out]
+//	go run ./internal/preview [-o out] [-fixtures dir]
 package main
 
 import (
@@ -122,6 +123,7 @@ func diagram() *scene.Scene {
 
 func main() {
 	out := flag.String("o", "out", "directory to write into")
+	fixtures := flag.String("fixtures", "mermaid/internal/sequence/testdata/e2e", "Mermaid sequence diagrams to lay out")
 	flag.Parse()
 	if err := os.MkdirAll(*out, 0o755); err != nil {
 		log.Fatal(err)
@@ -133,11 +135,7 @@ func main() {
 	var rows strings.Builder
 	for _, sc := range scenes {
 		rows.WriteString("<tr>")
-		for _, th := range []struct {
-			name string
-			p    scene.Palette
-			bg   string
-		}{{"light", scene.Light, "#ffffff"}, {"dark", scene.Dark, "#0d1117"}} {
+		for _, th := range themes {
 			file := sc.name + "-" + th.name + ".svg"
 			if err := os.WriteFile(filepath.Join(*out, file), svg.Render(sc.s, th.p), 0o644); err != nil {
 				log.Fatal(err)
@@ -148,7 +146,11 @@ func main() {
 	}
 	page := "<!doctype html><meta charset=utf-8><title>sumi preview</title>\n" +
 		"<style>body{margin:16px;font:14px sans-serif}td{padding:16px;vertical-align:top}</style>\n" +
+		"<p><a href=\"sequence.html\">Mermaid's sequence test diagrams</a></p>\n" +
 		"<table>\n" + rows.String() + "</table>\n"
+	if err := sequencePage(*fixtures, *out); err != nil {
+		log.Fatal(err)
+	}
 	if err := os.WriteFile(filepath.Join(*out, "index.html"), []byte(page), 0o644); err != nil {
 		log.Fatal(err)
 	}
