@@ -32,7 +32,9 @@
 //	            | "par"      REST document { "and"    REST document } "end"
 //	            | "critical" REST document { "option" REST document } "end" ;
 //	arrow       = "->" | "-->" | "->>" | "-->>" | "<<->>" | "<<-->>"
-//	            | "-x" | "--x" | "-)" | "--)" ;
+//	            | "-x" | "--x" | "-)" | "--)"
+//	            | "-|\" | "-|/" | "-\\" | "-//" | "/|-" | "\|-" | "//-" | "\\-"
+//	            | "--|\" | "--|/" | "--\\" | "--//" | "/|--" | "\|--" | "//--" | "\\--" ;
 //
 // Each production is a function that takes the tokens and returns what it
 // read and the tokens left: Parse for diagram, parseDocument, parseStatement,

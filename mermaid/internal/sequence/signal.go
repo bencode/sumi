@@ -93,9 +93,6 @@ var shapeOf = map[string]Shape{
 func parseSignal(ts []syntax.Token) (Stmt, []syntax.Token, error) {
 	from, ts := ts[0], ts[1:]
 	_, ts, circleFrom := syntax.Accept(ts, kCentral)
-	if ts[0].Kind == kHalfArrow {
-		return nil, nil, syntax.Unsupported(ts[0].Pos, syntax.Describe(ts[0]))
-	}
 	a, ts, err := syntax.Expect(ts, kArrow, "an arrow")
 	if err != nil {
 		return nil, nil, err
@@ -135,6 +132,15 @@ var arrowOf = map[string]Message{
 	"--x":    {Head: Cross, Dotted: true},
 	"-)":     {Head: Open},
 	"--)":    {Head: Open, Dotted: true},
+
+	`-|\`: {Head: SolidTop}, `--|\`: {Head: SolidTop, Dotted: true},
+	`-|/`: {Head: SolidBottom}, `--|/`: {Head: SolidBottom, Dotted: true},
+	`-\\`: {Head: StickTop}, `--\\`: {Head: StickTop, Dotted: true},
+	`-//`: {Head: StickBottom}, `--//`: {Head: StickBottom, Dotted: true},
+	`/|-`: {Head: SolidTop, Back: true}, `/|--`: {Head: SolidTop, Back: true, Dotted: true},
+	`\|-`: {Head: SolidBottom, Back: true}, `\|--`: {Head: SolidBottom, Back: true, Dotted: true},
+	`//-`: {Head: StickTop, Back: true}, `//--`: {Head: StickTop, Back: true, Dotted: true},
+	`\\-`: {Head: StickBottom, Back: true}, `\\--`: {Head: StickBottom, Back: true, Dotted: true},
 }
 
 // parseNote reads a note.

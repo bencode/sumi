@@ -83,18 +83,25 @@ func drawMessage(p *pMessage, l layout) []scene.Item {
 	var path []scene.Seg
 	var end, endDir, startDir scene.Point
 	if p.From == p.To {
+		if p.Number != "" && (p.Back || p.Both) { // clear of the number's circle
+			x1 += 10
+		}
 		path = (&scene.Path{}).MoveTo(x1, y).CubeTo(x1+60, y-10, x2+60, y+30, x2, y+20).Segs
 		end, endDir, startDir = scene.Point{X: x2, Y: y + 20}, scene.Point{X: -60, Y: -10}, scene.Point{X: -60, Y: 10}
 	} else {
 		if p.Number != "" {
-			x1 = numberedStart(p, mm, l.e.c)
+			x1, x2 = numberedEnds(p, mm, l.e.c)
 		}
 		path = line(x1, y, x2, y)
 		end, endDir, startDir = scene.Point{X: x2, Y: y}, scene.Point{X: x2 - x1, Y: 0}, scene.Point{X: x1 - x2, Y: 0}
 	}
 	it := scene.Item{Kind: scene.Edge, ID: p.id, Parent: p.parent, From: p.From, To: p.To,
 		Paths: []scene.Path{{Segs: path, Stroke: stroke}}}
-	it.Paths = append(it.Paths, head(p.Head, end, endDir)...)
+	if p.Back {
+		it.Paths = append(it.Paths, head(flipped[p.Head], scene.Point{X: x1, Y: y}, startDir)...)
+	} else {
+		it.Paths = append(it.Paths, head(p.Head, end, endDir)...)
+	}
 	if p.Both {
 		it.Paths = append(it.Paths, head(Arrow, scene.Point{X: x1, Y: y}, startDir)...)
 	}
@@ -111,47 +118,67 @@ func drawMessage(p *pMessage, l layout) []scene.Item {
 	return []scene.Item{it, drawNumber(p, l)}
 }
 
-// numberedStart is where a numbered message's line starts: past the
-// number's circle (lines 664-695), and for a two-headed one to the left,
-// past a central connection too.
-func numberedStart(p *pMessage, mm msgModel, c config) float64 {
+// numberedEnds are where a numbered message's line starts and ends, clear
+// of the number's circle (lines 655-695). A line with a head at its start
+// has its number at the other end; central connections move both a little.
+func numberedEnds(p *pMessage, mm msgModel, c config) (float64, float64) {
 	r := c.numberRadius // SEQUENCE_NUMBER_RADIUS
-	if !p.Both {
-		return mm.startx + r
+	x1, x2 := mm.startx, mm.stopx
+	right := x1 < x2
+	switch {
+	case p.Both && right:
+		x1 += 2 * r
+	case p.Both:
+		x1 -= r
+		if p.CircleFrom || p.CircleTo {
+			x1 -= 5
+		}
+		if p.CircleFrom {
+			x1 -= 7.5
+		}
+	case p.Back:
+		if right {
+			x2 -= 2 * r
+		} else {
+			x2 -= r
+			if p.CircleFrom {
+				x1 -= 7.5
+			}
+		}
+		if p.CircleFrom || p.CircleTo {
+			x2 += 15
+		}
+	default:
+		x1 += r
 	}
-	if mm.startx < mm.stopx {
-		return mm.startx + 2*r
-	}
-	x := mm.startx - r
-	if p.CircleFrom || p.CircleTo {
-		x -= 5
-	}
-	if p.CircleFrom {
-		x -= 7.5
-	}
-	return x
+	return x1, x2
 }
 
 // circles are a message's central connections: dots of radius 5 on the
 // lifelines' middles, filled with the text color the diagram's root sets
-// (drawCentralConnection, lines 288-375). With numbers on, the sender's
-// dot moves 16.5 toward the receiver, out of the number's way.
+// (drawCentralConnection, lines 288-375). With numbers on, the dot at the
+// number's end moves 16.5 toward the other: the sender's, or the
+// receiver's when the head is at the sender's end.
 func circles(p *pMessage, l layout) []scene.Path {
 	from, to := l.e.x[l.e.at[p.From]], l.e.x[l.e.at[p.To]]
 	dot := func(x float64) scene.Path {
 		return scene.Path{Segs: scene.Ellipse(scene.Point{X: x, Y: p.y}, 5, 5), Fill: scene.Use(scene.TextColor)}
 	}
+	shift := 0.0
+	if p.Number != "" {
+		shift = 16.5
+		if from > to {
+			shift = -16.5
+		}
+	}
+	if p.Back {
+		to -= shift
+	} else {
+		from += shift
+	}
 	var out []scene.Path
 	if p.CircleFrom {
-		x := from
-		if p.Number != "" {
-			if from <= to {
-				x += 16.5
-			} else {
-				x -= 16.5
-			}
-		}
-		out = append(out, dot(x))
+		out = append(out, dot(from))
 	}
 	if p.CircleTo {
 		out = append(out, dot(to))
@@ -160,12 +187,13 @@ func circles(p *pMessage, l layout) []scene.Path {
 }
 
 // drawNumber is a message's number in a filled circle, at the sender's end of
-// the line. The circle is a marker of radius numberRadius on a line Mermaid's
-// stylesheet makes 2 wide, which scales the marker by 2.
+// the line, or the receiver's when the head is at the sender's. The circle is
+// a marker of radius numberRadius on a line Mermaid's stylesheet makes 2
+// wide, which scales the marker by 2.
 func drawNumber(p *pMessage, l layout) scene.Item {
 	mm, r := p.model, 2*l.e.c.numberRadius
 	x := mm.from + 1
-	if p.From != p.To && mm.startx > mm.stopx {
+	if p.From != p.To && (mm.startx > mm.stopx) != p.Back {
 		x = mm.to - 1
 	}
 	at := scene.Point{X: x, Y: p.y}

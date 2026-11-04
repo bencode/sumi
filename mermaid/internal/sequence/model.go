@@ -45,6 +45,7 @@ type Message struct {
 	Deactivate bool   // -: From is deactivated after it
 	CircleFrom bool   // () before the arrow: a central connection on From's lifeline
 	CircleTo   bool   // () after the arrow: one on To's
+	Back       bool   // the head is at From's end: /|-, \|-, //- and \\-
 	Line       int
 }
 
@@ -52,10 +53,14 @@ type Message struct {
 type Head uint8
 
 const (
-	NoHead Head = iota // ->
-	Arrow              // ->>, a filled triangle
-	Cross              // -x
-	Open               // -), an open arrow, for an async message
+	NoHead      Head = iota // ->
+	Arrow                   // ->>, a filled triangle
+	Cross                   // -x
+	Open                    // -), an open arrow, for an async message
+	SolidTop                // -|\, half a filled triangle, above a line drawn left to right
+	SolidBottom             // -|/, below it
+	StickTop                // -\\, one stroke, above it
+	StickBottom             // -//, below it
 )
 
 // A Note is a box of text beside a participant, or over one or two.

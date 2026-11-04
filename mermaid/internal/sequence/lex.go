@@ -43,8 +43,7 @@ const (
 	kRest   // the rest of a line: a block's title, an alias
 	kConfig // @{...}, a participant's settings
 	kArrow
-	kHalfArrow // one of the sixteen half arrows, as -|\ or //-
-	kText      // : and the text after it
+	kText // : and the text after it
 	kPlus
 	kMinus
 	kCentral // ()
@@ -182,7 +181,6 @@ func initialRules() []rule {
 		rule{scan: token(syntax.Newline, lit(";"))},
 		rule{scan: token(kName, name)},
 		rule{scan: token(kArrow, oneOf(arrows))},
-		rule{scan: token(kHalfArrow, oneOf(halfArrows))},
 		rule{scan: token(kText, text)},
 		rule{scan: token(kPlus, lit("+"))},
 		rule{scan: token(kMinus, lit("-"))},
@@ -192,16 +190,13 @@ func initialRules() []rule {
 	return r
 }
 
-// The arrows, in the grammar's order, which is the order to try them in
-// (lines 85-94); and the half arrows (lines 96-117), which are not supported
-// yet.
-var (
-	arrows     = []string{"->>", "<<->>", "-->>", "<<-->>", "->", "-->", "-x", "--x", "-)", "--)"}
-	halfArrows = []string{
-		`--|\`, `--|/`, `--\\`, `--//`, `/|--`, `\|--`, `//--`, `\\--`,
-		`-|\`, `-|/`, `-\\`, `-//`, `/|-`, `\|-`, `//-`, `\\-`,
-	}
-)
+// All 26 arrows, in the grammar's order, which is the order to try them in
+// (lines 85-117): the whole ones, then the half ones.
+var arrows = []string{
+	"->>", "<<->>", "-->>", "<<-->>", "->", "-->", "-x", "--x", "-)", "--)",
+	`--|\`, `--|/`, `--\\`, `--//`, `/|--`, `\|--`, `//--`, `\\--`,
+	`-|\`, `-|/`, `-\\`, `-//`, `/|-`, `\|-`, `//-`, `\\-`,
+}
 
 // num is a number, followed by a space or a line break (line 30).
 func num(src string, i int) int {

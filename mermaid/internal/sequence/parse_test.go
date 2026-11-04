@@ -98,6 +98,18 @@ B()<<->>()A: 4`, &Diagram{
 				msg("A", "B", "3", Message{Head: Arrow, CircleFrom: true, CircleTo: true, Line: 4}),
 				msg("B", "A", "4", Message{Head: Arrow, Both: true, CircleFrom: true, CircleTo: true, Line: 5}),
 			}}},
+		{"half arrows", `sequenceDiagram
+A-|\B: 1
+A--//B: 2
+A/|-B: 3
+A\\--B: 4`, &Diagram{
+			Participants: ps("A", "B"),
+			Body: []Stmt{
+				msg("A", "B", "1", Message{Head: SolidTop, Line: 2}),
+				msg("A", "B", "2", Message{Head: StickBottom, Dotted: true, Line: 3}),
+				msg("A", "B", "3", Message{Head: SolidTop, Back: true, Line: 4}),
+				msg("A", "B", "4", Message{Head: StickBottom, Back: true, Dotted: true, Line: 5}),
+			}}},
 		{"participant types", `sequenceDiagram
 participant D@{ "type": "database" }
 actor G@{ "type" : "boundary" }
@@ -216,7 +228,6 @@ participant A@{ "type": "databse" }`, `line 2:14: unknown participant type "data
 		{"unclosed settings", "sequenceDiagram\nparticipant A@{ \"type\": \"queue\"", `line 2:14: "@{" is not closed`},
 		{"settings not JSON", `sequenceDiagram
 participant A@{ type: database }`, `line 2:14: @{...} that is not JSON is not supported yet`},
-		{"half arrow", "sequenceDiagram\nA-|\\B: x", `line 2:2: "-|\" is not supported yet`},
 		{"() and +", "sequenceDiagram\nA()->>+B: x", `line 2:7: unexpected "+", expected a participant's name`},
 		{"wrap", "sequenceDiagram\nA->>B: wrap: x", `line 2:6: "wrap:" is not supported yet`},
 	}

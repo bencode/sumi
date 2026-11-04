@@ -28,6 +28,20 @@ var (
 	crossMarker = marker{[]scene.Point{{X: 1, Y: 2}, {X: 6, Y: 7}, {X: 6, Y: 2}, {X: 1, Y: 7}}, scene.Point{X: 4, Y: 4.5}, 1.5}
 )
 
+// halfMarkers are the half heads (insertSolidTopArrowHead and the three
+// after it): userSpaceOnUse, so not scaled.
+var halfMarkers = map[Head]marker{
+	SolidTop:    {[]scene.Point{{X: 0, Y: 0}, {X: 10, Y: 8}, {X: 0, Y: 8}}, scene.Point{X: 7.9, Y: 7.25}, 1},
+	SolidBottom: {[]scene.Point{{X: 0, Y: 0}, {X: 10, Y: 0}, {X: 0, Y: 8}}, scene.Point{X: 7.9, Y: 0.75}, 1},
+	StickTop:    {[]scene.Point{{X: 0, Y: 0}, {X: 7, Y: 7}}, scene.Point{X: 7.5, Y: 7}, 1},
+	StickBottom: {[]scene.Point{{X: 0, Y: 7}, {X: 7, Y: 0}}, scene.Point{X: 7.5, Y: 0}, 1},
+}
+
+// flipped is the half head on a line's other side. Mermaid draws a head at
+// a line's start turned half round, so /|- takes the bottom one to show
+// above the line.
+var flipped = map[Head]Head{SolidTop: SolidBottom, SolidBottom: SolidTop, StickTop: StickBottom, StickBottom: StickTop}
+
 const crossWidth = 1.5 * 4.0 / 3 // 1pt, scaled with the marker
 
 // at places m's points at p, pointing along dir.
@@ -64,6 +78,16 @@ func head(h Head, p, dir scene.Point) []scene.Path {
 		segs := (&scene.Path{}).MoveTo(q[0].X, q[0].Y).LineTo(q[1].X, q[1].Y).
 			MoveTo(q[2].X, q[2].Y).LineTo(q[3].X, q[3].Y).Segs
 		return []scene.Path{{Segs: segs, Stroke: scene.Stroke{Paint: fill, Width: crossWidth}}}
+	}
+	// A half head has no class, so a solid one takes the text color the
+	// diagram's root sets. Mermaid strokes a stick one black, whatever the
+	// theme; sumi uses the line's color, so it shows on a dark canvas.
+	if m, ok := halfMarkers[h]; ok {
+		q := m.at(p, dir)
+		if stick(h) {
+			return []scene.Path{{Segs: line(q[0].X, q[0].Y, q[1].X, q[1].Y), Stroke: scene.Stroke{Paint: fill, Width: 1.5}}}
+		}
+		return []scene.Path{{Segs: polygon(q), Fill: scene.Use(scene.TextColor)}}
 	}
 	return nil
 }

@@ -218,10 +218,10 @@ func message(s *Message, open map[string][]float64, e env) msgModel {
 		if (s.Activate || s.CircleTo) && math.Abs(tl-tr) <= 2 {
 			mm.stopx += adjust(e.c.activationWidth/2 - 1)
 		}
-		if s.Head != NoHead {
+		if s.Head != NoHead && !stick(s.Head) && !s.Back {
 			mm.stopx += adjust(3)
 		}
-		if s.Both {
+		if s.Both || s.Back && !stick(s.Head) {
 			mm.startx -= adjust(3)
 		}
 	}
@@ -229,6 +229,10 @@ func message(s *Message, open map[string][]float64, e env) msgModel {
 	mm.width = max(text, math.Abs(mm.startx-mm.stopx)+2*e.c.wrapPadding, e.c.width)
 	return mm
 }
+
+// stick tells whether h is a single stroke, which a line's end is not
+// shortened for.
+func stick(h Head) bool { return h == StickTop || h == StickBottom }
 
 // noteBox is where a note's box starts and how wide it is (buildNoteModel).
 func noteBox(n *Note, e env) (x, w float64) {
