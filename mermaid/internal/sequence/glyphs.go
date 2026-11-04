@@ -11,9 +11,13 @@ import (
 // label's middle. Fills and outlines are the actor's colors; the lines and
 // the circles of the actor-man class are 2 wide, everything else 1.
 //
-// At the foot some labels sit lower than at the top: drawing the top one
-// sets Mermaid's actor.height to the glyph's bounding box (getBBox), plus a
-// labelBoxHeight or two, and the foot one centers its label in that.
+// At the foot some labels sit lower than at the top: the one at the foot
+// is the height the shape has once drawn (look.height), and centers its
+// label in that.
+
+// circleR is the radius of a control's, an entity's and a boundary's
+// circle.
+const circleR = 22
 
 var (
 	glyphFill = scene.Use(scene.NodeFill)
@@ -75,8 +79,6 @@ func queue(g slot) ([]scene.Path, float64) {
 
 // database is a cylinder standing up, a third as wide as the participant
 // and as tall as it is wide; the label is below its top (drawActorTypeDatabase).
-// Its bounding box is its height, so at the foot the label's middle is 35
-// and half of that height + 20 down.
 func database(g slot) ([]scene.Path, float64) {
 	d := g.w / 3
 	rx := d / 2
@@ -86,11 +88,7 @@ func database(g slot) ([]scene.Path, float64) {
 	p := (&scene.Path{}).MoveTo(g.c-rx, top.Y)
 	arc(arc(p, top, rx, ry, 180, 0), top, rx, ry, 0, -180).LineTo(g.c-rx, bottom.Y)
 	arc(p, bottom, rx, ry, 180, 0).LineTo(g.c+rx, top.Y)
-	mid := g.y + 35 + g.h/2
-	if g.foot {
-		mid = g.y + 35 + (d+20)/2
-	}
-	return []scene.Path{{Segs: p.Segs, Fill: glyphFill, Stroke: thin}}, mid
+	return []scene.Path{{Segs: p.Segs, Fill: glyphFill, Stroke: thin}}, g.y + 35 + g.h/2
 }
 
 // controlMarker is the arrowhead on a control's circle: a marker fixed at
@@ -101,15 +99,14 @@ var controlMarker = marker{
 }
 
 // control is a circle with an arrowhead on its top (drawActorTypeControl).
-// Its box is the circle's 44 + 2 labelBoxHeights tall at the foot.
 func control(g slot) ([]scene.Path, float64) {
-	const r = 22
+	const r = circleR
 	cy := g.y + 32
 	a := 172.5 * math.Pi / 180
 	head := controlMarker.at(scene.Point{X: g.c, Y: cy - r}, scene.Point{X: math.Cos(a), Y: math.Sin(a)})
 	mid := g.y + r + 12 + g.h/2
 	if g.foot {
-		mid = g.y + r + 5 + (2*r+40)/2
+		mid = g.y + r + 5 + g.h/2
 	}
 	return []scene.Path{
 		{Segs: scene.Ellipse(scene.Point{X: g.c, Y: cy}, r, r), Fill: glyphFill, Stroke: thick},
@@ -118,12 +115,12 @@ func control(g slot) ([]scene.Path, float64) {
 }
 
 // entity is a circle on a line, moved down by r/2 - 5 at the top and r at
-// the foot (drawActorTypeEntity). Its box is 44 + 20 tall at the foot.
+// the foot (drawActorTypeEntity).
 func entity(g slot) ([]scene.Path, float64) {
-	const r = 22
+	const r = circleR
 	cy, mid := g.y+25+r/2-5, g.y+30+r/2-5+g.h/2
 	if g.foot {
-		cy, mid = g.y+10+r, g.y+15+r+(2*r+20)/2
+		cy, mid = g.y+10+r, g.y+15+r+g.h/2
 	}
 	return []scene.Path{
 		{Segs: scene.Ellipse(scene.Point{X: g.c, Y: cy}, r, r), Fill: glyphFill, Stroke: thin},
@@ -133,14 +130,11 @@ func entity(g slot) ([]scene.Path, float64) {
 
 // boundary is a circle with a line out of its left side, ended by a short
 // upright one, all moved down by r/2 + 10
-// (drawActorTypeBoundary). Its box is 44 + 20 tall at the foot.
+// (drawActorTypeBoundary).
 func boundary(g slot) ([]scene.Path, float64) {
-	const r = 22
+	const r = circleR
 	cy := g.y + 12 + r/2 + 10
 	mid := g.y + 15 + r/2 + 10 + g.h/2
-	if g.foot {
-		mid = g.y + 15 + r/2 + 10 + (2*r+20)/2
-	}
 	bar := (&scene.Path{}).
 		MoveTo(g.c-2.5*r, cy).LineTo(g.c-15, cy).
 		MoveTo(g.c-2.5*r, cy-10).LineTo(g.c-2.5*r, cy+10).Segs

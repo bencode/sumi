@@ -117,8 +117,9 @@ func checkApart(t *testing.T, path string, l layout) {
 }
 
 // checkHeld checks that each block's frame holds the messages, notes and
-// blocks in it. An activation bar may start in a block and end outside it,
-// so bars are left out.
+// blocks in it, and each box's its participants, at the top and at the
+// foot. An activation bar may start in a block and end outside it, so bars
+// are left out.
 func checkHeld(t *testing.T, path string, l layout) {
 	frames := map[string]scene.Rect{}
 	for _, p := range l.items {
@@ -143,6 +144,22 @@ func checkHeld(t *testing.T, path string, l layout) {
 		}
 		if f, ok := frames[parent]; ok && union(f, p.extent()) != f {
 			t.Errorf("%s: %v sticks out of %s", path, p.extent(), parent)
+		}
+	}
+	for _, b := range l.boxes {
+		for i, p := range l.d.Participants {
+			if p.Group != b.Group {
+				continue
+			}
+			for _, foot := range []bool{false, true} {
+				y := l.top
+				if foot {
+					y = l.bottom
+				}
+				if box := participant(p, i, y, foot, l).Box; union(b.frame, box) != b.frame {
+					t.Errorf("%s: %s, foot %v, %v sticks out of %s", path, p.ID, foot, box, b.id)
+				}
+			}
 		}
 	}
 }

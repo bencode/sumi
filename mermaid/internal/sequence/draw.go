@@ -9,12 +9,15 @@ import (
 )
 
 // draw turns a layout into a scene, in the order Mermaid stacks things
-// (draw, sequenceRenderer.ts lines 1143-1395): the rects lowest; then the
-// lifelines; notes, activation bars and block frames in the order Mermaid
-// adds them; the top participants; the messages; the bottom participants;
-// the title.
+// (draw, sequenceRenderer.ts lines 1143-1408): the boxes lowest, each
+// below the one before it; the rects; then the lifelines; notes,
+// activation bars and block frames in the order Mermaid adds them; the top
+// participants; the messages; the bottom participants; the title.
 func draw(l layout) *scene.Scene {
 	var items []scene.Item
+	for _, b := range slices.Backward(l.boxes) {
+		items = append(items, drawBox(b, l))
+	}
 	for _, p := range slices.Backward(l.items) {
 		if r, ok := p.(*pRect); ok {
 			items = append(items, background(r))
@@ -35,7 +38,7 @@ func draw(l layout) *scene.Scene {
 		items = append(items, drawStacked(p, l))
 	}
 	for i, p := range l.d.Participants {
-		items = append(items, participant(p, i, 0, false, l))
+		items = append(items, participant(p, i, l.top, false, l))
 	}
 	for _, p := range l.items {
 		if m, ok := p.(*pMessage); ok {

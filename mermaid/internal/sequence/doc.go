@@ -4,12 +4,14 @@
 //
 //	Lex      source -> tokens                        lex.go, modes.go
 //	Parse    tokens -> a tree of statements          parse.go, signal.go
-//	Resolve  the tree -> participants, numbers,
+//	Resolve  the tree -> participants, boxes, numbers,
 //	         activations checked                     resolve.go
 //	measure, gaps, centers, measureAcross
-//	         -> where things go across               measure.go, horizontal.go
-//	place    -> where things go down the page        place.go, activation.go
-//	draw     -> a scene                              draw.go, shapes.go
+//	         -> where things go across               measure.go, horizontal.go,
+//	                                                 box.go
+//	place    -> where things go down the page        place.go, activation.go,
+//	                                                 box.go
+//	draw     -> a scene                              draw.go, shapes.go, box.go
 //
 // The parser is a recursive descent over this grammar, taken from
 // Mermaid's sequenceDiagram.jison with its left recursion written as
@@ -17,7 +19,7 @@
 //
 //	diagram     = { NEWLINE } "sequenceDiagram" document EOF ;
 //	document    = { NEWLINE | statement } ;
-//	statement   = participant | signal | note | activation | block | rect
+//	statement   = participant | signal | note | activation | block | rect | box
 //	            | "autonumber" [ "off" | NUM [ NUM ] ] NEWLINE
 //	            | "title" REST NEWLINE
 //	            | "accTitle" ":" REST NEWLINE
@@ -32,6 +34,7 @@
 //	            | "par"      REST document { "and"    REST document } "end"
 //	            | "critical" REST document { "option" REST document } "end" ;
 //	rect        = "rect" REST document "end" ;
+//	box         = "box" REST { NEWLINE | participant } "end" ;
 //	arrow       = "->" | "-->" | "->>" | "-->>" | "<<->>" | "<<-->>"
 //	            | "-x" | "--x" | "-)" | "--)"
 //	            | "-|\" | "-|/" | "-\\" | "-//" | "/|-" | "\|-" | "//-" | "\\-"
@@ -40,7 +43,7 @@
 // Each production is a function that takes the tokens and returns what it
 // read and the tokens left: Parse for diagram, parseDocument, parseStatement,
 // parseParticipant, parseSignal, parseNote, parseActivation, parseAutonumber,
-// parseBlock and parseRect. Syntax Mermaid accepts that sumi does not yet,
-// such as box and create, is refused with an error saying so. SETTINGS is
+// parseBlock, parseRect and parseBox. Syntax Mermaid accepts that sumi does
+// not yet, such as create, is refused with an error saying so. SETTINGS is
 // @{...} after a participant's name: JSON for its type and its alias.
 package sequence

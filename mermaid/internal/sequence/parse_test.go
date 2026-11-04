@@ -123,6 +123,29 @@ end`, &Diagram{
 				msg("A", "B", "1", Message{Head: Arrow, Line: 3}),
 				&Rect{Body: []Stmt{msg("B", "A", "2", Message{Head: Arrow, Line: 5})}},
 			}}}}},
+		{"boxes", `sequenceDiagram
+box rgb(0,0,0) Phase (1)
+participant A
+actor B
+end
+box Group 1
+participant C
+end
+box
+actor D
+end
+participant A as Alpha
+A->>C: x`, func() *Diagram {
+			g1, g2, g3 := &Group{Title: "Phase (1)", Fill: scene.Color{A: 255}}, &Group{Title: "Group 1"}, &Group{}
+			return &Diagram{
+				Participants: []*Participant{
+					{ID: "A", Label: "Alpha", Group: g1}, {ID: "B", Label: "B", Shape: Figure, Group: g1},
+					{ID: "C", Label: "C", Group: g2}, {ID: "D", Label: "D", Shape: Figure, Group: g3},
+				},
+				Groups: []*Group{g1, g2, g3},
+				Body:   []Stmt{msg("A", "C", "x", Message{Head: Arrow, Line: 13})},
+			}
+		}()},
 		{"participant types", `sequenceDiagram
 participant D@{ "type": "database" }
 actor G@{ "type" : "boundary" }
@@ -234,7 +257,9 @@ func TestParseErrors(t *testing.T) {
 		{"unknown", "sequenceDiagram\nactivate C", `line 2:1: cannot activate "C": no such participant`},
 		{"deactivating an unknown participant", "sequenceDiagram\nA->>B: x\ndeactivate C", `line 3:1: cannot deactivate "C": it is not active`},
 		{"thousandths", "sequenceDiagram\nautonumber 10.001\nA->>B: x", `line 2:12: unexpected "10.001", expected the end of the line`},
-		{"box", "sequenceDiagram\nbox Aqua G\nend", `line 2:1: "box" is not supported yet`},
+		{"two boxes", "sequenceDiagram\nbox X\nparticipant A\nend\nbox Y\nparticipant A\nend", `line 6:13: "A" is already in another box`},
+		{"outside a box first", "sequenceDiagram\nA->>B: x\nbox X\nparticipant A\nend", `line 4:13: "A" has already appeared outside a box`},
+		{"a message in a box", "sequenceDiagram\nbox X\nA->>B: x\nend", `line 3:1: unexpected "A", expected "end"`},
 		{"unknown participant type", `sequenceDiagram
 participant A@{ "type": "databse" }`, `line 2:14: unknown participant type "databse"`},
 		{"empty settings", "sequenceDiagram\nparticipant A@{}", `line 2:14: unexpected "@{}", expected settings in it`},
@@ -259,7 +284,12 @@ func dump(d *Diagram) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "%q |", d.Title)
 	for _, p := range d.Participants {
-		fmt.Fprintf(&b, " %+v", *p)
+		q := *p
+		q.Group = nil
+		fmt.Fprintf(&b, " %+v", q)
+		if p.Group != nil {
+			fmt.Fprintf(&b, " in %+v", *p.Group)
+		}
 	}
 	dumpBody(&b, d.Body)
 	return b.String()

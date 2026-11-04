@@ -1,6 +1,7 @@
 package sequence
 
 import (
+	"regexp"
 	"slices"
 
 	"github.com/bencode/sumi/mermaid/internal/syntax"
@@ -78,7 +79,9 @@ func parseStatement(ts []syntax.Token) (Stmt, []syntax.Token, error) {
 		return nil, ts[1:], nil
 	case kRect:
 		return parseRect(ts)
-	case kBox, kCreate, kDestroy, kParOver, kMenu:
+	case kBox:
+		return parseBox(ts)
+	case kCreate, kDestroy, kParOver, kMenu:
 		return nil, nil, syntax.Unsupported(t.Pos, syntax.Describe(t))
 	}
 	if kind, ok := blockKinds[t.Kind]; ok {
@@ -156,6 +159,47 @@ func parseRect(ts []syntax.Token) (Stmt, []syntax.Token, error) {
 	}
 	_, ts, err = syntax.Expect(ts, kEnd, `"end"`)
 	return r, ts, err
+}
+
+// boxColor is the start of a box's line that may be a color: a color
+// function up to its first ")", or a word (parseBoxData, sequenceDb.ts,
+// which takes a function up to the last ")").
+var boxColor = regexp.MustCompile(`^(?:(?:rgba?|hsla?)\s*\(.*?\)|\w*)`)
+
+// parseBox reads a box: its line, a color and a title, either of which may
+// be missing, and the participant statements in it. A line that does not
+// start with a color is all title.
+//
+//	box = "box" REST { NEWLINE | participant } "end"
+func parseBox(ts []syntax.Token) (Stmt, []syntax.Token, error) {
+	rest, ts, err := syntax.Expect(ts[1:], kRest, "the rest of the line")
+	if err != nil {
+		return nil, nil, err
+	}
+	g, title := &Group{}, rest.Text
+	head := boxColor.FindString(title)
+	if c, ok := syntax.Color(head); ok {
+		g.Fill, title = c, title[len(head):]
+	}
+	if g.Title, err = label(rest.Pos, title); err != nil {
+		return nil, nil, err
+	}
+	s := &boxed{group: g}
+	for {
+		switch ts[0].Kind {
+		case syntax.Newline:
+			ts = ts[1:]
+		case kParticipant, kActorKw:
+			d, rest, err := parseParticipant(ts)
+			if err != nil {
+				return nil, nil, err
+			}
+			s.decls, ts = append(s.decls, d.(*declare)), rest
+		default:
+			_, ts, err = syntax.Expect(ts, kEnd, `"end"`)
+			return s, ts, err
+		}
+	}
 }
 
 var sepWords = map[syntax.Kind]string{kElse: "else", kAnd: "and", kOption: "option"}

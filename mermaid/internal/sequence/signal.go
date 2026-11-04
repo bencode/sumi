@@ -31,7 +31,7 @@ func parseParticipant(ts []syntax.Token) (Stmt, []syntax.Token, error) {
 		}
 		ts = rest
 	}
-	d := &declare{p: Participant{ID: id, Label: syntax.Decode(id), Shape: shape}}
+	d := &declare{p: Participant{ID: id, Label: syntax.Decode(id), Shape: shape}, pos: n.Pos}
 	if _, rest, ok := syntax.Accept(ts, kAs); ok {
 		a, rest, err := syntax.Expect(rest, kRest, "an alias")
 		if err != nil {

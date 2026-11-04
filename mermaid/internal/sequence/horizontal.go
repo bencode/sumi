@@ -2,13 +2,13 @@ package sequence
 
 import "math"
 
-// gaps are the distances between the centers of neighboring participants,
-// as Mermaid sets them (getMaxMessageWidthPerActor and calculateActorMargins,
-// sequenceRenderer.ts lines 1488-1666): each gap is wide enough for the two
-// boxes and actorMargin between them, and for the widest message or note
-// that falls in it, plus actorMargin. Only messages between neighbors, and
-// notes, count; a message that passes over a participant does not.
-func gaps(body []Stmt, e env) []float64 {
+// needs are how wide the widest message or note that falls between each
+// participant and the next is (getMaxMessageWidthPerActor,
+// sequenceRenderer.ts lines 1488-1587), 0 where none does. Only messages
+// between neighbors, and notes, count; a message that passes over a
+// participant does not. The last participant's is from its messages to
+// itself.
+func needs(body []Stmt, e env) []float64 {
 	need := make([]float64, len(e.ps)) // need[i]: what falls between i and i+1
 	grow := func(i int, width float64) {
 		if i >= 0 && i < len(need) {
@@ -33,6 +33,14 @@ func gaps(body []Stmt, e env) []float64 {
 			noteGaps(s, e, wd, grow)
 		}
 	})
+	return need
+}
+
+// gaps are the distances between the centers of neighboring participants,
+// as Mermaid sets them (calculateActorMargins, sequenceRenderer.ts lines
+// 1649-1670): each gap is wide enough for the two boxes and actorMargin
+// between them, and for what falls in it, plus actorMargin.
+func gaps(need []float64, e env) []float64 {
 	g := make([]float64, max(len(e.ps)-1, 0))
 	for i := range g {
 		g[i] = max(e.w[i]/2+e.w[i+1]/2+e.c.actorMargin, need[i]+e.c.actorMargin)
@@ -65,12 +73,12 @@ func noteGaps(n *Note, e env, wd float64, grow func(int, float64)) {
 	}
 }
 
-// centers are the participants' centers, the first box's left edge at 0.
-func centers(w, gaps []float64) []float64 {
+// centers are the participants' centers, the first one's left edge at lead.
+func centers(w, gaps []float64, lead float64) []float64 {
 	c := make([]float64, len(w))
 	for i := range w {
 		if i == 0 {
-			c[i] = w[0] / 2
+			c[i] = lead + w[0]/2
 			continue
 		}
 		c[i] = c[i-1] + gaps[i-1]

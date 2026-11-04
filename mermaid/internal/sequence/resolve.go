@@ -13,21 +13,30 @@ import (
 // title statement takes its place. It returns a new diagram, without
 // participant, autonumber and title statements.
 func Resolve(d *Diagram, frontTitle string) (*Diagram, error) {
-	ps := participants(d.Body)
+	ps, groups, err := participants(d.Body)
+	if err != nil {
+		return nil, err
+	}
 	if err := checkActivations(d.Body, ps); err != nil {
 		return nil, err
 	}
 	body, _ := number(d.Body, counter{next: 1, step: 1})
-	return &Diagram{Title: titleOf(d.Body, frontTitle), Participants: ps, Body: body}, nil
+	return &Diagram{Title: titleOf(d.Body, frontTitle), Participants: ps, Groups: groups, Body: body}, nil
 }
 
 // participants lists the participants in the order they first appear, in a
 // participant statement, a message or a note, as Mermaid's addActor does
 // (sequenceDb.ts): a later participant statement with an alias changes the
 // label and the shape of one that has appeared, but not its place; one
-// without an alias changes nothing.
-func participants(body []Stmt) []*Participant {
+// without an alias changes nothing. It lists the boxes too, and puts in
+// each the participants declared in it. A participant declared in a box
+// must first appear there: declaring it in a second box fails, as in
+// Mermaid, and so does declaring one that has appeared outside a box,
+// which Mermaid takes into the box where it stands, apart from the others.
+// A box's participants are side by side, then.
+func participants(body []Stmt) ([]*Participant, []*Group, error) {
 	var ps []*Participant
+	var groups []*Group
 	at := map[string]*Participant{}
 	add := func(p Participant, alias bool) {
 		old, ok := at[p.ID]
@@ -40,10 +49,31 @@ func participants(body []Stmt) []*Participant {
 			old.Label, old.Shape = p.Label, p.Shape
 		}
 	}
+	var err error
 	walk(body, func(s Stmt) {
+		if err != nil {
+			return
+		}
 		switch s := s.(type) {
 		case *declare:
 			add(s.p, s.alias)
+		case *boxed:
+			groups = append(groups, s.group)
+			for _, d := range s.decls {
+				switch old, ok := at[d.p.ID]; {
+				case ok && old.Group == nil:
+					err = syntax.Errorf(d.pos, "%q has already appeared outside a box", d.p.ID)
+				case ok && old.Group != s.group:
+					err = syntax.Errorf(d.pos, "%q is already in another box", d.p.ID)
+				default:
+					p := d.p
+					p.Group = s.group
+					add(p, d.alias)
+				}
+				if err != nil {
+					return
+				}
+			}
 		case *Message:
 			add(implicit(s.From), false)
 			add(implicit(s.To), false)
@@ -53,13 +83,14 @@ func participants(body []Stmt) []*Participant {
 			}
 		}
 	})
-	return ps
+	return ps, groups, err
 }
 
 func implicit(id string) Participant { return Participant{ID: id, Label: syntax.Decode(id)} }
 
 // walk calls f on each statement of body, in order, blocks before what they
-// hold.
+// hold. It leaves out the participant statements in a box, which only
+// participants reads, from the box.
 func walk(body []Stmt, f func(Stmt)) {
 	for _, s := range body {
 		f(s)
@@ -161,7 +192,7 @@ func number(body []Stmt, c counter) ([]Stmt, counter) {
 			r := &Rect{Color: s.Color}
 			r.Body, c = number(s.Body, c)
 			out = append(out, r)
-		case *declare, *title:
+		case *declare, *title, *boxed:
 		default:
 			out = append(out, s)
 		}

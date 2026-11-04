@@ -1,12 +1,16 @@
 package sequence
 
-import "github.com/bencode/sumi/scene"
+import (
+	"github.com/bencode/sumi/mermaid/internal/syntax"
+	"github.com/bencode/sumi/scene"
+)
 
 // A Diagram is a sequence diagram as its source says it: who takes part, and
 // what happens, in order, as a tree of statements.
 type Diagram struct {
 	Title        string
 	Participants []*Participant // from left to right
+	Groups       []*Group       // the boxes, in the order they appear, empty ones too
 	Body         []Stmt
 }
 
@@ -15,6 +19,14 @@ type Participant struct {
 	ID    string // the name messages use for it
 	Label string // what its box shows: its alias, or its ID; may hold <br>
 	Shape Shape
+	Group *Group // the box it is declared in, or nil
+}
+
+// A Group is a box statement's frame around the participants declared in
+// it, side by side.
+type Group struct {
+	Title string      // may hold <br>; empty when the line gives none
+	Fill  scene.Color // transparent when the line names no color
 }
 
 // A Shape is how a participant is drawn: Mermaid's participant types
@@ -132,7 +144,14 @@ func (*Rect) stmt()       {}
 // A declare is a participant or actor statement.
 type declare struct {
 	p     Participant
-	alias bool // it gave a label, with as or in its settings
+	alias bool       // it gave a label, with as or in its settings
+	pos   syntax.Pos // its name's
+}
+
+// A boxed is a box statement: the box and the participant statements in it.
+type boxed struct {
+	group *Group
+	decls []*declare
 }
 
 // An autonumber turns numbering on, from start by step when they are not 0,
@@ -146,5 +165,6 @@ type autonumber struct {
 type title struct{ text string }
 
 func (*declare) stmt()    {}
+func (*boxed) stmt()      {}
 func (*autonumber) stmt() {}
 func (*title) stmt()      {}
