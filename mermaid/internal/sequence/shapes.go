@@ -68,22 +68,6 @@ func head(h Head, p, dir scene.Point) []scene.Path {
 	return nil
 }
 
-// figure is an actor's stick figure, its top at y (drawActorTypeActor):
-// a torso, arms, two legs, and the head drawn over them.
-func figure(c, y float64) []scene.Path {
-	const arm = 18 // ACTOR_TYPE_WIDTH / 2
-	body := (&scene.Path{}).
-		MoveTo(c, y+25).LineTo(c, y+45).
-		MoveTo(c-arm, y+33).LineTo(c+arm, y+33).
-		MoveTo(c-arm, y+60).LineTo(c, y+45).
-		MoveTo(c, y+45).LineTo(c+arm-2, y+60).Segs
-	stroke := scene.Stroke{Paint: scene.Use(scene.NodeStroke), Width: 2}
-	return []scene.Path{
-		{Segs: body, Stroke: stroke},
-		{Segs: scene.Ellipse(scene.Point{X: c, Y: y + 10}, 15, 15), Fill: scene.Use(scene.NodeFill), Stroke: stroke},
-	}
-}
-
 // tab is the pentagon a block's keyword sits in, its lower right corner
 // cut (drawLabel).
 func tab(x, y, w, h float64) []scene.Seg {

@@ -22,7 +22,7 @@
 //	            | "title" REST NEWLINE
 //	            | "accTitle" ":" REST NEWLINE
 //	            | "accDescr" ( ":" REST | "{" TEXT "}" ) NEWLINE ;
-//	participant = ( "participant" | "actor" ) ACTOR [ "as" REST ] NEWLINE ;
+//	participant = ( "participant" | "actor" ) ACTOR [ SETTINGS ] [ "as" REST ] NEWLINE ;
 //	signal      = ACTOR arrow [ "+" | "-" ] ACTOR TXT NEWLINE ;
 //	note        = "note" ( ( "left of" | "right of" ) ACTOR
 //	                     | "over" ACTOR [ "," ACTOR ] ) TXT NEWLINE ;
@@ -38,5 +38,6 @@
 // read and the tokens left: Parse for diagram, parseDocument, parseStatement,
 // parseParticipant, parseSignal, parseNote, parseActivation, parseAutonumber
 // and parseBlock. Syntax Mermaid accepts that sumi does not yet, such as
-// box, rect and participant types, is refused with an error saying so.
+// box and rect, is refused with an error saying so. SETTINGS is @{...}
+// after a participant's name: JSON for its type and its alias.
 package sequence

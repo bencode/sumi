@@ -83,9 +83,21 @@ actor B as Bob<br>Smith
 participant A
 participant C as Carol`, &Diagram{
 			Participants: []*Participant{
-				{ID: "A", Label: "A"}, {ID: "B", Label: "Bob<br>Smith", Actor: true}, {ID: "C", Label: "Carol"},
+				{ID: "A", Label: "A"}, {ID: "B", Label: "Bob<br>Smith", Shape: Figure}, {ID: "C", Label: "Carol"},
 			},
 			Body: []Stmt{msg("A", "B", "hi", Message{Head: Arrow, Line: 2})}}},
+		{"participant types", `sequenceDiagram
+participant D@{ "type": "database" }
+actor G@{ "type" : "boundary" }
+participant Q@{ "type": "queue", "alias": "Jobs" }
+participant S@{ "alias": "X" } as Y
+participant P@{ "type": "control", "alias": "Ctl" } as P
+actor N@{ "type": null }`, &Diagram{
+			Participants: []*Participant{
+				{ID: "D", Label: "D", Shape: Database}, {ID: "G", Label: "G", Shape: Boundary},
+				{ID: "Q", Label: "Jobs", Shape: Queue}, {ID: "S", Label: "Y"}, {ID: "P", Label: "Ctl", Shape: Control},
+				{ID: "N", Label: "N", Shape: Figure},
+			}}},
 		{"arrows", `sequenceDiagram
 A->B: 1
 A-->>B: 2
@@ -186,8 +198,12 @@ func TestParseErrors(t *testing.T) {
 		{"deactivating an unknown participant", "sequenceDiagram\nA->>B: x\ndeactivate C", `line 3:1: cannot deactivate "C": it is not active`},
 		{"thousandths", "sequenceDiagram\nautonumber 10.001\nA->>B: x", `line 2:12: unexpected "10.001", expected the end of the line`},
 		{"box", "sequenceDiagram\nbox Aqua G\nend", `line 2:1: "box" is not supported yet`},
-		{"participant type", `sequenceDiagram
-participant A@{ "type": "database" }`, `line 2:14: @{...} is not supported yet`},
+		{"unknown participant type", `sequenceDiagram
+participant A@{ "type": "databse" }`, `line 2:14: unknown participant type "databse"`},
+		{"empty settings", "sequenceDiagram\nparticipant A@{}", `line 2:14: unexpected "@{}", expected settings in it`},
+		{"unclosed settings", "sequenceDiagram\nparticipant A@{ \"type\": \"queue\"", `line 2:14: "@{" is not closed`},
+		{"settings not JSON", `sequenceDiagram
+participant A@{ type: database }`, `line 2:14: @{...} that is not JSON is not supported yet`},
 		{"half arrow", "sequenceDiagram\nA-|\\B: x", `line 2:2: "-|\" is not supported yet`},
 		{"wrap", "sequenceDiagram\nA->>B: wrap: x", `line 2:6: "wrap:" is not supported yet`},
 	}

@@ -1,26 +1,37 @@
 package sequence
 
 import (
+	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
 
 	"github.com/bencode/sumi/mermaid/internal/syntax"
 )
 
-// parseParticipant reads a participant or actor statement.
+// parseParticipant reads a participant or actor statement. Its settings'
+// type takes the keyword's place, and their alias is its label unless as
+// gives another one than its name (addActor, sequenceDb.ts lines 157-181).
 //
-//	participant = ( "participant" | "actor" ) NAME [ "as" REST ] NEWLINE
+//	participant = ( "participant" | "actor" ) NAME [ SETTINGS ] [ "as" REST ] NEWLINE
 func parseParticipant(ts []syntax.Token) (Stmt, []syntax.Token, error) {
-	actor := ts[0].Kind == kActorKw
+	shape := Box
+	if ts[0].Kind == kActorKw {
+		shape = Figure
+	}
 	n, ts, err := syntax.Expect(ts[1:], kName, "a participant's name")
 	if err != nil {
 		return nil, nil, err
 	}
-	if ts[0].Kind == kConfig {
-		return nil, nil, syntax.Unsupported(ts[0].Pos, "@{...}")
-	}
 	id := strings.TrimSpace(n.Text)
-	d := &declare{p: Participant{ID: id, Label: syntax.Decode(id), Actor: actor}}
+	alias := ""
+	if t, rest, ok := syntax.Accept(ts, kConfig); ok {
+		if shape, alias, err = parseSettings(t, shape); err != nil {
+			return nil, nil, err
+		}
+		ts = rest
+	}
+	d := &declare{p: Participant{ID: id, Label: syntax.Decode(id), Shape: shape}}
 	if _, rest, ok := syntax.Accept(ts, kAs); ok {
 		a, rest, err := syntax.Expect(rest, kRest, "an alias")
 		if err != nil {
@@ -29,10 +40,49 @@ func parseParticipant(ts []syntax.Token) (Stmt, []syntax.Token, error) {
 		if d.p.Label, err = label(a.Pos, a.Text); err != nil {
 			return nil, nil, err
 		}
+		if strings.TrimSpace(a.Text) == id && alias != "" {
+			d.p.Label = syntax.Decode(alias)
+		}
 		d.alias, ts = true, rest
+	} else if alias != "" {
+		d.p.Label, d.alias = syntax.Decode(alias), true
 	}
 	_, ts, err = syntax.Expect(ts, syntax.Newline, "the end of the line")
 	return d, ts, err
+}
+
+// parseSettings reads a participant's @{...}: its type, which replaces shape
+// unless it is null, and its alias. Mermaid reads them as YAML; sumi reads the JSON that
+// Mermaid's own examples write, and refuses the rest as not supported yet.
+func parseSettings(t syntax.Token, shape Shape) (Shape, string, error) {
+	body, ok := strings.CutSuffix(strings.TrimPrefix(t.Text, "@{"), "}")
+	if !ok {
+		return 0, "", syntax.Errorf(t.Pos, `"@{" is not closed`)
+	}
+	if body == "" {
+		return 0, "", syntax.Errorf(t.Pos, `unexpected "@{}", expected settings in it`)
+	}
+	if strings.Contains(body, "\n") {
+		return 0, "", syntax.Unsupported(t.Pos, "@{...} over several lines")
+	}
+	var m map[string]any
+	if err := json.Unmarshal([]byte("{"+body+"}"), &m); err != nil {
+		return 0, "", syntax.Unsupported(t.Pos, "@{...} that is not JSON")
+	}
+	if v := m["type"]; v != nil {
+		name, _ := v.(string)
+		var known bool
+		if shape, known = shapeOf[name]; !known {
+			return 0, "", syntax.Errorf(t.Pos, "unknown participant type %q", fmt.Sprint(v))
+		}
+	}
+	alias, _ := m["alias"].(string)
+	return shape, alias, nil
+}
+
+var shapeOf = map[string]Shape{
+	"participant": Box, "actor": Figure, "boundary": Boundary, "control": Control,
+	"entity": Entity, "database": Database, "collections": Collections, "queue": Queue,
 }
 
 // parseSignal reads a message.

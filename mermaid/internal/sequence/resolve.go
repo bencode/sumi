@@ -37,7 +37,7 @@ func participants(body []Stmt) []*Participant {
 			return
 		}
 		if alias {
-			old.Label, old.Actor = p.Label, p.Actor
+			old.Label, old.Shape = p.Label, p.Shape
 		}
 	}
 	walk(body, func(s Stmt) {

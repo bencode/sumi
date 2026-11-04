@@ -71,49 +71,6 @@ func drawStacked(p placed, l layout) scene.Item {
 	return block(p.(*pBlock), l)
 }
 
-// lifeline runs from under the top participant to the bottom one: from
-// the box's foot, or 80 below an actor's top (drawActorTypeParticipant,
-// drawActorTypeActor, svgDraw.js). Every line of Mermaid's is 2 wide, by
-// its stylesheet's rule for line.
-func lifeline(p *Participant, i int, l layout) scene.Item {
-	c, top := l.e.x[i], l.e.c.height
-	if p.Actor {
-		top = l.e.c.actorLifeline
-	}
-	return scene.Item{Kind: scene.Mark, Parent: p.ID, Box: between(c, top, c, l.bottom), Paths: []scene.Path{{
-		Segs: line(c, top, c, l.bottom), Stroke: scene.Stroke{Paint: scene.Use(scene.LineColor), Width: 2},
-	}}}
-}
-
-// participant is a participant's box, or an actor's figure, with its top
-// at y. The top one has the participant's id; the one at the foot is in it.
-// The label's lines are a font size apart about its middle: the box's, or
-// 35 + 32.5 below an actor's top (byTspan).
-func participant(p *Participant, i int, y float64, foot bool, l layout) scene.Item {
-	e := l.e
-	c, w, h := e.x[i], e.w[i], e.c.height
-	it := scene.Item{Kind: scene.Node, ID: p.ID}
-	if foot {
-		it.ID, it.Parent = "", p.ID
-	}
-	mid := y + h/2
-	if p.Actor {
-		mid += 35
-		it.Paths = figure(c, y)
-		it.Box = between(c-18, y-5, c+18, y+60)
-	} else {
-		it.Box = scene.Rect{X: c - w/2, Y: y, W: w, H: h}
-		it.Paths = []scene.Path{{Segs: scene.RoundRect(it.Box, 3), Fill: scene.Use(scene.NodeFill),
-			Stroke: scene.Stroke{Paint: scene.Use(scene.NodeStroke), Width: 1}}}
-	}
-	tb := measure(e.m, p.Label, e.c.actorFont)
-	fs, n := tb.font.Size, float64(len(tb.lines))
-	t, box := tb.set(e.m, c, false, func(j int) float64 { return tb.middle(mid + float64(j)*fs - fs*(n-1)/2) })
-	it.Texts = []scene.Text{t}
-	it.Box = union(it.Box, box)
-	return it
-}
-
 // drawMessage is a message's line, head and text (drawMessage,
 // sequenceRenderer.ts lines 466-742), and its number if it has one.
 func drawMessage(p *pMessage, l layout) []scene.Item {

@@ -21,7 +21,6 @@ type config struct {
 	numberFont      float64 // an autonumber's digits, when there are 3 or fewer
 	numberRadius    float64 // the number marker's radius, before the 2px stroke scales it
 	titleFont       float64
-	actorLifeline   float64 // where an actor's lifeline starts below its top
 	footerGap       float64 // between the last statement and the bottom participants
 }
 
@@ -42,6 +41,5 @@ var defaults = config{
 	numberFont:      12,
 	numberRadius:    6,
 	titleFont:       16,
-	actorLifeline:   80,
 	footerGap:       20,
 }

@@ -12,8 +12,23 @@ type Diagram struct {
 type Participant struct {
 	ID    string // the name messages use for it
 	Label string // what its box shows: its alias, or its ID; may hold <br>
-	Actor bool   // drawn as a stick figure, not a box
+	Shape Shape
 }
+
+// A Shape is how a participant is drawn: Mermaid's participant types
+// (PARTICIPANT_TYPE, sequenceDb.ts).
+type Shape uint8
+
+const (
+	Box    Shape = iota // participant
+	Figure              // actor: a stick figure
+	Boundary
+	Control
+	Entity
+	Database
+	Collections
+	Queue
+)
 
 // A Stmt is one of *Message, *Note, *Activation and *Block.
 type Stmt interface{ stmt() }
@@ -101,7 +116,7 @@ func (*Block) stmt()      {}
 // A declare is a participant or actor statement.
 type declare struct {
 	p     Participant
-	alias bool // it gave a label with as
+	alias bool // it gave a label, with as or in its settings
 }
 
 // An autonumber turns numbering on, from start by step when they are not 0,
