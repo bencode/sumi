@@ -81,7 +81,11 @@ func parseStatement(ts []syntax.Token) (Stmt, []syntax.Token, error) {
 		return parseRect(ts)
 	case kBox:
 		return parseBox(ts)
-	case kCreate, kDestroy, kParOver, kMenu:
+	case kCreate:
+		return parseCreate(ts)
+	case kDestroy:
+		return parseDestroy(ts)
+	case kParOver, kMenu:
 		return nil, nil, syntax.Unsupported(t.Pos, syntax.Describe(t))
 	}
 	if kind, ok := blockKinds[t.Kind]; ok {

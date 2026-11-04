@@ -56,12 +56,13 @@ func databaseHeight(c config, w float64) float64 { return w/3 + c.labelBoxHeight
 func controlHeight(c config, _ float64) float64  { return 2*circleR + 2*c.labelBoxHeight }
 func circleHeight(c config, _ float64) float64   { return 2*circleR + c.labelBoxHeight }
 
-// lifeline runs from under the top participant to the bottom one. Every
-// line of Mermaid's is 2 wide, by its stylesheet's rule for line.
+// lifeline runs from under the top participant to the bottom one, which
+// are where it is created and destroyed, if it is. Every line of Mermaid's
+// is 2 wide, by its stylesheet's rule for line.
 func lifeline(p *Participant, i int, l layout) scene.Item {
-	c, top := l.e.x[i], l.top+looks[p.Shape].lifeline(l.e.c)
-	return scene.Item{Kind: scene.Mark, Parent: p.ID, Box: between(c, top, c, l.bottom), Paths: []scene.Path{{
-		Segs: line(c, top, c, l.bottom), Stroke: scene.Stroke{Paint: scene.Use(scene.LineColor), Width: 2},
+	c, top, foot := l.e.x[i], l.tops[i]+looks[p.Shape].lifeline(l.e.c), l.feet[i]
+	return scene.Item{Kind: scene.Mark, Parent: p.ID, Box: between(c, top, c, foot), Paths: []scene.Path{{
+		Segs: line(c, top, c, foot), Stroke: scene.Stroke{Paint: scene.Use(scene.LineColor), Width: 2},
 	}}}
 }
 

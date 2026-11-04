@@ -50,6 +50,33 @@ func parseParticipant(ts []syntax.Token) (Stmt, []syntax.Token, error) {
 	return d, ts, err
 }
 
+// parseCreate reads a participant statement that makes a participant at
+// the next message, rather than at the top.
+//
+//	create = "create" participant
+func parseCreate(ts []syntax.Token) (Stmt, []syntax.Token, error) {
+	if k := ts[1].Kind; k != kParticipant && k != kActorKw {
+		return nil, nil, syntax.Unexpected(ts[1], `"participant" or "actor"`)
+	}
+	d, ts, err := parseParticipant(ts[1:])
+	if err != nil {
+		return nil, nil, err
+	}
+	return &create{d.(*declare)}, ts, nil
+}
+
+// parseDestroy reads a destroy statement.
+//
+//	destroy = "destroy" NAME NEWLINE
+func parseDestroy(ts []syntax.Token) (Stmt, []syntax.Token, error) {
+	n, ts, err := syntax.Expect(ts[1:], kName, "a participant's name")
+	if err != nil {
+		return nil, nil, err
+	}
+	_, ts, err = syntax.Expect(ts, syntax.Newline, "the end of the line")
+	return &destroy{id: strings.TrimSpace(n.Text), pos: n.Pos}, ts, err
+}
+
 // parseSettings reads a participant's @{...}: its type, which replaces shape
 // unless it is null, and its alias. Mermaid reads them as YAML; sumi reads the JSON that
 // Mermaid's own examples write, and refuses the rest as not supported yet.

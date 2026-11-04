@@ -10,6 +10,8 @@ type layout struct {
 	boxes  []pBox
 	top    float64    // the top of the participants at the top
 	bottom float64    // the top of the participants drawn again at the foot
+	tops   []float64  // each participant's top: top, or where it is created
+	feet   []float64  // each one's foot: bottom, or where it is destroyed
 	bounds scene.Rect // what Mermaid's bounds hold, which the title goes by
 }
 
@@ -47,11 +49,13 @@ func arrange(d *Diagram, m scene.Measurer) layout {
 	need := needs(d.Body, e)
 	fits := boxFits(d, need, e)
 	lead, g := spread(d.Participants, gaps(need, e), fits, e.c)
+	lead, g = created(d.Participants, e.w, lead, g)
 	e.x = centers(e.w, g, lead)
 	e.across = measureAcross(d.Body, e)
 	top := boxTop(fits, e)
 	items, s := place(d.Body, state{y: top + e.c.height}, e)
 	l := layout{d: d, e: e, items: items, top: top, bottom: s.y + e.c.footerGap}
+	l.tops, l.feet = lifelines(l)
 	l.boxes = placeBoxes(l, fits)
 	for _, b := range l.boxes {
 		l.bounds = union(l.bounds, b.model)

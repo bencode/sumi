@@ -69,6 +69,21 @@ A->>B: a #9829; b # comment`, &Diagram{
 			Title:        "Diagram Title",
 			Participants: ps("A", "B"),
 			Body:         []Stmt{msg("A", "B", "a \u2665 b", Message{Head: Arrow, Line: 9})}}},
+		{"create and destroy", `sequenceDiagram
+A->>B: a
+create participant C
+Note over A: n
+A->>C: c
+destroy A
+destroy C
+A->>C: d`, &Diagram{
+			Participants: []*Participant{{ID: "A", Label: "A"}, {ID: "B", Label: "B"}, {ID: "C", Label: "C", Created: true}},
+			Body: []Stmt{
+				msg("A", "B", "a", Message{Head: Arrow, Line: 2}),
+				&Note{Place: Over, Of: []string{"A"}, Text: "n"},
+				msg("A", "C", "c", Message{Head: Arrow, Creates: true, Line: 5}),
+				msg("A", "C", "d", Message{Head: Arrow, DestroysFrom: true, DestroysTo: true, Line: 8}),
+			}}},
 		{"names with spaces, dashes and equals", `sequenceDiagram
 participant Alice=Wonderland
 Alice-in-Wonderland ->>Bob Smith: Hello - you
@@ -280,6 +295,11 @@ participant A@{ "type": "databse" }`, `line 2:14: unknown participant type "data
 participant A@{ type: database }`, `line 2:14: @{...} that is not JSON is not supported yet`},
 		{"() and +", "sequenceDiagram\nA()->>+B: x", `line 2:7: unexpected "+", expected a participant's name`},
 		{"not a color", "sequenceDiagram\nrect rgb(1,2)\nend", `line 2:6: "rgb(1,2)" is not a color`},
+		{"created again", "sequenceDiagram\nA->>B: x\ncreate participant B\nA->>B: y", `line 3:20: cannot create "B": it has already appeared; give the new one another name, and its label with as`},
+		{"created by another message", "sequenceDiagram\nA->>B: x\ncreate participant C\nA->>B: y", `line 3:20: "C" is created, but the next message is not to it`},
+		{"destroyed by another message", "sequenceDiagram\nA->>B: x\ndestroy A\nB->>B: y", `line 3:9: "A" is destroyed, but the next message is neither from nor to it`},
+		{"created by no message", "sequenceDiagram\ncreate participant C", `line 2:20: "C" is created, but no message follows`},
+		{"create destroy", "sequenceDiagram\nA->>B: x\ncreate destroy A\nA->>B: y", `line 3:8: unexpected "destroy", expected "participant" or "actor"`},
 	}
 	for _, tt := range tests {
 		_, err := read(tt.src)
