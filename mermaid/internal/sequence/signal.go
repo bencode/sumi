@@ -85,12 +85,15 @@ var shapeOf = map[string]Shape{
 	"entity": Entity, "database": Database, "collections": Collections, "queue": Queue,
 }
 
-// parseSignal reads a message.
+// parseSignal reads a message. A () before its arrow or after it is a
+// central connection on the sender's or the receiver's lifeline; one after
+// it takes the place of + or -.
 //
-//	signal = NAME arrow [ "+" | "-" ] NAME TEXT NEWLINE
+//	signal = NAME [ "()" ] arrow [ "+" | "-" | "()" ] NAME TEXT NEWLINE
 func parseSignal(ts []syntax.Token) (Stmt, []syntax.Token, error) {
 	from, ts := ts[0], ts[1:]
-	if k := ts[0].Kind; k == kHalfArrow || k == kCentral {
+	_, ts, circleFrom := syntax.Accept(ts, kCentral)
+	if ts[0].Kind == kHalfArrow {
 		return nil, nil, syntax.Unsupported(ts[0].Pos, syntax.Describe(ts[0]))
 	}
 	a, ts, err := syntax.Expect(ts, kArrow, "an arrow")
@@ -98,14 +101,15 @@ func parseSignal(ts []syntax.Token) (Stmt, []syntax.Token, error) {
 		return nil, nil, err
 	}
 	m := arrowOf[strings.ToLower(a.Text)]
-	m.From, m.Line = strings.TrimSpace(from.Text), from.Pos.Line
-	switch ts[0].Kind {
-	case kPlus:
+	m.From, m.Line, m.CircleFrom = strings.TrimSpace(from.Text), from.Pos.Line, circleFrom
+	switch k := ts[0].Kind; {
+	case k == kCentral:
+		m.CircleTo, ts = true, ts[1:]
+	case circleFrom: // ()->> takes no + or -
+	case k == kPlus:
 		m.Activate, ts = true, ts[1:]
-	case kMinus:
+	case k == kMinus:
 		m.Deactivate, ts = true, ts[1:]
-	case kCentral:
-		return nil, nil, syntax.Unsupported(ts[0].Pos, syntax.Describe(ts[0]))
 	}
 	to, ts, err := syntax.Expect(ts, kName, "a participant's name")
 	if err != nil {

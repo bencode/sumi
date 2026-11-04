@@ -23,7 +23,7 @@
 //	            | "accTitle" ":" REST NEWLINE
 //	            | "accDescr" ( ":" REST | "{" TEXT "}" ) NEWLINE ;
 //	participant = ( "participant" | "actor" ) ACTOR [ SETTINGS ] [ "as" REST ] NEWLINE ;
-//	signal      = ACTOR arrow [ "+" | "-" ] ACTOR TXT NEWLINE ;
+//	signal      = ACTOR [ "()" ] arrow [ "+" | "-" | "()" ] ACTOR TXT NEWLINE ;
 //	note        = "note" ( ( "left of" | "right of" ) ACTOR
 //	                     | "over" ACTOR [ "," ACTOR ] ) TXT NEWLINE ;
 //	activation  = ( "activate" | "deactivate" ) ACTOR NEWLINE ;

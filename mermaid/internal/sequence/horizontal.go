@@ -80,11 +80,12 @@ func centers(w, gaps []float64) []float64 {
 
 // across is the horizontal geometry Mermaid works out before it places
 // anything down the page (calculateLoopBounds, sequenceRenderer.ts): where
-// each message's line runs, where each activation bar stands, and how wide
-// each block wraps its titles.
+// each message's line runs, and how wide each block wraps its titles. It
+// keeps its own activation bars, which only activate, deactivate, + and -
+// open and close; where the bars are drawn is worked out down the page,
+// where central connections open bars too.
 type across struct {
 	msgs   map[*Message]msgModel
-	bars   map[Stmt]float64 // the left edge of the bar a statement opens
 	widths map[*Block]float64
 }
 
@@ -102,7 +103,7 @@ type blockSpan struct{ from, to, width float64 }
 const maxSafe = 1<<53 - 1 // JavaScript's Number.MAX_SAFE_INTEGER
 
 func measureAcross(body []Stmt, e env) across {
-	a := across{msgs: map[*Message]msgModel{}, bars: map[Stmt]float64{}, widths: map[*Block]float64{}}
+	a := across{msgs: map[*Message]msgModel{}, widths: map[*Block]float64{}}
 	open := map[string][]float64{} // each participant's open bars, by left edge
 	var spans []*blockSpan         // the blocks around the statement
 	var visit func([]Stmt)
@@ -130,14 +131,14 @@ func measureAcross(body []Stmt, e env) across {
 					sp.grow(s, mm, e)
 				}
 				if s.Activate {
-					a.bars[s] = openAt(open, s.To, e)
+					openAt(open, s.To, e)
 				}
 				if s.Deactivate {
 					open[s.From] = open[s.From][:len(open[s.From])-1]
 				}
 			case *Activation:
 				if s.On {
-					a.bars[s] = openAt(open, s.ID, e)
+					openAt(open, s.ID, e)
 				} else {
 					open[s.ID] = open[s.ID][:len(open[s.ID])-1]
 				}
@@ -166,12 +167,16 @@ func (sp *blockSpan) grow(s *Message, mm msgModel, e env) {
 	sp.width = max(sp.width, math.Abs(sp.to-sp.from)) - e.c.labelBoxWidth
 }
 
-// openAt opens a bar on id, half a bar's width right of the one below it,
-// the first half a width left of the lifeline (newActivation).
-func openAt(open map[string][]float64, id string, e env) float64 {
-	x := e.x[e.at[id]] + float64(len(open[id])-1)*e.c.activationWidth/2
-	open[id] = append(open[id], x)
-	return x
+// openAt opens a bar on id at barX.
+func openAt(open map[string][]float64, id string, e env) {
+	open[id] = append(open[id], barX(id, len(open[id]), e))
+}
+
+// barX is the left edge of a bar opened on id over n others, half a bar's
+// width right of the one below it, the first half a width left of the
+// lifeline (newActivation).
+func barX(id string, n int, e env) float64 {
+	return e.x[e.at[id]] + float64(n-1)*e.c.activationWidth/2
 }
 
 // edges are where a participant's open bars, or its lifeline, start and end
@@ -201,10 +206,16 @@ func message(s *Message, open map[string][]float64, e env) msgModel {
 	if right {
 		mm.startx, mm.stopx = fr, tl
 	}
+	if s.CircleFrom { // calculateCentralConnectionOffset
+		mm.startx += 4
+		if s.Both && !right {
+			mm.startx -= 6
+		}
+	}
 	if s.From == s.To {
 		mm.stopx = mm.startx
 	} else {
-		if s.Activate && math.Abs(tl-tr) <= 2 {
+		if (s.Activate || s.CircleTo) && math.Abs(tl-tr) <= 2 {
 			mm.stopx += adjust(e.c.activationWidth/2 - 1)
 		}
 		if s.Head != NoHead {

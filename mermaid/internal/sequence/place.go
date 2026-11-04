@@ -83,7 +83,7 @@ func place(body []Stmt, s state, e env) ([]placed, state) {
 			ps, s = placeBlock(st, s, e)
 		case *Activation:
 			if st.On {
-				s = openBar(s, st.ID, e.across.bars[st], e.parent)
+				s = openBar(s, st.ID, e)
 				continue
 			}
 			var b *pBar
@@ -118,7 +118,15 @@ func placeMessage(msg *Message, s state, e env) ([]placed, state) {
 	s = reach(s, p.ext.Y, e.c)
 	out := []placed{p}
 	if msg.Activate {
-		s = openBar(s, msg.To, e.across.bars[msg], e.parent)
+		s = openBar(s, msg.To, e)
+	}
+	// A central connection opens a bar that only a deactivate closes
+	// (sequenceRenderer.ts lines 1158-1162): on To first, then on From.
+	if msg.CircleTo {
+		s = openBar(s, msg.To, e)
+	}
+	if msg.CircleFrom {
+		s = openBar(s, msg.From, e)
 	}
 	if msg.Deactivate {
 		var b *pBar

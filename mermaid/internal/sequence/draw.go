@@ -98,6 +98,7 @@ func drawMessage(p *pMessage, l layout) []scene.Item {
 	if p.Both {
 		it.Paths = append(it.Paths, head(Arrow, scene.Point{X: x1, Y: y}, startDir)...)
 	}
+	it.Paths = append(it.Paths, circles(p, l)...)
 	cx := math.Round(min(mm.startx, mm.stopx) + math.Abs(mm.startx-mm.stopx)/2)
 	t, box := p.text.set(e.m, cx, false, func(i int) float64 {
 		return p.text.middle(math.Round(p.top+10+float64(i)*p.text.lh+e.c.wrapPadding/2) + p.text.font.Size)
@@ -111,7 +112,8 @@ func drawMessage(p *pMessage, l layout) []scene.Item {
 }
 
 // numberedStart is where a numbered message's line starts: past the
-// number's circle (lines 664-695).
+// number's circle (lines 664-695), and for a two-headed one to the left,
+// past a central connection too.
 func numberedStart(p *pMessage, mm msgModel, c config) float64 {
 	r := c.numberRadius // SEQUENCE_NUMBER_RADIUS
 	if !p.Both {
@@ -120,7 +122,41 @@ func numberedStart(p *pMessage, mm msgModel, c config) float64 {
 	if mm.startx < mm.stopx {
 		return mm.startx + 2*r
 	}
-	return mm.startx - r
+	x := mm.startx - r
+	if p.CircleFrom || p.CircleTo {
+		x -= 5
+	}
+	if p.CircleFrom {
+		x -= 7.5
+	}
+	return x
+}
+
+// circles are a message's central connections: dots of radius 5 on the
+// lifelines' middles, filled with the text color the diagram's root sets
+// (drawCentralConnection, lines 288-375). With numbers on, the sender's
+// dot moves 16.5 toward the receiver, out of the number's way.
+func circles(p *pMessage, l layout) []scene.Path {
+	from, to := l.e.x[l.e.at[p.From]], l.e.x[l.e.at[p.To]]
+	dot := func(x float64) scene.Path {
+		return scene.Path{Segs: scene.Ellipse(scene.Point{X: x, Y: p.y}, 5, 5), Fill: scene.Use(scene.TextColor)}
+	}
+	var out []scene.Path
+	if p.CircleFrom {
+		x := from
+		if p.Number != "" {
+			if from <= to {
+				x += 16.5
+			} else {
+				x -= 16.5
+			}
+		}
+		out = append(out, dot(x))
+	}
+	if p.CircleTo {
+		out = append(out, dot(to))
+	}
+	return out
 }
 
 // drawNumber is a message's number in a filled circle, at the sender's end of

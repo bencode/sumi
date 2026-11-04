@@ -17,12 +17,14 @@ type bar struct {
 	id, parent string
 }
 
-// openBar opens a bar on id, two pixels below the cursor (newActivation,
-// sequenceRenderer.ts). Mermaid stacks the bar where it opens, so it takes
-// its order now. The state's map is copied, never changed.
-func openBar(s state, id string, x float64, parent string) state {
+// openBar opens a bar on id, two pixels below the cursor, over the bars
+// open on it (newActivation, sequenceRenderer.ts). Mermaid stacks the bar
+// where it opens, so it takes its order now. The state's map is copied,
+// never changed.
+func openBar(s state, id string, e env) state {
 	s.n.bar++
-	b := bar{x: x, y: s.y + 2, order: s.order, id: fmt.Sprintf("activation-%d", s.n.bar), parent: parent}
+	x := barX(id, len(s.bars[id]), e)
+	b := bar{x: x, y: s.y + 2, order: s.order, id: fmt.Sprintf("activation-%d", s.n.bar), parent: e.parent}
 	s.order++
 	s.bars = withBars(s.bars, id, append(s.bars[id][:len(s.bars[id]):len(s.bars[id])], b))
 	return s

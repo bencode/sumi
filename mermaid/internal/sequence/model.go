@@ -43,6 +43,8 @@ type Message struct {
 	Number     string // its autonumber, as "3" or "1.75"; empty when autonumber is off
 	Activate   bool   // +: To is activated after it
 	Deactivate bool   // -: From is deactivated after it
+	CircleFrom bool   // () before the arrow: a central connection on From's lifeline
+	CircleTo   bool   // () after the arrow: one on To's
 	Line       int
 }
 

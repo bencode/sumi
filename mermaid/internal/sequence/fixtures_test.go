@@ -88,6 +88,26 @@ func TestBarTop(t *testing.T) {
 	}
 }
 
+// TestCentralBars checks that a bar opened after a central connection
+// stacks on the bar the connection opened, as Mermaid's do: Bob's bar
+// starts on his lifeline, not half a bar's width left of it.
+func TestCentralBars(t *testing.T) {
+	d, err := read("sequenceDiagram\nAlice ()->>() Bob: x\nactivate Bob\ndeactivate Bob")
+	if err != nil {
+		t.Fatal(err)
+	}
+	l := arrange(d, scene.Arial)
+	var bars []*pBar
+	for _, p := range l.items {
+		if b, ok := p.(*pBar); ok {
+			bars = append(bars, b)
+		}
+	}
+	if c := l.e.x[l.e.at["Bob"]]; len(bars) != 1 || bars[0].box.X != c {
+		t.Errorf("bars %+v: want one starting at Bob's lifeline, %v", bars, c)
+	}
+}
+
 func checkApart(t *testing.T, path string, l layout) {
 	for i := 1; i < len(l.e.x); i++ {
 		if right, left := l.e.x[i-1]+l.e.w[i-1]/2, l.e.x[i]-l.e.w[i]/2; right > left {

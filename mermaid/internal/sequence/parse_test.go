@@ -86,6 +86,18 @@ participant C as Carol`, &Diagram{
 				{ID: "A", Label: "A"}, {ID: "B", Label: "Bob<br>Smith", Shape: Figure}, {ID: "C", Label: "Carol"},
 			},
 			Body: []Stmt{msg("A", "B", "hi", Message{Head: Arrow, Line: 2})}}},
+		{"central connections", `sequenceDiagram
+A->>()B: 1
+A()-->>B: 2
+A()->>()B: 3
+B()<<->>()A: 4`, &Diagram{
+			Participants: ps("A", "B"),
+			Body: []Stmt{
+				msg("A", "B", "1", Message{Head: Arrow, CircleTo: true, Line: 2}),
+				msg("A", "B", "2", Message{Head: Arrow, Dotted: true, CircleFrom: true, Line: 3}),
+				msg("A", "B", "3", Message{Head: Arrow, CircleFrom: true, CircleTo: true, Line: 4}),
+				msg("B", "A", "4", Message{Head: Arrow, Both: true, CircleFrom: true, CircleTo: true, Line: 5}),
+			}}},
 		{"participant types", `sequenceDiagram
 participant D@{ "type": "database" }
 actor G@{ "type" : "boundary" }
@@ -205,6 +217,7 @@ participant A@{ "type": "databse" }`, `line 2:14: unknown participant type "data
 		{"settings not JSON", `sequenceDiagram
 participant A@{ type: database }`, `line 2:14: @{...} that is not JSON is not supported yet`},
 		{"half arrow", "sequenceDiagram\nA-|\\B: x", `line 2:2: "-|\" is not supported yet`},
+		{"() and +", "sequenceDiagram\nA()->>+B: x", `line 2:7: unexpected "+", expected a participant's name`},
 		{"wrap", "sequenceDiagram\nA->>B: wrap: x", `line 2:6: "wrap:" is not supported yet`},
 	}
 	for _, tt := range tests {
