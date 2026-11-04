@@ -19,6 +19,7 @@ const (
 	GroupStroke
 	NoteFill
 	NoteStroke
+	Background // the canvas the diagram is drawn on
 )
 
 // A Paint is how something is filled or stroked: in the theme's color for
@@ -62,6 +63,7 @@ var Light = Palette{
 	GroupStroke: rgb(0xd0d7de),
 	NoteFill:    rgb(0xfff8c5),
 	NoteStroke:  rgb(0xd4a72c),
+	Background:  rgb(0xffffff),
 }
 
 // Dark is sumi's own theme on a dark background.
@@ -74,6 +76,7 @@ var Dark = Palette{
 	GroupStroke: rgb(0x3d444d),
 	NoteFill:    rgb(0x3b2e0a),
 	NoteStroke:  rgb(0x9e6a03),
+	Background:  rgb(0x0d1117),
 }
 
 // TextOn is black or white, whichever contrasts more with fill: for a label
