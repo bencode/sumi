@@ -7,20 +7,25 @@ import (
 	"github.com/bencode/sumi/mermaid/internal/syntax"
 )
 
-// Resolve settles what a parsed diagram leaves open, in three walks over
-// its statements, in order: it lists the participants, numbers the messages
-// and checks activations. frontTitle is the title the front matter gave; a
-// title statement takes its place. It returns a new diagram, without
-// participant, autonumber and title statements.
+// Resolve settles what a parsed diagram leaves open, in walks over its
+// statements, in order: it lists the participants, finds the messages that
+// create and destroy them, checks activations and numbers the messages.
+// frontTitle is the title the front matter gave; a title statement takes
+// its place. It returns a new diagram, without participant, create,
+// destroy, autonumber and title statements.
 func Resolve(d *Diagram, frontTitle string) (*Diagram, error) {
 	ps, groups, err := participants(d.Body)
+	if err != nil {
+		return nil, err
+	}
+	lives, err := lifecycles(d.Body)
 	if err != nil {
 		return nil, err
 	}
 	if err := checkActivations(d.Body, ps); err != nil {
 		return nil, err
 	}
-	body, _ := number(d.Body, counter{next: 1, step: 1})
+	body, _ := number(d.Body, counter{next: 1, step: 1}, lives)
 	return &Diagram{Title: titleOf(d.Body, frontTitle), Participants: ps, Groups: groups, Body: body}, nil
 }
 
@@ -33,7 +38,8 @@ func Resolve(d *Diagram, frontTitle string) (*Diagram, error) {
 // must first appear there: declaring it in a second box fails, as in
 // Mermaid, and so does declaring one that has appeared outside a box,
 // which Mermaid takes into the box where it stands, apart from the others.
-// A box's participants are side by side, then.
+// A box's participants are side by side, then. A participant made by create
+// must not have appeared before, as in Mermaid.
 func participants(body []Stmt) ([]*Participant, []*Group, error) {
 	var ps []*Participant
 	var groups []*Group
@@ -57,6 +63,14 @@ func participants(body []Stmt) ([]*Participant, []*Group, error) {
 		switch s := s.(type) {
 		case *declare:
 			add(s.p, s.alias)
+		case *create:
+			if _, ok := at[s.d.p.ID]; ok {
+				err = syntax.Errorf(s.d.pos, "cannot create %q: it has already appeared; give the new one another name, and its label with as", s.d.p.ID)
+				return
+			}
+			p := s.d.p
+			p.Created = true
+			add(p, s.d.alias)
 		case *boxed:
 			groups = append(groups, s.group)
 			for _, d := range s.decls {
@@ -156,12 +170,13 @@ type counter struct {
 	on         bool
 }
 
-// number returns body without its participant, autonumber and title
-// statements, each message copied with its number when numbering is on, as
-// Mermaid's renderer counts (sequenceRenderer.ts lines 1268-1277 and 1380):
-// every message counts, numbered or not; autonumber's start and step,
-// when not 0, replace the counter's.
-func number(body []Stmt, c counter) ([]Stmt, counter) {
+// number returns body without its participant, create, destroy, autonumber
+// and title statements, each message copied with what it creates and
+// destroys, and its number when numbering is on, as Mermaid's renderer
+// counts (sequenceRenderer.ts lines 1268-1277 and 1380): every message
+// counts, numbered or not; autonumber's start and step, when not 0,
+// replace the counter's.
+func number(body []Stmt, c counter, lives map[*Message]life) ([]Stmt, counter) {
 	var out []Stmt
 	for _, s := range body {
 		switch s := s.(type) {
@@ -175,6 +190,8 @@ func number(body []Stmt, c counter) ([]Stmt, counter) {
 			}
 		case *Message:
 			m := *s
+			lv := lives[s]
+			m.Creates, m.DestroysFrom, m.DestroysTo = lv.creates, lv.destroysFrom, lv.destroysTo
 			if c.on {
 				m.Number = strconv.FormatFloat(c.next, 'f', -1, 64)
 			}
@@ -184,15 +201,15 @@ func number(body []Stmt, c counter) ([]Stmt, counter) {
 			b := &Block{Kind: s.Kind}
 			for _, sec := range s.Sections {
 				var sb []Stmt
-				sb, c = number(sec.Body, c)
+				sb, c = number(sec.Body, c, lives)
 				b.Sections = append(b.Sections, Section{Label: sec.Label, Body: sb})
 			}
 			out = append(out, b)
 		case *Rect:
 			r := &Rect{Color: s.Color}
-			r.Body, c = number(s.Body, c)
+			r.Body, c = number(s.Body, c, lives)
 			out = append(out, r)
-		case *declare, *title, *boxed:
+		case *declare, *title, *boxed, *create, *destroy:
 		default:
 			out = append(out, s)
 		}

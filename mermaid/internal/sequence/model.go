@@ -16,11 +16,12 @@ type Diagram struct {
 
 // A Participant is a lifeline.
 type Participant struct {
-	ID    string // the name messages use for it
-	Label string // what its box shows: its alias, or its ID; may hold <br>
-	Shape Shape
-	Group *Group // the box it is declared in, or nil
-	Wrap  bool   // wrap: before its label, to break the label to fit
+	ID      string // the name messages use for it
+	Label   string // what its box shows: its alias, or its ID; may hold <br>
+	Shape   Shape
+	Group   *Group // the box it is declared in, or nil
+	Wrap    bool   // wrap: before its label, to break the label to fit
+	Created bool   // made by create: it first shows at the message that creates it
 }
 
 // A Group is a box statement's frame around the participants declared in
@@ -51,19 +52,22 @@ type Stmt interface{ stmt() }
 
 // A Message is an arrow from one participant to another, or to itself.
 type Message struct {
-	From, To   string
-	Dotted     bool // -- rather than -
-	Head       Head
-	Both       bool   // a head at each end: <<->> and <<-->>
-	Text       string // may hold <br>
-	Number     string // its autonumber, as "3" or "1.75"; empty when autonumber is off
-	Activate   bool   // +: To is activated after it
-	Deactivate bool   // -: From is deactivated after it
-	CircleFrom bool   // () before the arrow: a central connection on From's lifeline
-	CircleTo   bool   // () after the arrow: one on To's
-	Back       bool   // the head is at From's end: /|-, \|-, //- and \\-
-	Wrap       bool   // wrap: before its text, to break the text to fit
-	Line       int
+	From, To     string
+	Dotted       bool // -- rather than -
+	Head         Head
+	Both         bool   // a head at each end: <<->> and <<-->>
+	Text         string // may hold <br>
+	Number       string // its autonumber, as "3" or "1.75"; empty when autonumber is off
+	Activate     bool   // +: To is activated after it
+	Deactivate   bool   // -: From is deactivated after it
+	CircleFrom   bool   // () before the arrow: a central connection on From's lifeline
+	CircleTo     bool   // () after the arrow: one on To's
+	Back         bool   // the head is at From's end: /|-, \|-, //- and \\-
+	Wrap         bool   // wrap: before its text, to break the text to fit
+	Creates      bool   // create: To first shows at this message
+	DestroysFrom bool   // destroy: From's lifeline ends at this message
+	DestroysTo   bool   // destroy: To's does
+	Line         int
 }
 
 // A Head is the end of a message's arrow.
@@ -158,6 +162,16 @@ type boxed struct {
 	decls []*declare
 }
 
+// A create is a create statement: the participant statement after it.
+type create struct{ d *declare }
+
+// A destroy is a destroy statement: the participant whose lifeline ends at
+// the next message.
+type destroy struct {
+	id  string
+	pos syntax.Pos
+}
+
 // An autonumber turns numbering on, from start by step when they are not 0,
 // or off.
 type autonumber struct {
@@ -170,5 +184,7 @@ type title struct{ text string }
 
 func (*declare) stmt()    {}
 func (*boxed) stmt()      {}
+func (*create) stmt()     {}
+func (*destroy) stmt()    {}
 func (*autonumber) stmt() {}
 func (*title) stmt()      {}

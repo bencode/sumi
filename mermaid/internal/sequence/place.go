@@ -125,6 +125,10 @@ func placeMessage(msg *Message, s state, e env) ([]placed, state) {
 	}
 	s.y = y + off
 	p.ext = union(p.ext, between(mm.from, p.top, mm.to, p.top+lh+off))
+	if model, room, ok := lifeEnds(p, e); ok {
+		p.model, p.ext = model, union(p.ext, room)
+		s.y += e.c.height / 2
+	}
 	s = reach(s, p.ext.Y, e.c)
 	out := []placed{p}
 	if msg.Activate {

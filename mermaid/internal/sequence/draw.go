@@ -38,7 +38,7 @@ func draw(l layout) *scene.Scene {
 		items = append(items, drawStacked(p, l))
 	}
 	for i, p := range l.d.Participants {
-		items = append(items, participant(p, i, l.top, false, l))
+		items = append(items, participant(p, i, l.tops[i], false, l))
 	}
 	for _, p := range l.items {
 		if m, ok := p.(*pMessage); ok {
@@ -46,7 +46,7 @@ func draw(l layout) *scene.Scene {
 		}
 	}
 	for i, p := range l.d.Participants {
-		items = append(items, participant(p, i, l.bottom, true, l))
+		items = append(items, participant(p, i, l.feet[i], true, l))
 	}
 	if l.d.Title != "" {
 		items = append(items, drawTitle(l))
