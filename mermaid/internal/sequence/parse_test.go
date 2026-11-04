@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/bencode/sumi/mermaid/internal/syntax"
+	"github.com/bencode/sumi/scene"
 )
 
 // The cases follow Mermaid's own parser tests, "when parsing a
@@ -110,6 +111,18 @@ A\\--B: 4`, &Diagram{
 				msg("A", "B", "3", Message{Head: SolidTop, Back: true, Line: 4}),
 				msg("A", "B", "4", Message{Head: StickBottom, Back: true, Dotted: true, Line: 5}),
 			}}},
+		{"rect", `sequenceDiagram
+rect rgb(0, 128, 255)
+A->>B: 1
+rect
+B->>A: 2
+end
+end`, &Diagram{
+			Participants: ps("A", "B"),
+			Body: []Stmt{&Rect{Color: &scene.Color{R: 0, G: 128, B: 255, A: 255}, Body: []Stmt{
+				msg("A", "B", "1", Message{Head: Arrow, Line: 3}),
+				&Rect{Body: []Stmt{msg("B", "A", "2", Message{Head: Arrow, Line: 5})}},
+			}}}}},
 		{"participant types", `sequenceDiagram
 participant D@{ "type": "database" }
 actor G@{ "type" : "boundary" }
@@ -229,6 +242,7 @@ participant A@{ "type": "databse" }`, `line 2:14: unknown participant type "data
 		{"settings not JSON", `sequenceDiagram
 participant A@{ type: database }`, `line 2:14: @{...} that is not JSON is not supported yet`},
 		{"() and +", "sequenceDiagram\nA()->>+B: x", `line 2:7: unexpected "+", expected a participant's name`},
+		{"not a color", "sequenceDiagram\nrect rgb(1,2)\nend", `line 2:6: "rgb(1,2)" is not a color`},
 		{"wrap", "sequenceDiagram\nA->>B: wrap: x", `line 2:6: "wrap:" is not supported yet`},
 	}
 	for _, tt := range tests {
@@ -253,16 +267,23 @@ func dump(d *Diagram) string {
 
 func dumpBody(b *strings.Builder, body []Stmt) {
 	for _, s := range body {
-		blk, ok := s.(*Block)
-		if !ok {
+		switch s := s.(type) {
+		case *Block:
+			fmt.Fprintf(b, " [%d", s.Kind)
+			for _, sec := range s.Sections {
+				fmt.Fprintf(b, " %q:", sec.Label)
+				dumpBody(b, sec.Body)
+			}
+			b.WriteString(" ]")
+		case *Rect:
+			b.WriteString(" [rect")
+			if s.Color != nil {
+				fmt.Fprintf(b, " %v", *s.Color)
+			}
+			dumpBody(b, s.Body)
+			b.WriteString(" ]")
+		default:
 			fmt.Fprintf(b, " %+v", s)
-			continue
 		}
-		fmt.Fprintf(b, " [%d", blk.Kind)
-		for _, sec := range blk.Sections {
-			fmt.Fprintf(b, " %q:", sec.Label)
-			dumpBody(b, sec.Body)
-		}
-		b.WriteString(" ]")
 	}
 }

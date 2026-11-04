@@ -118,6 +118,8 @@ func measureAcross(body []Stmt, e env) across {
 				}
 				spans = spans[:len(spans)-1]
 				a.widths[s] = sp.width
+			case *Rect: // not one of calculateLoopBounds' blocks
+				visit(s.Body)
 			case *Note:
 				x, w := noteBox(s, e)
 				for _, sp := range spans {

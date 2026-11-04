@@ -9,17 +9,26 @@ import (
 )
 
 // draw turns a layout into a scene, in the order Mermaid stacks things
-// (draw, sequenceRenderer.ts lines 1143-1393): the lifelines lowest; then
-// notes, activation bars and block frames in the order Mermaid adds them;
-// the top participants; the messages; the bottom participants; the title.
+// (draw, sequenceRenderer.ts lines 1143-1395): the rects lowest; then the
+// lifelines; notes, activation bars and block frames in the order Mermaid
+// adds them; the top participants; the messages; the bottom participants;
+// the title.
 func draw(l layout) *scene.Scene {
 	var items []scene.Item
+	for _, p := range slices.Backward(l.items) {
+		if r, ok := p.(*pRect); ok {
+			items = append(items, background(r))
+		}
+	}
 	for i, p := range l.d.Participants {
 		items = append(items, lifeline(p, i, l))
 	}
 	stacked := slices.DeleteFunc(slices.Clone(l.items), func(p placed) bool {
-		_, ok := p.(*pMessage)
-		return ok
+		switch p.(type) {
+		case *pMessage, *pRect:
+			return true
+		}
+		return false
 	})
 	slices.SortStableFunc(stacked, func(a, b placed) int { return cmp.Compare(order(a), order(b)) })
 	for _, p := range stacked {
@@ -222,6 +231,19 @@ func note(p *pNote, l layout) scene.Item {
 		Paths: []scene.Path{{Segs: scene.RoundRect(p.box, 0), Fill: scene.Use(scene.NoteFill),
 			Stroke: scene.Stroke{Paint: scene.Use(scene.NoteStroke), Width: 1}}},
 		Texts: []scene.Text{t}}
+}
+
+// background is a rect's fill, in its author's color or the theme's
+// (drawBackgroundRect, svgDrawCommon.ts lines 54-66), with no outline.
+// Mermaid lowers the rects under everything, one by one in the order they
+// end, so the last to end is the lowest: draw takes them from the last.
+func background(p *pRect) scene.Item {
+	fill := scene.Use(scene.Highlight)
+	if p.Color != nil {
+		fill = scene.Fixed(*p.Color)
+	}
+	return scene.Item{Kind: scene.Group, ID: p.id, Parent: p.parent, Box: p.box,
+		Paths: []scene.Path{{Segs: scene.RoundRect(p.box, 0), Fill: fill}}}
 }
 
 var keywords = [...]string{Loop: "loop", Alt: "alt", Opt: "opt", Par: "par", Critical: "critical", Break: "break"}

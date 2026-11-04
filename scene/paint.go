@@ -20,6 +20,7 @@ const (
 	NoteFill
 	NoteStroke
 	Background // the canvas the diagram is drawn on
+	Highlight  // a background that sets part of a diagram apart: a sequence diagram's rect
 )
 
 // A Paint is how something is filled or stroked: in the theme's color for
@@ -64,6 +65,7 @@ var Light = Palette{
 	NoteFill:    rgb(0xfff8c5),
 	NoteStroke:  rgb(0xd4a72c),
 	Background:  rgb(0xffffff),
+	Highlight:   rgb(0xddf4ff),
 }
 
 // Dark is sumi's own theme on a dark background.
@@ -77,6 +79,7 @@ var Dark = Palette{
 	NoteFill:    rgb(0x3b2e0a),
 	NoteStroke:  rgb(0x9e6a03),
 	Background:  rgb(0x0d1117),
+	Highlight:   rgb(0x132339),
 }
 
 // TextOn is black or white, whichever contrasts more with fill: for a label

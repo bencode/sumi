@@ -24,7 +24,7 @@ type state struct {
 	y     float64
 	order int
 	bars  map[string][]bar
-	n     struct{ msg, note, block, bar int }
+	n     struct{ msg, note, block, rect, bar int }
 }
 
 // A placed thing has its shapes' places, and the room Mermaid's bounds
@@ -63,10 +63,17 @@ type pBlock struct {
 	titles     []textBlock // each section's title, wrapped and in brackets
 }
 
+type pRect struct {
+	*Rect
+	id, parent string
+	box        scene.Rect
+}
+
 func (p *pMessage) extent() scene.Rect { return p.ext }
 func (p *pNote) extent() scene.Rect    { return p.box }
 func (p *pBar) extent() scene.Rect     { return p.ext }
 func (p *pBlock) extent() scene.Rect   { return p.box }
+func (p *pRect) extent() scene.Rect    { return p.box }
 
 // place places body's statements one after another from the cursor, as
 // Mermaid's main loop does (draw, sequenceRenderer.ts lines 1143-1381).
@@ -81,6 +88,8 @@ func place(body []Stmt, s state, e env) ([]placed, state) {
 			ps, s = placeNote(st, s, e)
 		case *Block:
 			ps, s = placeBlock(st, s, e)
+		case *Rect:
+			ps, s = placeRect(st, s, e)
 		case *Activation:
 			if st.On {
 				s = openBar(s, st.ID, e)
@@ -183,6 +192,23 @@ func placeBlock(b *Block, s state, e env) ([]placed, state) {
 	s.y = p.box.Y + p.box.H
 	p.order = s.order
 	s.order++
+	return append(kids, p), s
+}
+
+// placeRect follows RECT_START and RECT_END (lines 1182-1202): boxMargin
+// above the rect's top and boxMargin below it, no title, and the frame
+// holds what is inside it as a block's does.
+func placeRect(r *Rect, s state, e env) ([]placed, state) {
+	s.n.rect++
+	p := &pRect{Rect: r, id: fmt.Sprintf("rect-%d", s.n.rect), parent: e.parent}
+	inner := e
+	inner.parent = p.id
+	s.y += e.c.boxMargin
+	top := s.y
+	s.y += e.c.boxMargin
+	kids, s := place(r.Body, s, inner)
+	p.box = frame(kids, top, s.y, e)
+	s.y = p.box.Y + p.box.H
 	return append(kids, p), s
 }
 

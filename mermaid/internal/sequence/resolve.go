@@ -63,10 +63,13 @@ func implicit(id string) Participant { return Participant{ID: id, Label: syntax.
 func walk(body []Stmt, f func(Stmt)) {
 	for _, s := range body {
 		f(s)
-		if b, ok := s.(*Block); ok {
-			for _, sec := range b.Sections {
+		switch s := s.(type) {
+		case *Block:
+			for _, sec := range s.Sections {
 				walk(sec.Body, f)
 			}
+		case *Rect:
+			walk(s.Body, f)
 		}
 	}
 }
@@ -154,6 +157,10 @@ func number(body []Stmt, c counter) ([]Stmt, counter) {
 				b.Sections = append(b.Sections, Section{Label: sec.Label, Body: sb})
 			}
 			out = append(out, b)
+		case *Rect:
+			r := &Rect{Color: s.Color}
+			r.Body, c = number(s.Body, c)
+			out = append(out, r)
 		case *declare, *title:
 		default:
 			out = append(out, s)

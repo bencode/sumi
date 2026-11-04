@@ -17,7 +17,7 @@
 //
 //	diagram     = { NEWLINE } "sequenceDiagram" document EOF ;
 //	document    = { NEWLINE | statement } ;
-//	statement   = participant | signal | note | activation | block
+//	statement   = participant | signal | note | activation | block | rect
 //	            | "autonumber" [ "off" | NUM [ NUM ] ] NEWLINE
 //	            | "title" REST NEWLINE
 //	            | "accTitle" ":" REST NEWLINE
@@ -31,6 +31,7 @@
 //	            | "alt"      REST document { "else"   REST document } "end"
 //	            | "par"      REST document { "and"    REST document } "end"
 //	            | "critical" REST document { "option" REST document } "end" ;
+//	rect        = "rect" REST document "end" ;
 //	arrow       = "->" | "-->" | "->>" | "-->>" | "<<->>" | "<<-->>"
 //	            | "-x" | "--x" | "-)" | "--)"
 //	            | "-|\" | "-|/" | "-\\" | "-//" | "/|-" | "\|-" | "//-" | "\\-"
@@ -38,8 +39,8 @@
 //
 // Each production is a function that takes the tokens and returns what it
 // read and the tokens left: Parse for diagram, parseDocument, parseStatement,
-// parseParticipant, parseSignal, parseNote, parseActivation, parseAutonumber
-// and parseBlock. Syntax Mermaid accepts that sumi does not yet, such as
-// box and rect, is refused with an error saying so. SETTINGS is @{...}
-// after a participant's name: JSON for its type and its alias.
+// parseParticipant, parseSignal, parseNote, parseActivation, parseAutonumber,
+// parseBlock and parseRect. Syntax Mermaid accepts that sumi does not yet,
+// such as box and create, is refused with an error saying so. SETTINGS is
+// @{...} after a participant's name: JSON for its type and its alias.
 package sequence

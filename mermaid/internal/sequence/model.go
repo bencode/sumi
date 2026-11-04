@@ -1,5 +1,7 @@
 package sequence
 
+import "github.com/bencode/sumi/scene"
+
 // A Diagram is a sequence diagram as its source says it: who takes part, and
 // what happens, in order, as a tree of statements.
 type Diagram struct {
@@ -30,7 +32,7 @@ const (
 	Queue
 )
 
-// A Stmt is one of *Message, *Note, *Activation and *Block.
+// A Stmt is one of *Message, *Note, *Activation, *Block and *Rect.
 type Stmt interface{ stmt() }
 
 // A Message is an arrow from one participant to another, or to itself.
@@ -112,10 +114,17 @@ type Section struct {
 	Body  []Stmt
 }
 
+// A Rect is a background behind statements (rect).
+type Rect struct {
+	Color *scene.Color // the author's color, nil when the line names none
+	Body  []Stmt
+}
+
 func (*Message) stmt()    {}
 func (*Note) stmt()       {}
 func (*Activation) stmt() {}
 func (*Block) stmt()      {}
+func (*Rect) stmt()       {}
 
 // The statements below live only between Parse and Resolve, which reads them
 // and leaves them out of the diagram.

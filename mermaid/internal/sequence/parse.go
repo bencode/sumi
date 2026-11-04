@@ -76,7 +76,9 @@ func parseStatement(ts []syntax.Token) (Stmt, []syntax.Token, error) {
 		return &title{syntax.Decode(t.Text)}, ts[1:], nil
 	case syntax.AccTitle, syntax.AccDescr:
 		return nil, ts[1:], nil
-	case kBox, kRect, kCreate, kDestroy, kParOver, kMenu:
+	case kRect:
+		return parseRect(ts)
+	case kBox, kCreate, kDestroy, kParOver, kMenu:
 		return nil, nil, syntax.Unsupported(t.Pos, syntax.Describe(t))
 	}
 	if kind, ok := blockKinds[t.Kind]; ok {
@@ -127,6 +129,33 @@ func parseBlock(ts []syntax.Token, kind BlockKind) (Stmt, []syntax.Token, error)
 		_, after, err = syntax.Expect(after, kEnd, want)
 		return b, after, err
 	}
+}
+
+// parseRect reads a rect, its line a color or nothing.
+//
+//	rect = "rect" REST document "end"
+func parseRect(ts []syntax.Token) (Stmt, []syntax.Token, error) {
+	rest, ts, err := syntax.Expect(ts[1:], kRest, "the rest of the line")
+	if err != nil {
+		return nil, nil, err
+	}
+	text, err := label(rest.Pos, rest.Text)
+	if err != nil {
+		return nil, nil, err
+	}
+	r := &Rect{}
+	if text != "" {
+		c, ok := syntax.Color(text)
+		if !ok {
+			return nil, nil, syntax.Errorf(rest.Pos, "%q is not a color", text)
+		}
+		r.Color = &c
+	}
+	if r.Body, ts, err = parseDocument(ts, kEnd); err != nil {
+		return nil, nil, err
+	}
+	_, ts, err = syntax.Expect(ts, kEnd, `"end"`)
+	return r, ts, err
 }
 
 var sepWords = map[syntax.Kind]string{kElse: "else", kAnd: "and", kOption: "option"}

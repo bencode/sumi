@@ -122,8 +122,11 @@ func checkApart(t *testing.T, path string, l layout) {
 func checkHeld(t *testing.T, path string, l layout) {
 	frames := map[string]scene.Rect{}
 	for _, p := range l.items {
-		if b, ok := p.(*pBlock); ok {
-			frames[b.id] = b.box
+		switch p := p.(type) {
+		case *pBlock:
+			frames[p.id] = p.box
+		case *pRect:
+			frames[p.id] = p.box
 		}
 	}
 	for _, p := range l.items {
@@ -134,6 +137,8 @@ func checkHeld(t *testing.T, path string, l layout) {
 		case *pNote:
 			parent = p.parent
 		case *pBlock:
+			parent = p.parent
+		case *pRect:
 			parent = p.parent
 		}
 		if f, ok := frames[parent]; ok && union(f, p.extent()) != f {
