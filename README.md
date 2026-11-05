@@ -34,3 +34,5 @@ out := svg.Render(s, scene.Dark)
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+The exception is `mermaid/internal/elk`, written after the Eclipse Layout Kernel and licensed as it is, under `EPL-2.0 OR GPL-3.0-or-later`. See its [LICENSE](mermaid/internal/elk/LICENSE) and [NOTICE](mermaid/internal/elk/NOTICE).
