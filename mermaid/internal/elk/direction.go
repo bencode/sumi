@@ -50,8 +50,8 @@ func mirrorY(g *Graph) {
 	g.Padding.Top, g.Padding.Bottom = g.Padding.Bottom, g.Padding.Top
 }
 
-// mirror flips g along the axis at picks. swapped gives the sides that trade
-// places.
+// mirror flips g along the axis that at picks. swapped gives the sides that
+// trade places.
 func mirror(g *Graph, at func(*Vec) *float64, swapped map[PortSide]PortSide) {
 	all := nodes(g)
 	offset := mirrorOffset(g, all, at)

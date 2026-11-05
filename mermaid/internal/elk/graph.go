@@ -27,15 +27,10 @@ const (
 // (fromDirection, core PortSide.java line 181).
 var sideOf = map[Direction]PortSide{Up: sideNorth, Right: sideEast, Down: sideSouth, Left: sideWest}
 
-// opposed gives the side across from a side (core PortSide.java).
+// opposed gives the side across from a side (core PortSide.java line 146).
 var opposed = map[PortSide]PortSide{
 	sideNorth: sideSouth, sideSouth: sideNorth, sideEast: sideWest, sideWest: sideEast,
 }
-
-// NodeType tells a real node from the ones steps add (LNode.NodeType).
-type NodeType int
-
-const typeNormal NodeType = iota
 
 // Graph is a graph being laid out (graph/LGraph.java). Nodes are in Layerless
 // until they are given a layer, and back there when layout ends.
@@ -55,7 +50,6 @@ type Layer struct{ Nodes []*Node }
 // Node is a node (graph/LNode.java). Pos is its top left corner.
 type Node struct {
 	ID         string
-	Type       NodeType
 	Pos, Size  Vec
 	Ports      []*Port
 	ModelOrder int // its index in Input.Nodes
