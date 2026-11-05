@@ -76,6 +76,7 @@ func minimizeCrossings(g *Graph) {
 func newSweep(g *Graph) *sweep {
 	r := newRandom(1)
 	r.setSeed(r.nextLong())
+	g.Random = r
 	s := &sweep{random: r, ranks: map[*Port]float64{}, centers: map[*Port]float64{}}
 	for _, l := range g.Layers {
 		s.layers = append(s.layers, slices.Clone(l.Nodes))

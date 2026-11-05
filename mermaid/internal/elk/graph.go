@@ -49,12 +49,16 @@ type Graph struct {
 	Layerless    []*Node
 	Layers       []*Layer
 	Direction    Direction
-	SelfLoops    bool // GraphProperties.SELF_LOOPS
-	CenterLabels bool // GraphProperties.CENTER_LABELS
+	SelfLoops    bool    // GraphProperties.SELF_LOOPS
+	CenterLabels bool    // GraphProperties.CENTER_LABELS
+	Random       *random // InternalProperties.RANDOM
 }
 
 // Layer is one layer's nodes, in order (graph/Layer.java).
-type Layer struct{ Nodes []*Node }
+type Layer struct {
+	Nodes []*Node
+	Width float64
+}
 
 // Node is a node (graph/LNode.java). Pos is its top left corner.
 type Node struct {

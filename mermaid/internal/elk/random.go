@@ -26,6 +26,16 @@ func (r *random) next(bits int) int32 {
 	return int32(r.seed >> (48 - bits))
 }
 
+// nextInt follows elkjs, not Java: its numbers are doubles, so the retry on
+// overflow never happens.
+func (r *random) nextInt(n int32) int32 {
+	bits := r.next(31)
+	if n&-n == n {
+		return int32(int64(n) * int64(bits) >> 31)
+	}
+	return bits % n
+}
+
 func (r *random) nextBoolean() bool { return r.next(1) != 0 }
 
 // nextFloat is a float64: elkjs runs as JavaScript, where a float is a double.

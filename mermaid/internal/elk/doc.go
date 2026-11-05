@@ -22,8 +22,11 @@
 //	positionPorts     ports along their sides                portpos.go
 //	nodeMargins       room for ports outside their node      portpos.go
 //	placeNodes        the y of each node                     bk.go
+//	measureLayers     widths of layers, height of the graph  route.go
+//	routeEdges        the x of each node, the bends of edges route.go
 //	joinLongEdges     the dummy nodes out again              longedge.go
 //	restoreReversed   reversed edges back                    cycles.go
+//	collectNodes      all nodes back in Layerless            route.go
 //	fromLTR           left to right -> the input's direction direction.go
 //	export            Graph -> Result                        export.go
 //
@@ -36,8 +39,9 @@
 // cells, but Mermaid's nodes come sized, with no labels of their own, so only
 // the placing of ports remains. Node placement is the balanced layout with the
 // one edge straightening Mermaid gets: fixed alignments, edge priorities and
-// what serves in-layer edges are left out. The steps above do not take self
-// loops, which a later step will set aside before breakCycles.
+// what serves in-layer edges are left out. Edge routing runs west to east only
+// and leaves out junction points. The steps above do not take self loops, which
+// a later step will set aside before breakCycles.
 //
 // Layout has to match elkjs, which is ELK compiled to JavaScript, not ELK on a
 // JVM: a float there is a double, and ELK's random numbers are seeded the same
