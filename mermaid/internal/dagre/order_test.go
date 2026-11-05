@@ -130,7 +130,7 @@ func TestOrderGraph(t *testing.T) {
 		},
 		parents: map[string]string{"edge:L2#4": "s0", "edge:L2#5": "s1"},
 	}} {
-		g := orderGraph(c.in, &counter{})
+		g, _ := orderGraph(c.in, &counter{})
 		layers := orderedLayers(g)
 		parents, labels := map[string]string{}, map[string][2]float64{}
 		for _, v := range g.nodeNames() {

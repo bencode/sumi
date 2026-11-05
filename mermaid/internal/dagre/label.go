@@ -5,7 +5,9 @@ import "strconv"
 // A node is what dagre keeps on a node of the graph it lays out.
 type node struct {
 	width, height float64
-	rank          int
+	// x and y are the node's center.
+	x, y float64
+	rank int
 	// order is the node's place in its rank, from 0.
 	order int
 	// dummy is the kind of node dagre added: "root", "border", "edge-proxy",
@@ -44,6 +46,11 @@ type edge struct {
 	// labelRank is the rank the edge's label goes in, when it has one.
 	labelRank    float64
 	hasLabelRank bool
+	// points are the edge's bends, then, with its ends, its whole path.
+	points []Point
+	// x and y are the center of the edge's label, when hasXY.
+	x, y  float64
+	hasXY bool
 }
 
 type layoutGraph = graph[node, edge]

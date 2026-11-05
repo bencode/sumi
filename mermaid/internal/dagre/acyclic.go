@@ -34,3 +34,18 @@ func acyclic(g *layoutGraph, c *counter) {
 		g.setEdge(e.w, e.v, c.next("rev"), label)
 	}
 }
+
+// undoAcyclic turns the edges acyclic turned around back, with their names
+// (acyclic.js line 48).
+func undoAcyclic(g *layoutGraph) {
+	for _, e := range g.edgeList() {
+		label := g.edgeOf(e)
+		if !label.reversed {
+			continue
+		}
+		g.removeEdgeKey(e)
+		name := label.forwardName
+		label.reversed, label.forwardName = false, ""
+		g.setEdge(e.w, e.v, name, label)
+	}
+}

@@ -3,7 +3,7 @@
 // steps, in the same order, coming to the same numbers. Flowcharts, state,
 // class and ER diagrams go through it.
 //
-// So far it does dagre's steps up to order (layout.js lines 26-40):
+// Layout, in result.go, runs dagre's steps (layout.js lines 26-52):
 //
 //	build       Mermaid's graph -> the graph to lay out    layout.go
 //	acyclic     turn around the edges that close cycles    acyclic.go
@@ -16,6 +16,10 @@
 //	order       each rank's order, for few crossings       order.go, layer.go,
 //	                                                       sort.go, conflicts.go,
 //	                                                       cross.go
+//	position    y by rank, x by Brandes and Köpf           position.go, bk.go,
+//	                                                       compact.go
+//	then        subgraphs' boxes, edges' bends, the direction, the margins
+//	                                                       finish.go, coords.go
 //
 // Like dagre, the steps change one graph in place: graph, a port of
 // graphlib's Graph (graph.go, edges.go). Where dagre picks among equals it
@@ -26,6 +30,6 @@
 //
 // What Mermaid never asks of dagre is left out: the greedy acyclicer, the
 // tight-tree and longest-path rankers, self-loops (Mermaid splits them up
-// before dagre sees them) and edge labels to the left or right (Mermaid
-// centers them all).
+// before dagre sees them) and edge labels to the left or right, with
+// fixupEdgeLabelCoords (Mermaid centers them all).
 package dagre
