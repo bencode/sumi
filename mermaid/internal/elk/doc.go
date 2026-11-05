@@ -12,19 +12,27 @@
 //
 //	importGraph       Input -> Graph                         import.go
 //	toLTR             any direction -> left to right         direction.go
+//	hideSelfLoops     self loops off the graph               selfloops.go
 //	breakCycles       reverse the edges closing a cycle      cycles.go
+//	insertLabelDummies a dummy node per label                labels.go
 //	assignLayers      Layerless -> Layers                    layering.go
 //	splitLongEdges    a dummy node per layer crossed         longedge.go
 //	assignPortSides   incoming west, outgoing east           portorder.go
 //	sortPortLists     ports grouped by side                  portorder.go
 //	sortByModelOrder  layers and ports as the input has them modelorder.go
 //	minimizeCrossings an order of layers with few crossings  sweep.go
+//	restoreLoopPorts  self loops' ports back, on the north   selfloops.go
 //	positionPorts     ports along their sides                portpos.go
 //	nodeMargins       room for ports outside their node      portpos.go
+//	routeSelfLoops    bends and labels of self loops         selfloops.go
+//	switchLabelDummies label dummies to the middle of edges  labels.go
+//	sizeLabelDummies  label dummies down to the label        labels.go
 //	placeNodes        the y of each node                     bk.go
 //	measureLayers     widths of layers, height of the graph  route.go
 //	routeEdges        the x of each node, the bends of edges route.go
 //	joinLongEdges     the dummy nodes out again              longedge.go
+//	restoreSelfLoops  self loops back on the graph           selfloops.go
+//	removeLabelDummies labels placed, their dummies out      labels.go
 //	restoreReversed   reversed edges back                    cycles.go
 //	collectNodes      all nodes back in Layerless            route.go
 //	fromLTR           left to right -> the input's direction direction.go
@@ -40,8 +48,9 @@
 // the placing of ports remains. Node placement is the balanced layout with the
 // one edge straightening Mermaid gets: fixed alignments, edge priorities and
 // what serves in-layer edges are left out. Edge routing runs west to east only
-// and leaves out junction points. The steps above do not take self loops, which
-// a later step will set aside before breakCycles.
+// and leaves out junction points. Labels are all inline and at the center, and
+// self loops all stay on the north side, so what ELK does for the other label
+// placements, sides and shapes of loops is left out too.
 //
 // Layout has to match elkjs, which is ELK compiled to JavaScript, not ELK on a
 // JVM: a float there is a double, and ELK's random numbers are seeded the same
