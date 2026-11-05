@@ -38,6 +38,7 @@ type NodeType int
 const (
 	typeNormal NodeType = iota
 	typeLongEdge
+	typeLabel
 )
 
 // Graph is a graph being laid out (graph/LGraph.java). Nodes are in Layerless
@@ -93,6 +94,15 @@ func nodes(g *Graph) []*Node {
 	all := slices.Clone(g.Layerless)
 	for _, l := range g.Layers {
 		all = append(all, l.Nodes...)
+	}
+	return all
+}
+
+// incoming gives the edges coming to n, port by port (graph/LNode.java line 348).
+func incoming(n *Node) []*Edge {
+	var all []*Edge
+	for _, p := range n.Ports {
+		all = append(all, p.In...)
 	}
 	return all
 }
