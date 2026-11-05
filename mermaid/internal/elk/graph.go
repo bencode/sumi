@@ -9,7 +9,7 @@ type Vec struct{ X, Y float64 }
 
 func (v Vec) add(w Vec) Vec { return Vec{v.X + w.X, v.Y + w.Y} }
 
-// Spacing is the room around a graph's content (LPadding).
+// Spacing is the room around a graph's content (LPadding) or a node (LMargin).
 type Spacing struct{ Top, Right, Bottom, Left float64 }
 
 // PortSide is the side of its node a port sits on (core PortSide.java).
@@ -60,6 +60,7 @@ type Node struct {
 	ID         string
 	Type       NodeType
 	Pos, Size  Vec
+	Margin     Spacing
 	Ports      []*Port
 	ModelOrder int // its index in Input.Nodes
 }
