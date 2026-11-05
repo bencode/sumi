@@ -93,7 +93,8 @@ func (s *simplex) initialize() {
 	s.postOrder = 1
 }
 
-// connected gives n's edges, incoming first (getConnectedEdges, NNode.java).
+// connected gives n's edges, incoming first (getConnectedEdges, NNode.java line
+// 107).
 func connected(n *simplexNode) []*simplexEdge { return slices.Concat(n.in, n.out) }
 
 func (e *simplexEdge) other(n *simplexNode) *simplexNode {
