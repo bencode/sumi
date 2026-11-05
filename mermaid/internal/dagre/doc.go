@@ -3,7 +3,7 @@
 // steps, in the same order, coming to the same numbers. Flowcharts, state,
 // class and ER diagrams go through it.
 //
-// So far it does dagre's first steps (layout.js lines 26-36):
+// So far it does dagre's steps up to order (layout.js lines 26-40):
 //
 //	build       Mermaid's graph -> the graph to lay out    layout.go
 //	acyclic     turn around the edges that close cycles    acyclic.go
@@ -11,6 +11,11 @@
 //	rank        network simplex                            rank.go, simplex.go
 //	then        label ranks, empty ranks removed, ranks from 0
 //	                                                       layout.go
+//	normalize   long edges split up, one dummy to a rank   normalize.go
+//	borders     subgraphs' left and right, rank by rank    border.go
+//	order       each rank's order, for few crossings       order.go, layer.go,
+//	                                                       sort.go, conflicts.go,
+//	                                                       cross.go
 //
 // Like dagre, the steps change one graph in place: graph, a port of
 // graphlib's Graph (graph.go, edges.go). Where dagre picks among equals it

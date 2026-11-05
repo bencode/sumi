@@ -6,8 +6,10 @@ import "strconv"
 type node struct {
 	width, height float64
 	rank          int
-	// dummy is the kind of node dagre added: "root", "border" or
-	// "edge-proxy"; "" for the caller's.
+	// order is the node's place in its rank, from 0.
+	order int
+	// dummy is the kind of node dagre added: "root", "border", "edge-proxy",
+	// "edge" or "edge-label"; "" for the caller's.
 	dummy string
 	// borderTop and borderBottom are a subgraph's border nodes, and
 	// minRank and maxRank their ranks.
@@ -19,6 +21,15 @@ type node struct {
 	// layout.js line 169).
 	proxyOf   edgeKey
 	proxyRank float64
+	// edgeLabel and edgeObj are the edge a dummy of a split edge stands for.
+	edgeLabel *edge
+	edgeObj   edgeKey
+	// borderLeft and borderRight are a subgraph's left and right border
+	// nodes, one for each rank from minRank on.
+	borderLeft, borderRight []string
+	// borderType is a border node's side: "borderLeft" or "borderRight";
+	// "" for a top or bottom one.
+	borderType string
 }
 
 // An edge is what dagre keeps on an edge of the graph it lays out.
