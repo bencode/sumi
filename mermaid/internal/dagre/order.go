@@ -59,6 +59,8 @@ func sweep(layers []layer, biasRight bool) {
 	}
 }
 
+// assignOrder gives each node its place in layering (order/index.js line
+// 71).
 func assignOrder(g *layoutGraph, layering [][]string) {
 	for _, vs := range layering {
 		for i, v := range vs {

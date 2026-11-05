@@ -65,7 +65,8 @@ func buildLayerGraph(g *layoutGraph, c *counter, rank int, adjacent func(string)
 
 // layerLabel is n's label in rank's layer, nil when n is not in rank. A
 // subgraph has no rank, and other nodes no minRank or maxRank, which JS
-// compares as undefined and Go would as 0.
+// compares as undefined and Go would as 0 (build-layer-graph.js lines 48
+// and 60).
 func layerLabel(n *node, rank int) *layerNode {
 	if n.borderTop != "" {
 		if rank < n.minRank || n.maxRank < rank {
