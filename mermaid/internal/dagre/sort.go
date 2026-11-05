@@ -7,7 +7,9 @@ import (
 
 // A center is a barycenter, the mean place of a node's neighbors, and the
 // weight it carries. ok is whether there is one: JS leaves the property
-// out when not.
+// out when not. Sums of products convert each product to float64, which
+// keeps Go from fusing them on some machines: JS rounds every step, and
+// barycenters decide ties to the last bit.
 type center struct {
 	value  float64
 	weight int
@@ -52,7 +54,7 @@ func sortSubgraph(lg *layerGraph, v string, cg *constraints, biasRight bool) ent
 	result.vs = slices.Concat([]string{l.left}, result.vs, []string{l.right})
 	if preds := lg.predecessors(l.left); len(preds) > 0 {
 		left, right := lg.node(preds[0]).n, lg.node(lg.predecessors(l.right)[0]).n
-		sum := result.value*float64(result.weight) + float64(left.order) + float64(right.order)
+		sum := float64(result.value*float64(result.weight)) + float64(left.order) + float64(right.order)
 		result.value = sum / float64(result.weight+2)
 		result.weight += 2
 		result.ok = true
@@ -103,7 +105,7 @@ func mergeBarycenters(target *center, other center) {
 		*target = other
 		return
 	}
-	sum := target.value*float64(target.weight) + other.value*float64(other.weight)
+	sum := float64(target.value*float64(target.weight)) + float64(other.value*float64(other.weight))
 	target.value = sum / float64(target.weight+other.weight)
 	target.weight += other.weight
 }
@@ -145,7 +147,7 @@ func sortEntries(entries []*entry, biasRight bool) entry {
 	for _, e := range sortable {
 		index += len(e.vs)
 		result.vs = append(result.vs, e.vs...)
-		sum += e.value * float64(e.weight)
+		sum += float64(e.value * float64(e.weight))
 		weight += e.weight
 		consume()
 	}

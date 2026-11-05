@@ -74,11 +74,11 @@ func doResolveConflicts(sources []*conflict) []*entry {
 func mergeEntries(target, source *conflict) {
 	sum, weight := 0.0, 0
 	if target.weight != 0 {
-		sum += target.value * float64(target.weight)
+		sum += float64(target.value * float64(target.weight))
 		weight += target.weight
 	}
 	if source.weight != 0 {
-		sum += source.value * float64(source.weight)
+		sum += float64(source.value * float64(source.weight))
 		weight += source.weight
 	}
 	target.vs = slices.Concat(source.vs, target.vs)
