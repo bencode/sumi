@@ -19,6 +19,8 @@
 //	sortPortLists     ports grouped by side                  portorder.go
 //	sortByModelOrder  layers and ports as the input has them modelorder.go
 //	minimizeCrossings an order of layers with few crossings  sweep.go
+//	positionPorts     ports along their sides                portpos.go
+//	nodeMargins       room for ports outside their node      portpos.go
 //	joinLongEdges     the dummy nodes out again              longedge.go
 //	restoreReversed   reversed edges back                    cycles.go
 //	fromLTR           left to right -> the input's direction direction.go
@@ -29,7 +31,9 @@
 // constraints, so they do nothing and are left out. The same goes for
 // InLayerConstraintProcessor, and for the parts of crossing minimization that
 // serve in-layer edges, north and south ports, several edges on a port and
-// constraints between nodes. The steps above do not take self loops, which a
+// constraints between nodes. ELK sizes nodes around their labels in a system of
+// cells, but Mermaid's nodes come sized, with no labels of their own, so only
+// the placing of ports remains. The steps above do not take self loops, which a
 // later step will set aside before breakCycles.
 //
 // Layout has to match elkjs, which is ELK compiled to JavaScript, not ELK on a

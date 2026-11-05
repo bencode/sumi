@@ -7,9 +7,9 @@ import (
 	"slices"
 )
 
-// iterationFactor is ELK's default thoroughness, 7 (Layered.melk line 1265),
-// times ITER_LIMIT_FACTOR (p2layers/NetworkSimplexLayerer.java line 229).
-const iterationFactor = 7 * 4
+// iterationFactor is thoroughness times ITER_LIMIT_FACTOR
+// (p2layers/NetworkSimplexLayerer.java line 229).
+const iterationFactor = thoroughness * 4
 
 // assignLayers moves all nodes out of Layerless into layers, solving each
 // connected component on its own. All components start at the first layer, and
