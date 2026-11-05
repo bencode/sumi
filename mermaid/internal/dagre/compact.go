@@ -81,8 +81,8 @@ func buildBlockGraph(g *layoutGraph, layering [][]string, root map[string]string
 }
 
 // sep is how far apart the centers of v and w must be: their half widths
-// and half of each one's gap (bk.js line 396). With labels centered, it is
-// the same both ways.
+// and half of each one's gap (bk.js line 396). With labels centered,
+// reverseSep changes nothing here.
 func sep(g *layoutGraph, v, w string, nodeSep float64) float64 {
 	gap := func(n *node) float64 {
 		if n.dummy != "" {

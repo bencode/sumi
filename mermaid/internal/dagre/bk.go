@@ -48,9 +48,8 @@ func findType1Conflicts(g *layoutGraph, layering [][]string, c conflicts) {
 }
 
 // findType2Conflicts adds the inner segments that go across a subgraph's
-// border to c (bk.js line 81). nextNorth stands for JS's undefined until
-// the first border: as the least place, -1 is like it in that no order is
-// less.
+// border to c (bk.js line 81). nextNorth is undefined in JS until the
+// first border, and order < undefined is false, as order < -1 is.
 func findType2Conflicts(g *layoutGraph, layering [][]string, c conflicts) {
 	scan := func(south []string, from, to, prevBorder, nextBorder int) {
 		for _, v := range south[from:to] {

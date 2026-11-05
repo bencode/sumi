@@ -1,7 +1,7 @@
 package dagre
 
-// Options are what Mermaid sets on dagre's graph. dagre's defaults for
-// what is left out do not apply: Mermaid sets them all.
+// Options are what Mermaid sets on dagre's graph. A field left at 0 is 0,
+// not dagre's default.
 type Options struct {
 	RankDir          string // "TB", "BT", "LR" or "RL"; "" is TB
 	NodeSep, RankSep float64
@@ -28,7 +28,7 @@ type PlacedEdge struct {
 
 // A Result is where dagre puts in's nodes and edges, in in's order, and
 // the size it gives the graph. Like dagre's, the size leaves out edges'
-// bends, which can go outside it.
+// bends, which can go outside it, and is -Inf for an empty graph.
 type Result struct {
 	Nodes         []PlacedNode
 	Edges         []PlacedEdge
