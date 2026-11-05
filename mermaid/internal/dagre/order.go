@@ -6,13 +6,15 @@ import (
 )
 
 // orderGraph runs dagre's layout up to the order of each rank (layout.js
-// lines 26-40). c names what it adds.
-func orderGraph(in Graph, c *counter) *layoutGraph {
+// lines 26-40), and returns the graph and each split edge's first dummy.
+// c names what it adds.
+func orderGraph(in Graph, c *counter) (*layoutGraph, []string) {
 	g := rankGraph(in, c)
-	parentDummyChains(g, normalize(g, c))
+	chains := normalize(g, c)
+	parentDummyChains(g, chains)
 	addBorderSegments(g, c)
 	order(g, c)
-	return g
+	return g, chains
 }
 
 // order gives each node its place in its rank. From a first order it

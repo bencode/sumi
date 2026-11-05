@@ -42,6 +42,26 @@ func normalizeEdge(g *layoutGraph, c *counter, e edgeKey) string {
 	return first
 }
 
+// denormalize puts each split edge back, with its dummies' places as its
+// bends and its label's dummy's as its label's (normalize.js line 90).
+func denormalize(g *layoutGraph, chains []string) {
+	for _, v := range chains {
+		n := g.node(v)
+		l, e := n.edgeLabel, n.edgeObj
+		g.setEdge(e.v, e.w, e.name, l)
+		for n.dummy != "" {
+			w := g.successors(v)[0]
+			g.removeNode(v)
+			l.points = append(l.points, Point{n.x, n.y})
+			if n.dummy == "edge-label" {
+				l.x, l.y, l.hasXY = n.x, n.y, true
+				l.width, l.height = n.width, n.height
+			}
+			v, n = w, g.node(w)
+		}
+	}
+}
+
 // parentDummyChains puts each split edge's dummies in subgraphs. The path
 // from the edge's start up to the two ends' lowest common ancestor and
 // down to its end names the subgraphs the edge goes through; each dummy
