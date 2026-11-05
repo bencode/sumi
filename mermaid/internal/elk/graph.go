@@ -32,6 +32,14 @@ var opposed = map[PortSide]PortSide{
 	sideNorth: sideSouth, sideSouth: sideNorth, sideEast: sideWest, sideWest: sideEast,
 }
 
+// NodeType tells a real node from the ones steps add (LNode.NodeType).
+type NodeType int
+
+const (
+	typeNormal NodeType = iota
+	typeLongEdge
+)
+
 // Graph is a graph being laid out (graph/LGraph.java). Nodes are in Layerless
 // until they are given a layer, and back there when layout ends.
 type Graph struct {
@@ -50,6 +58,7 @@ type Layer struct{ Nodes []*Node }
 // Node is a node (graph/LNode.java). Pos is its top left corner.
 type Node struct {
 	ID         string
+	Type       NodeType
 	Pos, Size  Vec
 	Ports      []*Port
 	ModelOrder int // its index in Input.Nodes
@@ -70,7 +79,8 @@ type Edge struct {
 	Source, Target *Port
 	Bends          []Vec
 	Labels         []*Label
-	ModelOrder     int // its index in Input.Edges
+	ModelOrder     int  // its index in Input.Edges
+	Reversed       bool // InternalProperties.REVERSED
 }
 
 // Label is an edge's label (graph/LLabel.java).
@@ -86,13 +96,50 @@ func nodes(g *Graph) []*Node {
 	return all
 }
 
+// outgoing gives the edges leaving n, port by port (graph/LNode.java line 362).
+func outgoing(n *Node) []*Edge {
+	var all []*Edge
+	for _, p := range n.Ports {
+		all = append(all, p.Out...)
+	}
+	return all
+}
+
+// setSource moves e's start to p, last among p's edges; a nil p leaves e
+// without a start (graph/LEdge.java line 112).
+func setSource(e *Edge, p *Port) {
+	if e.Source != nil {
+		e.Source.Out = without(e.Source.Out, e)
+	}
+	e.Source = p
+	if p != nil {
+		p.Out = append(p.Out, e)
+	}
+}
+
+// setTarget moves e's end to p, as setSource moves its start
+// (graph/LEdge.java line 142).
+func setTarget(e *Edge, p *Port) {
+	if e.Target != nil {
+		e.Target.In = without(e.Target.In, e)
+	}
+	e.Target = p
+	if p != nil {
+		p.In = append(p.In, e)
+	}
+}
+
+// without gives all with item taken out, keeping the order.
+func without[T comparable](all []T, item T) []T {
+	i := slices.Index(all, item)
+	return slices.Delete(all, i, i+1)
+}
+
 // edges gives g's edges, each once, from the ports they leave.
 func edges(g *Graph) []*Edge {
 	var all []*Edge
 	for _, n := range nodes(g) {
-		for _, p := range n.Ports {
-			all = append(all, p.Out...)
-		}
+		all = append(all, outgoing(n)...)
 	}
 	return all
 }
