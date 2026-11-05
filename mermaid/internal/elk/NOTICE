@@ -1,0 +1,18 @@
+The Go code in this directory is written after the Eclipse Layout Kernel
+(ELK) v0.12.1, commit 3aa3b9f, and is licensed as ELK is:
+
+    SPDX-License-Identifier: EPL-2.0 OR GPL-3.0-or-later
+
+The Eclipse Public License 2.0 is in LICENSE, and at
+https://www.eclipse.org/legal/epl-2.0. GPL-3.0 is at
+https://www.gnu.org/licenses/gpl-3.0-standalone.html.
+
+The rest of this repository is under the MIT license.
+
+Eclipse Layout Kernel
+  Project home: https://projects.eclipse.org/projects/modeling.elk
+  Source code:  https://github.com/eclipse-elk/elk
+
+Eclipse Layout Kernel is a trademark of the Eclipse Foundation. All ELK
+content is the property of the respective authors or their employers. For
+authorship, see the logs of the ELK source repository.
