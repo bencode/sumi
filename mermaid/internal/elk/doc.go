@@ -10,20 +10,31 @@
 //
 // The steps so far, in the order they run:
 //
-//	importGraph      Input -> Graph                         import.go
-//	toLTR            any direction -> left to right         direction.go
-//	breakCycles      reverse the edges closing a cycle      cycles.go
-//	assignLayers     Layerless -> Layers                    layering.go
-//	splitLongEdges   a dummy node per layer crossed         longedge.go
-//	joinLongEdges    the dummy nodes out again              longedge.go
-//	restoreReversed  reversed edges back                    cycles.go
-//	fromLTR          left to right -> the input's direction direction.go
-//	export           Graph -> Result                        export.go
+//	importGraph       Input -> Graph                         import.go
+//	toLTR             any direction -> left to right         direction.go
+//	breakCycles       reverse the edges closing a cycle      cycles.go
+//	assignLayers      Layerless -> Layers                    layering.go
+//	splitLongEdges    a dummy node per layer crossed         longedge.go
+//	assignPortSides   incoming west, outgoing east           portorder.go
+//	sortPortLists     ports grouped by side                  portorder.go
+//	sortByModelOrder  layers and ports as the input has them modelorder.go
+//	minimizeCrossings an order of layers with few crossings  sweep.go
+//	joinLongEdges     the dummy nodes out again              longedge.go
+//	restoreReversed   reversed edges back                    cycles.go
+//	fromLTR           left to right -> the input's direction direction.go
+//	export            Graph -> Result                        export.go
 //
 // The other steps are still to come, and nothing calls this package yet. ELK
 // also runs three layer constraint processors here. Mermaid sets no layer
-// constraints, so they do nothing and are left out. The steps above do not
-// take self loops, which a later step will set aside before breakCycles.
+// constraints, so they do nothing and are left out. The same goes for
+// InLayerConstraintProcessor, and for the parts of crossing minimization that
+// serve in-layer edges, north and south ports, several edges on a port and
+// constraints between nodes. The steps above do not take self loops, which a
+// later step will set aside before breakCycles.
+//
+// Layout has to match elkjs, which is ELK compiled to JavaScript, not ELK on a
+// JVM: a float there is a double, and ELK's random numbers are seeded the same
+// way each time.
 //
 // In a Graph, edges join ports, not nodes: each edge gets a port of its own at
 // both ends. That is what spreads edges along a node's side. Steps change one
