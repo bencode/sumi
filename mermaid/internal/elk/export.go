@@ -7,31 +7,50 @@ package elk
 // 67). ELK writes onto the input graph's objects; here ModelOrder gives each
 // its place in the Result.
 func export(g *Graph) Result {
-	offset := Vec{g.Offset.X + g.Padding.Left, g.Offset.Y + g.Padding.Top}
-	all := edges(g)
-	r := Result{
-		Width:  g.Size.X + g.Padding.Left + g.Padding.Right,
-		Height: g.Size.Y + g.Padding.Top + g.Padding.Bottom,
-		Nodes:  make([]PlacedNode, len(g.Layerless)),
-		Edges:  make([]PlacedEdge, len(all)),
-	}
-	for _, n := range g.Layerless {
-		r.Nodes[n.ModelOrder] = exportNode(n, offset)
-	}
-	for _, e := range all {
-		r.Edges[e.ModelOrder] = exportEdge(e, offset)
+	size := actualSize(g)
+	byOrder := map[int]PlacedEdge{}
+	r := Result{Width: size.X, Height: size.Y, Nodes: exportNodes(g, byOrder)}
+	r.Edges = make([]PlacedEdge, len(byOrder))
+	for i, e := range byOrder {
+		r.Edges[i] = e
 	}
 	return r
 }
 
+// exportNodes gives the nodes of g, and adds its edges and those of the graphs
+// below it to byOrder.
+func exportNodes(g *Graph, byOrder map[int]PlacedEdge) []PlacedNode {
+	offset := Vec{g.Offset.X + g.Padding.Left, g.Offset.Y + g.Padding.Top}
+	container := ""
+	if g.Parent != nil {
+		container = g.Parent.ID
+	}
+	for _, e := range edges(g) {
+		byOrder[e.ModelOrder] = exportEdge(e, offset, container)
+	}
+	placed := make([]PlacedNode, len(g.Layerless))
+	for _, n := range g.Layerless {
+		placed[n.ModelOrder] = exportNode(n, offset, byOrder)
+	}
+	return placed
+}
+
 // exportNode is applyNodeLayout (ElkGraphLayoutTransferrer.java line 159).
-func exportNode(n *Node, offset Vec) PlacedNode {
+func exportNode(n *Node, offset Vec, byOrder map[int]PlacedEdge) PlacedNode {
 	pos := n.Pos.add(offset)
-	return PlacedNode{ID: n.ID, X: pos.X, Y: pos.Y, Width: n.Size.X, Height: n.Size.Y}
+	placed := PlacedNode{ID: n.ID, X: pos.X, Y: pos.Y, Width: n.Size.X, Height: n.Size.Y}
+	if n.Title != nil {
+		t := n.Title
+		placed.Title = &PlacedLabel{t.Pos.X, t.Pos.Y, t.Size.X, t.Size.Y}
+	}
+	if n.Nested != nil {
+		placed.Children = exportNodes(n.Nested, byOrder)
+	}
+	return placed
 }
 
 // exportEdge is applyEdgeLayout (ElkGraphLayoutTransferrer.java line 233).
-func exportEdge(e *Edge, offset Vec) PlacedEdge {
+func exportEdge(e *Edge, offset Vec, container string) PlacedEdge {
 	points := make([]Vec, 0, len(e.Bends)+2)
 	points = append(points, absolute(e.Source).add(offset))
 	for _, b := range e.Bends {
@@ -43,7 +62,7 @@ func exportEdge(e *Edge, offset Vec) PlacedEdge {
 		pos := l.Pos.add(offset)
 		labels[i] = PlacedLabel{pos.X, pos.Y, l.Size.X, l.Size.Y}
 	}
-	return PlacedEdge{ID: e.ID, Points: points, Labels: labels}
+	return PlacedEdge{ID: e.ID, Container: container, Points: points, Labels: labels}
 }
 
 // absolute gives where p sits in g (getAbsoluteAnchor, graph/LPort.java line

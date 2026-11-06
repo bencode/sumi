@@ -51,13 +51,17 @@ func mirrorY(g *Graph) {
 }
 
 // mirror flips g along the axis that at picks. swapped gives the sides that
-// trade places.
+// trade places. ELK also mirrors the placement of node labels; here that is the
+// direction titlePosition looks at.
 func mirror(g *Graph, at func(*Vec) *float64, swapped map[PortSide]PortSide) {
 	all := nodes(g)
 	offset := mirrorOffset(g, all, at)
 	flip := func(v *Vec, across float64) { *at(v) = across - *at(v) }
 	for _, n := range all {
 		flip(&n.Pos, offset-*at(&n.Size))
+		if n.Title != nil {
+			flip(&n.Title.Pos, *at(&n.Size)-*at(&n.Title.Size))
+		}
 		for _, p := range n.Ports {
 			flip(&p.Pos, *at(&n.Size))
 			if side, ok := swapped[p.Side]; ok {
@@ -97,6 +101,10 @@ func transpose(g *Graph) {
 	for _, n := range nodes(g) {
 		swap(&n.Pos)
 		swap(&n.Size)
+		if n.Title != nil {
+			swap(&n.Title.Pos)
+			swap(&n.Title.Size)
+		}
 		for _, p := range n.Ports {
 			swap(&p.Pos)
 			p.Side = transposedSide[p.Side]

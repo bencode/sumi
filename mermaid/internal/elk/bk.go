@@ -8,13 +8,6 @@ import (
 	"slices"
 )
 
-// Spacing between neighbors in a layer: spacing.nodeNode, and spacing.edgeNode
-// and spacing.edgeEdge at Mermaid's base value, which come to the same.
-const (
-	nodeGap = 40.0
-	edgeGap = 20.0
-)
-
 // alignment is one of Brandes and Köpf's four layouts
 // (p4nodes/bk/BKAlignedLayout.java). A block is a ring of nodes, each with its
 // next, around a root. Sweeping left means from the last layer back, sweeping up
@@ -33,6 +26,7 @@ type alignment struct {
 // neighbors is what placement looks up about the order of a graph
 // (p4nodes/bk/NeighborhoodInformation.java).
 type neighbors struct {
+	settings    settings
 	index       map[*Node]int
 	layer       map[*Node][]*Node
 	left, right map[*Node][]neighbor
@@ -113,7 +107,7 @@ func reversed[T any](all []T) []T {
 // lines 131 and 164). Edges only join neighboring layers at this point.
 func neighborsOf(g *Graph) *neighbors {
 	near := &neighbors{
-		index: map[*Node]int{}, layer: map[*Node][]*Node{},
+		settings: g.Settings, index: map[*Node]int{}, layer: map[*Node][]*Node{},
 		left: map[*Node][]neighbor{}, right: map[*Node][]neighbor{},
 	}
 	for _, l := range g.Layers {
@@ -281,9 +275,12 @@ func (a *alignment) extent(g *Graph) float64 {
 
 // nodeSpacing is the room between neighbors in a layer (getVerticalSpacing,
 // options/Spacings.java line 195, with the table from line 62).
-func nodeSpacing(a, b *Node) float64 {
-	if a.Type == typeLongEdge || b.Type == typeLongEdge || a.Type == typeLabel && b.Type == typeLabel {
-		return edgeGap
+func nodeSpacing(s settings, a, b *Node) float64 {
+	switch {
+	case a.Type == b.Type && a.Type != typeNormal:
+		return s.edgeEdge
+	case a.Type == typeLongEdge || b.Type == typeLongEdge:
+		return s.edgeNode
 	}
-	return nodeGap
+	return s.nodeNode
 }

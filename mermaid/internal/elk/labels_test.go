@@ -10,46 +10,42 @@ import (
 )
 
 // fullLayout lays spec out in a direction, on nodes of the sizes routed gives
-// them. spec lists edges like "a>b", with "=30x10" after one that has a label.
+// them.
 func fullLayout(d Direction, spec string) Result {
 	widths := []float64{30, 52, 18, 70, 41}
 	heights := []float64{45, 30, 5, 62, 14}
-	in := Input{Direction: d}
+	in := Input{Direction: d, Edges: edgesOf(spec)}
 	seen := map[string]bool{}
 	addNode := func(id string) {
 		if !seen[id] {
 			seen[id] = true
 			i := int(id[0]) % len(heights)
-			in.Nodes = append(in.Nodes, InputNode{id, widths[i], heights[i]})
+			in.Nodes = append(in.Nodes, InputNode{ID: id, Width: widths[i], Height: heights[i]})
 		}
 	}
+	for _, e := range in.Edges {
+		addNode(e.Source)
+		addNode(e.Target)
+	}
+	return Layout(in)
+}
+
+// edgesOf reads edges like "a>b", with "=30x10" after one that has a label.
+func edgesOf(spec string) []InputEdge {
+	var all []InputEdge
 	for i, part := range strings.Fields(spec) {
 		ends, size, hasLabel := strings.Cut(part, "=")
 		source, target, _ := strings.Cut(ends, ">")
-		addNode(source)
-		addNode(target)
-		e := InputEdge{ID: strconv.Itoa(i), Source: source, Target: target}
+		e := InputEdge{ID: "e" + strconv.Itoa(i), Source: source, Target: target}
 		if hasLabel {
 			width, height, _ := strings.Cut(size, "x")
 			w, _ := strconv.ParseFloat(width, 64)
 			h, _ := strconv.ParseFloat(height, 64)
 			e.Label = &Size{w, h}
 		}
-		in.Edges = append(in.Edges, e)
+		all = append(all, e)
 	}
-	g := importGraph(in)
-	toLTR(g)
-	for _, step := range []func(*Graph){
-		hideSelfLoops, breakCycles, insertLabelDummies, assignLayers, splitLongEdges,
-		assignPortSides, sortPortLists, sortByModelOrder, minimizeCrossings, restoreLoopPorts,
-		positionPorts, nodeMargins, routeSelfLoops, switchLabelDummies, sizeLabelDummies,
-		placeNodes, measureLayers, routeEdges, joinLongEdges, restoreSelfLoops,
-		removeLabelDummies, restoreReversed, collectNodes,
-	} {
-		step(g)
-	}
-	fromLTR(g)
-	return export(g)
+	return all
 }
 
 // labelDrawing is drawing with each edge's labels at the end, as x,y.

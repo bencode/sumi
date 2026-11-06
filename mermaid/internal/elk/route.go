@@ -4,13 +4,6 @@ package elk
 
 import "math"
 
-// Spacing between layers, at Mermaid's base value.
-const (
-	layerGap = 40.0 // spacing.nodeNodeBetweenLayers
-	slotGap  = 20.0 // spacing.edgeEdgeBetweenLayers
-	sideGap  = 20.0 // spacing.edgeNodeBetweenLayers
-)
-
 // measureLayers gives each layer its width and g its height, moving the top of
 // the drawing to where the graph starts
 // (intermediate/LayerSizeAndGraphHeightCalculator.java line 49).
@@ -38,7 +31,8 @@ func measureLayers(g *Graph) {
 // layers, nothing routes before the first layer or after the last, and two
 // side gaps are never less than ELK's minimum of a layer gap.
 func routeEdges(g *Graph) {
-	r := &router{random: g.Random}
+	s := g.Settings
+	r := &router{random: g.Random, slotGap: s.edgeEdgeLayers}
 	x := 0.0
 	for i, left := range g.Layers {
 		placeHorizontally(left, x)
@@ -46,10 +40,10 @@ func routeEdges(g *Graph) {
 		if i == len(g.Layers)-1 {
 			break
 		}
-		slots := r.route(left.Nodes, g.Layers[i+1].Nodes, x+sideGap)
-		gap := layerGap
+		slots := r.route(left.Nodes, g.Layers[i+1].Nodes, x+s.edgeNodeLayers)
+		gap := s.nodeLayers
 		if slots > 0 {
-			gap = float64(slots-1)*slotGap + sideGap + sideGap
+			gap = s.edgeNodeLayers + float64(slots-1)*s.edgeEdgeLayers + s.edgeNodeLayers
 		}
 		x += gap
 	}
@@ -98,15 +92,10 @@ func portRatio(n *Node) float64 {
 }
 
 // collectNodes puts all nodes back in Layerless (process,
-// intermediate/HierarchicalNodeResizingProcessor.java line 54). Mermaid sets no
-// minimum size, so a graph stays as big as it is, but ELK still adds the padding
-// and takes it off again (line 225), which can change the last bit of its size.
+// intermediate/HierarchicalNodeResizingProcessor.java line 54).
 func collectNodes(g *Graph) {
 	for _, l := range g.Layers {
 		g.Layerless = append(g.Layerless, l.Nodes...)
 	}
 	g.Layers = nil
-	p := g.Padding
-	g.Size.X = g.Size.X + p.Left + p.Right - p.Left - p.Right
-	g.Size.Y = g.Size.Y + p.Top + p.Bottom - p.Top - p.Bottom
 }

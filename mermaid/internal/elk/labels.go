@@ -7,10 +7,6 @@ import (
 	"slices"
 )
 
-// labelGap is spacing.edgeLabel at Mermaid's base value. spacing.labelLabel is 0
-// there, and Input holds one label per edge, so nothing separates labels.
-const labelGap = 4.0
-
 func vertical(d Direction) bool { return d == Down || d == Up }
 
 // insertLabelDummies cuts each edge with a label in two around a dummy node the
@@ -26,7 +22,7 @@ func insertLabelDummies(g *Graph) {
 			if len(e.Labels) > 0 {
 				dummy := &Node{Type: typeLabel}
 				splitEdge(e, dummy)
-				dummy.Size = labelRoom(e.Labels[0].Size, g.Direction)
+				dummy.Size = labelRoom(e.Labels[0].Size, g.Direction, g.Settings.edgeLabel)
 				dummies = append(dummies, dummy)
 			}
 		}
@@ -38,8 +34,9 @@ func insertLabelDummies(g *Graph) {
 // dummy starts with, then what LabelDummyInserter.java adds in lines 94-114.
 // Going down or up, labels sit beside the edge instead of on top of it, so the
 // starting height is only a minimum. The sum runs in ELK's order, which can
-// change its last bit.
-func labelRoom(size Vec, d Direction) Vec {
+// change its last bit. spacing.labelLabel is 0 at Mermaid's base value, and
+// Input holds one label per edge, so nothing separates labels.
+func labelRoom(size Vec, d Direction, labelGap float64) Vec {
 	if vertical(d) {
 		return Vec{size.X, max(edgeThickness, size.Y) + (labelGap + edgeThickness)}
 	}
@@ -104,8 +101,8 @@ func swapNodes(a, b *Node, la, lb *Layer) {
 func sizeLabelDummies(g *Graph) {
 	for _, n := range nodes(g) {
 		if n.Type == typeLabel {
-			y := math.Ceil(n.Size.Y-labelGap-edgeThickness) / 2
-			n.Size.Y -= labelGap
+			y := math.Ceil(n.Size.Y-g.Settings.edgeLabel-edgeThickness) / 2
+			n.Size.Y -= g.Settings.edgeLabel
 			n.Size.Y -= edgeThickness
 			for _, p := range n.Ports {
 				p.Pos.Y = y

@@ -4,38 +4,56 @@ package elk
 
 import "slices"
 
-// Spacing around ports. Mermaid sets a base value of 40 and portsSurrounding of
-// 12. The base value doubles the defaults of portPort and labelPortVertical
-// (Core.melk lines 451 and 424). ELK takes the latter, as the height of the
-// empty cells above and below, off the top and bottom of portsSurrounding
-// (updateVerticalInsidePortLabelCellPadding,
-// nodespacing/internal/algorithm/CellSystemConfigurator.java line 142).
-const (
-	portSpacing = 20.0
-	sidePadding = 12.0
-	endPadding  = 10.0
-)
-
 // positionPorts spreads the ports of real nodes along their sides, top to
-// bottom and left to right (intermediate/LabelAndNodeSizeProcessor.java line
-// 65). A node's ports run clockwise, so west ports go in reverse.
+// bottom and left to right, and places their titles
+// (intermediate/LabelAndNodeSizeProcessor.java line 65). A node's ports run
+// clockwise, so west ports go in reverse. ELK takes labelPortVertical, as the
+// height of the empty cells above and below, off the top and bottom of
+// portsSurrounding (updateVerticalInsidePortLabelCellPadding,
+// nodespacing/internal/algorithm/CellSystemConfigurator.java line 142).
 func positionPorts(g *Graph) {
+	s := g.Settings
+	endPadding := s.portsSurrounding - s.labelPort
 	for _, n := range nodes(g) {
 		if n.Type != typeNormal {
 			continue
 		}
 		east, west, north := portsOn(n, sideEast), portsOn(n, sideWest), portsOn(n, sideNorth)
 		slices.Reverse(west)
-		for i, y := range spread(n.Size.Y, len(east), endPadding) {
+		for i, y := range spread(n.Size.Y, len(east), endPadding, s.portPort) {
 			east[i].Pos = Vec{n.Size.X, y}
 		}
-		for i, y := range spread(n.Size.Y, len(west), endPadding) {
+		for i, y := range spread(n.Size.Y, len(west), endPadding, s.portPort) {
 			west[i].Pos = Vec{0, y}
 		}
-		for i, x := range spread(n.Size.X, len(north), sidePadding) {
+		for i, x := range spread(n.Size.X, len(north), s.portsSurrounding, s.portPort) {
 			north[i].Pos = Vec{x, 0}
 		}
+		if n.Title != nil {
+			n.Title.Pos = titlePosition(n, g.Direction)
+		}
 	}
+}
+
+// titlePosition places n's title in the graph turned left to right, which turns
+// Mermaid's top center too: going down it is left center, and going up right
+// center (applyHorizontalModeLabelLayout and applyVerticalModeLabelLayout,
+// nodespacing/cellsystem/LabelCell.java lines 241 and 286; transposeNodeLabelPlacement,
+// intermediate/GraphTransformer.java line 683). The title's cell takes titleGap
+// off each side of the node (applyWidthsToRow,
+// nodespacing/cellsystem/GridContainerCell.java line 411).
+func titlePosition(n *Node, d Direction) Vec {
+	size := n.Title.Size
+	center := func(length, title float64) float64 {
+		return titleGap + (length-titleGap-titleGap-title)/2
+	}
+	switch d {
+	case Down:
+		return Vec{titleGap, center(n.Size.Y, size.Y)}
+	case Up:
+		return Vec{n.Size.X - titleGap - size.X, center(n.Size.Y, size.Y)}
+	}
+	return Vec{center(n.Size.X, size.X), titleGap}
 }
 
 func portsOn(n *Node, side PortSide) []*Port {
@@ -55,8 +73,8 @@ func portsOn(n *Node, side PortSide) []*Port {
 // none they run backwards. A single port goes to the middle, but with less than
 // no room it stays at the padding: ELK then takes the branch that divides by
 // count-1 and only uses the result between ports.
-func spread(length float64, count int, padding float64) []float64 {
-	room := length - 2*padding
+func spread(length float64, count int, padding, portSpacing float64) []float64 {
+	room := length - padding - padding
 	if count == 1 {
 		return []float64{padding + max(room, 0)/2}
 	}
@@ -70,18 +88,23 @@ func spread(length float64, count int, padding float64) []float64 {
 	return all
 }
 
-// nodeMargins makes room for ports outside their node, as on nodes too small
-// for the padding (intermediate/InnermostNodeMarginCalculator.java line 57 and
+// nodeMargins makes room for titles and ports outside their node, as on nodes too
+// small for the padding (intermediate/InnermostNodeMarginCalculator.java line 57 and
 // processNode, nodespacing/NodeMarginCalculator.java line 138). The box grows
 // as ElkRectangle.union grows it (core/math/ElkRectangle.java line 151).
 func nodeMargins(g *Graph) {
 	for _, n := range nodes(g) {
 		x, y, width, height := n.Pos.X, n.Pos.Y, n.Size.X, n.Size.Y
-		for _, p := range n.Ports {
-			at := p.Pos.add(n.Pos)
+		union := func(at, size Vec) {
 			left, top := min(x, at.X), min(y, at.Y)
-			right, bottom := max(x+width, at.X), max(y+height, at.Y)
+			right, bottom := max(x+width, at.X+size.X), max(y+height, at.Y+size.Y)
 			x, y, width, height = left, top, right-left, bottom-top
+		}
+		if n.Title != nil {
+			union(n.Title.Pos.add(n.Pos), n.Title.Size)
+		}
+		for _, p := range n.Ports {
+			union(p.Pos.add(n.Pos), Vec{})
 		}
 		n.Margin = Spacing{
 			Top:    max(0, n.Pos.Y-y),
