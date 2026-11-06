@@ -18,17 +18,22 @@ const (
 
 // sweep is the crossing minimizer's work on one graph: the order it is working on
 // and what it remembers about ports between layers. Directions come from the
-// random numbers of the layout's root, whose seed goes back before each graph.
-// All else comes from the graph's own, which never go back: the root's are one
-// and the same (GraphInfoHolder.java line 94).
+// random numbers of the layout's root, whose seed goes back before each graph that
+// goes bottom up. All else comes from the graph's own, which never go back: the
+// root's are one and the same (GraphInfoHolder.java line 94).
 type sweep struct {
+	graph        *Graph
+	all          *sweeps
+	bottomUp     bool // dontSweepInto
 	random       *random
 	noise        *random
 	nodeRelative bool // NodeRelativePortDistributor, not LayerTotalPortDistributor
 	layers       [][]*Node
+	layerOf      map[*Node]int
 	ranks        map[*Port]float64 // portRanks
 	centers      map[*Port]float64 // portBarycenter
 	kept         *snapshot         // currentlyBestNodeAndPortOrder
+	best         *snapshot         // bestNodeNPortOrder
 }
 
 // snapshot is an order of nodes and ports (p3order/SweepCopy.java).
@@ -47,92 +52,20 @@ type centered struct {
 	visited bool
 }
 
-// minimizeCrossings orders the layers of root and the graphs laid out with it
-// (process and initialize, p3order/LayerSweepCrossingMinimizer.java lines 109 and
-// 609). Without edges across their borders each graph goes on its own, bottom up.
-func minimizeCrossings(root *Graph) {
-	if ordersNothing(root) {
-		return
-	}
-	seed := root.Random.nextLong()
-	all := graphsBottomUp(root)
-	sweeps := make([]*sweep, len(all))
-	for i, g := range all {
-		sweeps[i] = newSweep(root, g)
-	}
-	for i, g := range all {
-		root.Random.setSeed(seed)
-		sweeps[i].minimize(g)
-	}
-}
-
-// ordersNothing tells whether the minimizer leaves g alone, drawing no random
-// numbers: a graph with no layers, or a single node on its own (process,
-// LayerSweepCrossingMinimizer.java line 109).
-func ordersNothing(g *Graph) bool {
-	single := len(g.Layers) == 1 && len(g.Layers[0].Nodes) == 1
-	return len(g.Layers) == 0 || single && !g.Hierarchical
-}
-
-// minimize tries thoroughness times, each attempt going on from the order the
-// last one left, and takes the order with the fewest crossings
-// (compareDifferentRandomizedLayouts, LayerSweepCrossingMinimizer.java line 185).
-func (s *sweep) minimize(g *Graph) {
-	var result *snapshot
-	fewest := math.MaxInt
-	for i := range thoroughness {
-		count := s.attempt(i == 0 && g.Settings.modelOrder)
-		if count < fewest {
-			fewest, result = count, s.kept
-		}
-		if fewest == 0 {
-			break
-		}
-	}
-	if result == nil {
-		return
-	}
-	for i, l := range g.Layers {
-		l.Nodes = result.layers[i]
-		for _, n := range l.Nodes {
-			n.Ports = result.ports[n]
-		}
-	}
-	if g.External {
-		sortPortsByDummies(result.layers[len(result.layers)-1], g.Parent, sideEast)
-		sortPortsByDummies(reversed(result.layers[0]), g.Parent, sideWest)
-		g.Parent.FixedOrder = true
-	}
-}
-
-// sortPortsByDummies orders the ports on side of parent as the dummy nodes of a
-// layer came out, for the graph around it to work with (setPortOrderOnParentGraph and
-// sortPortsByDummyPositionsInLastLayer,
-// p3order/LayerSweepCrossingMinimizer.java lines 162 and 504). The first and last
-// layer may hold no such dummies.
-func sortPortsByDummies(dummies []*Node, parent *Node, side PortSide) {
-	if dummies[0].Type != typeExternalPort {
-		return
-	}
-	next := 0
-	for i, p := range parent.Ports {
-		if p.Side == side {
-			parent.Ports[i] = dummies[next].Origin
-			next++
-		}
-	}
-}
-
 // newSweep starts on g, which draws a bit for its port distributor
 // (p3order/ISweepPortDistributor.java line 58).
-func newSweep(root, g *Graph) *sweep {
+func newSweep(root, g *Graph, all *sweeps) *sweep {
 	s := &sweep{
-		random: root.Random, noise: g.Random, nodeRelative: g.Random.nextBoolean(),
-		ranks: map[*Port]float64{}, centers: map[*Port]float64{},
+		graph: g, all: all, random: root.Random, noise: g.Random, nodeRelative: g.Random.nextBoolean(),
+		layerOf: map[*Node]int{}, ranks: map[*Port]float64{}, centers: map[*Port]float64{},
 	}
-	for _, l := range g.Layers {
+	for i, l := range g.Layers {
 		s.layers = append(s.layers, slices.Clone(l.Nodes))
+		for _, n := range l.Nodes {
+			s.layerOf[n] = i
+		}
 	}
+	s.bottomUp = useBottomUp(g, s.layers)
 	return s
 }
 
@@ -148,43 +81,48 @@ func newSweep(root, g *Graph) *sweep {
 func (s *sweep) attempt(initial bool) int {
 	forward := s.random.nextBoolean()
 	if initial {
-		if crossings(s.layers) == 0 {
+		if s.totalCrossings() == 0 {
 			return 0
 		}
 		forward = true
 	} else {
 		s.shuffle(forward)
 	}
-	s.pass(forward, !initial)
-	count := crossings(s.layers)
+	s.pass(forward, true, initial)
+	count := s.totalCrossings()
 	for {
-		s.kept = s.snapshot()
+		s.all.keepOrders()
 		if count == 0 {
 			return 0
 		}
 		forward = !forward
 		last := count
-		s.pass(forward, false)
-		count = crossings(s.layers)
+		s.pass(forward, false, false)
+		count = s.totalCrossings()
 		if last <= count {
 			return last
 		}
 	}
 }
 
-// pass orders each layer by its neighbor already done (sweepReducingCrossings,
-// p3order/LayerSweepCrossingMinimizer.java line 450). ELK distributes ports in
-// the layer it starts from too, but on the side facing away, where only subgraphs
-// have ports, and those are in order already.
-func (s *sweep) pass(forward, first bool) {
+// pass orders each layer by its neighbor already done, going through its
+// subgraphs on the way (sweepReducingCrossings,
+// p3order/LayerSweepCrossingMinimizer.java line 450). On a first sweep layers start
+// from random numbers, but not those of a graph keeping its initial order: what
+// that graph sweeps through has no such order to keep.
+func (s *sweep) pass(forward, first, initial bool) {
 	start, step := 0, 1
 	if !forward {
 		start, step = len(s.layers)-1, -1
 	}
+	s.placeSide(s.layers[start], nearSide(forward))
+	s.sweepInto(s.layers[start], forward, first)
 	for i := start + step; i >= 0 && i < len(s.layers); i += step {
-		s.orderLayer(i, i-step, forward, first)
+		s.orderLayer(i, i-step, forward, first && !initial)
 		s.distribute(i, i-step, forward)
+		s.sweepInto(s.layers[i], forward, first)
 	}
+	s.all.changed[s] = true
 }
 
 // orderLayer sorts the layer free by barycenter (minimizeCrossings,

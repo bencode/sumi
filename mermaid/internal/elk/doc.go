@@ -35,7 +35,7 @@
 //	invertPorts       a dummy node per port the wrong way    inverted.go
 //	sortPortLists     ports grouped by side                  portorder.go
 //	sortByModelOrder  layers and ports as the input has them modelorder.go
-//	minimizeCrossings an order of layers with few crossings  sweep.go
+//	minimizeCrossings an order of layers with few crossings  sweep_hierarchy.go
 //	greedySwitch      neighbors swapped, components only     greedy.go
 //	restoreLoopPorts  self loops' ports back, on the north   selfloops.go
 //	positionPorts     ports along their sides, and titles    portpos.go
@@ -64,8 +64,8 @@
 // left out. Edges within a layer come only from inverted ports, the ports of a
 // subgraph that an edge reaches from the wrong side. Crossing minimization leaves
 // out what serves north and south ports, several edges on a port and constraints
-// between nodes, and works bottom up: ELK's sweeps into subgraphs are not done
-// yet, so graphs that take them still differ. ELK sizes nodes around their labels in
+// between nodes. A subgraph with edges through it may have its parent sweep through
+// it, as useBottomUp decides. ELK sizes nodes around their labels in
 // a system of cells, but Mermaid's nodes come sized, with no labels of their own,
 // so only the placing of ports and titles remains. Node placement is the balanced
 // layout with the one edge straightening Mermaid gets: fixed alignments and edge

@@ -55,19 +55,32 @@ func (s *sweep) rankWithinNode(ports []*Port, used float64, input bool) {
 	}
 }
 
+// nearSide is the side of a layer that a sweep reaches first
+// (sideOpposedSweepDirection, LayerSweepCrossingMinimizer.java line 582).
+func nearSide(forward bool) PortSide {
+	if forward {
+		return sideWest
+	}
+	return sideEast
+}
+
+// placeSide orders the ports of layer on side. Where a sweep starts that is all
+// there is to do (distributePortsWhileSweeping,
+// p3order/AbstractBarycenterPortDistributor.java line 83).
+func (s *sweep) placeSide(layer []*Node, side PortSide) {
+	for _, n := range layer {
+		s.placePorts(n, side)
+	}
+}
+
 // distribute orders the ports facing each other in the layers free and fixed
 // (distributePortsWhileSweeping,
 // p3order/AbstractBarycenterPortDistributor.java line 83). The fixed layer's
 // ranks are still those orderLayer took. A subgraph laid out with its parent keeps
 // its ports in the fixed layer (hasNestedGraph, line 100).
 func (s *sweep) distribute(free, fixed int, forward bool) {
-	side := sideWest
-	if !forward {
-		side = sideEast
-	}
-	for _, n := range s.layers[free] {
-		s.placePorts(n, side)
-	}
+	side := nearSide(forward)
+	s.placeSide(s.layers[free], side)
 	s.rankPorts(s.layers[free], forward)
 	for _, n := range s.layers[fixed] {
 		if !n.Included {
@@ -76,32 +89,77 @@ func (s *sweep) distribute(free, fixed int, forward bool) {
 	}
 }
 
-// placePorts sorts a node's ports by side, then by the ranks of what they
-// connect to on side (distributePorts and sortPorts,
-// p3order/AbstractBarycenterPortDistributor.java lines 152, 179 and 351). A port
-// has one edge, and ranks start at 1, so ELK's special case for a barycenter of
-// 0 sorts the same. Only a subgraph with external ports can hold other ports than
-// these, without edges or with an edge within the layer. Its graph has ordered its
-// ports by then: only the root may keep its initial order and skip that. This leaves
-// ELK's barycenters for ports within a layer (line 238) nothing to sort. An external
-// port dummy has one port, maybe with no edge.
+// placePorts sorts a node's ports by side, then by barycenter: the rank of what
+// they connect to on side, or for an edge within the layer where that sits
+// (distributePorts and iteratePortsAndCollectInLayerPorts,
+// p3order/AbstractBarycenterPortDistributor.java lines 152 and 179). A port holds
+// one edge at most. One without edges keeps a barycenter of 0.
 func (s *sweep) placePorts(n *Node, side PortSide) {
-	if n.FixedOrder || len(n.Ports) < 2 {
+	if n.FixedOrder {
 		return
 	}
-	for _, p := range n.Ports {
-		if p.Side != side {
-			continue
-		}
-		if side == sideEast {
-			s.centers[p] = s.ranks[p.Out[0].Target]
-		} else {
-			s.centers[p] = -s.ranks[p.In[0].Source]
+	low, high := 0.0, 0.0
+	var within []*Port
+	for _, p := range portsOn(n, side) {
+		end := farEnd(p)
+		switch {
+		case end == nil:
+		case s.layerOf[end.Owner] == s.layerOf[n]:
+			within = append(within, p)
+		default:
+			center := s.ranks[end]
+			if len(p.In) > 0 {
+				center = -center
+			}
+			s.centers[p] = center
+			low, high = min(low, center), max(high, center)
 		}
 	}
+	for _, p := range within {
+		s.centers[p] = s.centerWithin(p, low, high)
+	}
 	slices.SortStableFunc(n.Ports, func(a, b *Port) int {
-		return cmp.Or(cmp.Compare(a.Side, b.Side), cmp.Compare(s.centers[a], s.centers[b]))
+		return cmp.Or(cmp.Compare(a.Side, b.Side), compareCenters(s.centers[a], s.centers[b]))
 	})
+}
+
+// centerWithin puts a port with an edge within its layer above or below the ports
+// between low and high, by whether the edge leads up or down
+// (calculateInLayerPortsBarycenterValues,
+// p3order/AbstractBarycenterPortDistributor.java line 238). West sides run the other
+// way. ELK keeps positions noted when a layer was free (updateNodePositions, line
+// 323), but a layer does not move again before it has served as the fixed one, so
+// the current order gives the same.
+func (s *sweep) centerWithin(p *Port, low, high float64) float64 {
+	layer := s.layers[s.layerOf[p.Owner]]
+	own := float64(slices.Index(layer, p.Owner) + 1)
+	end := float64(slices.Index(layer, farEnd(p).Owner) + 1)
+	size := float64(len(layer) + 1)
+	up := end < own
+	switch {
+	case p.Side == sideEast && up:
+		return low - end
+	case p.Side == sideEast:
+		return high + (size - end)
+	case up:
+		return high + end
+	}
+	return low - (size - end)
+}
+
+// compareCenters puts a barycenter of 0 first: ports without edges go ahead of the
+// negative barycenters of a west side (sortPorts,
+// p3order/AbstractBarycenterPortDistributor.java line 351).
+func compareCenters(a, b float64) int {
+	switch {
+	case a == 0 && b == 0:
+		return 0
+	case a == 0:
+		return -1
+	case b == 0:
+		return 1
+	}
+	return cmp.Compare(a, b)
 }
 
 // farEnd gives the port at the other end of p's edge, if it has one: a port holds
