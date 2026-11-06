@@ -60,25 +60,28 @@ func joinLongEdges(g *Graph) {
 	for _, l := range g.Layers {
 		for _, n := range l.Nodes {
 			if isDummy(n) {
-				joinAt(n)
+				joinAt(n, true)
 			}
 		}
 		l.Nodes = slices.DeleteFunc(l.Nodes, isDummy)
 	}
 }
 
-// joinAt lets the edge into n run on to where the edge out of n ends. n leaves
-// a bend behind even on a straight edge, as Mermaid sets unnecessaryBendpoints.
-// A port holds one edge, so ELK's care for the order of a port's edges falls
-// away, and neither half has labels: the label dummy nodes hold them
-// (LongEdgeJoiner.java line 104).
-func joinAt(n *Node) {
+// joinAt lets the edge into n run on to where the edge out of n ends. With bend,
+// n leaves a bend behind even on a straight edge, as a long edge dummy does
+// because Mermaid sets unnecessaryBendpoints. A port holds one edge, so ELK's
+// care for the order of a port's edges falls away, and the second half has no
+// labels (LongEdgeJoiner.java line 104).
+func joinAt(n *Node, bend bool) {
 	kept, dropped := portOn(n, sideWest).In[0], portOn(n, sideEast).Out[0]
 	end := dropped.Target
 	setSource(dropped, nil)
 	setTarget(dropped, nil)
 	setTarget(kept, end)
-	kept.Bends = append(append(kept.Bends, absolute(n.Ports[0])), dropped.Bends...)
+	if bend {
+		kept.Bends = append(kept.Bends, absolute(n.Ports[0]))
+	}
+	kept.Bends = append(kept.Bends, dropped.Bends...)
 }
 
 func portOn(n *Node, side PortSide) *Port {

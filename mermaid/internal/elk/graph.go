@@ -67,7 +67,8 @@ type Node struct {
 	Pos, Size  Vec
 	Margin     Spacing
 	Ports      []*Port
-	ModelOrder int // its index in Input.Nodes
+	Loops      []selfLoop // InternalProperties.SELF_LOOP_HOLDER
+	ModelOrder int        // its index in Input.Nodes
 }
 
 // Port is where an edge meets a node (graph/LPort.java). Pos is relative to
