@@ -344,6 +344,12 @@ e8 [] 348.42578125,341.25 348.42578125,361.25 77.59375,361.25 77.59375,381.25
 	}
 }
 
+func TestEmptyGraph(t *testing.T) {
+	if got := treeDrawing(Layout(Input{Direction: Down})); got != "0x0\n" {
+		t.Errorf("got %s", got)
+	}
+}
+
 func TestEdgeAcrossSubgraphPanics(t *testing.T) {
 	defer func() {
 		if recover() == nil {

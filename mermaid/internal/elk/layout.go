@@ -23,9 +23,14 @@ var (
 	}
 )
 
-// Layout places the nodes and edges of in.
+// Layout places the nodes and edges of in. ELK leaves a graph without nodes alone,
+// with no padding around nothing (layoutRecursively, core
+// RecursiveGraphLayoutEngine.java line 151).
 func Layout(in Input) Result {
 	g := importGraph(in)
+	if len(in.Nodes) == 0 {
+		return Result{}
+	}
 	layoutGraph(g)
 	return export(g)
 }
