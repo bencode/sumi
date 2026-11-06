@@ -69,9 +69,9 @@ SOFTWARE.
 ---
 
 The diagrams in mermaid/internal/sequence/testdata/e2e come from Mermaid
-v12.3.0 (commit ea53556), https://github.com/mermaid-js/mermaid, and
-mermaid/internal/sequence and mermaid/internal/graphlayout are written after
-it. Mermaid is under this license:
+v12.3.0 (commit ea53556), https://github.com/mermaid-js/mermaid, and the code
+under mermaid/, apart from mermaid/internal/elk, is written after it. Mermaid
+is under this license:
 
 The MIT License (MIT)
 

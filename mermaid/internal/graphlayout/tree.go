@@ -15,7 +15,8 @@ func treeOf(nodes []Node) tree {
 }
 
 // commonAncestor gives the lowest node holding both a and b, which may be one of
-// them (findCommonAncestor, find-common-ancestor.ts).
+// them. For a node and itself that is the node, where Mermaid gives its parent
+// (findCommonAncestor, find-common-ancestor.ts).
 func (t tree) commonAncestor(a, b string) string {
 	seen := map[string]bool{}
 	for id := a; id != ""; id = t[id] {

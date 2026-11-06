@@ -13,7 +13,7 @@ import (
 
 func leaf(id, parent string) Node { return Node{ID: id, Parent: parent} }
 
-func group(id, parent string, direction elk.Direction, title *elk.Size) Node {
+func subgraph(id, parent string, direction elk.Direction, title *elk.Size) Node {
 	return Node{ID: id, Parent: parent, Direction: direction, Title: title, Padding: 8}
 }
 
@@ -74,8 +74,8 @@ func TestElkInput(t *testing.T) {
 		// Mermaid falls back on DOWN itself; no diagram in the captures leaves it out.
 		{"no direction reads as down", Data{Nodes: []Node{{ID: "a", Width: 10, Height: 20}}}, "down\na 10x20"},
 		{"feedback edges turn round and move", Data{elk.Up, []Node{
-			group("s1", "", elk.Undefined, &elk.Size{Width: 21, Height: 21}),
-			group("s0", "", elk.Up, &elk.Size{Width: 3.890625, Height: 21}),
+			subgraph("s1", "", elk.Undefined, &elk.Size{Width: 21, Height: 21}),
+			subgraph("s0", "", elk.Up, &elk.Size{Width: 3.890625, Height: 21}),
 			leaf("n1", "s0"),
 			leaf("n2", "s0"),
 			leaf("n0", ""),
@@ -95,7 +95,7 @@ L_s0_n0_0: s0 -> n0 label 42.828125x21
 L_s1_n0_0: s1 -> n0 label 42.828125x21
 L_n0_s1_0: n0 -> s1 label 42.828125x21`},
 		{"edges to a border and inside it", Data{elk.Right, []Node{
-			group("s0", "", elk.Undefined, &elk.Size{Width: 31.125, Height: 21}),
+			subgraph("s0", "", elk.Undefined, &elk.Size{Width: 31.125, Height: 21}),
 			leaf("n1", "s0"),
 			leaf("n2", "s0"),
 			leaf("n0", ""),
@@ -112,10 +112,10 @@ L_n2_n1_0: n2 -> n1
 L_n1_n1_0: n1 -> n1
 L_n2_s0_0: n2 -> s0`},
 		{"empty groups and edges into depth", Data{elk.Left, []Node{
-			group("s3", "", elk.Undefined, &elk.Size{Width: 105, Height: 21}),
-			group("s2", "", elk.Down, &elk.Size{Width: 3.890625, Height: 21}),
-			group("s0", "", elk.Undefined, &elk.Size{Width: 31.125, Height: 21}),
-			group("s1", "s0", elk.Undefined, &elk.Size{Width: 35, Height: 21}),
+			subgraph("s3", "", elk.Undefined, &elk.Size{Width: 105, Height: 21}),
+			subgraph("s2", "", elk.Down, &elk.Size{Width: 3.890625, Height: 21}),
+			subgraph("s0", "", elk.Undefined, &elk.Size{Width: 31.125, Height: 21}),
+			subgraph("s1", "s0", elk.Undefined, &elk.Size{Width: 35, Height: 21}),
 			leaf("n2", "s1"),
 			leaf("n0", ""),
 			leaf("n1", ""),
@@ -143,7 +143,7 @@ L_n1_n2_0: n1 -> n2
 L_n2_s3_0: n2 -> s3
 L_n0_s2_0: n0 -> s2`},
 		{"a subgraph without a title", Data{elk.Down, []Node{
-			group("s0", "", elk.Undefined, nil),
+			subgraph("s0", "", elk.Undefined, nil),
 			leaf("a", "s0"),
 			leaf("b", "s0"),
 			leaf("c", ""),
@@ -158,8 +158,8 @@ c include
 L_a_b_0: a -> b
 L_b_c_0: b -> c`},
 		{"edges of a subgraph and of its nodes", Data{elk.Right, []Node{
-			group("s1", "", elk.Undefined, &elk.Size{Width: 31.125, Height: 21}),
-			group("s0", "", elk.Up, &elk.Size{Width: 31.125, Height: 21}),
+			subgraph("s1", "", elk.Undefined, &elk.Size{Width: 31.125, Height: 21}),
+			subgraph("s0", "", elk.Up, &elk.Size{Width: 31.125, Height: 21}),
 			leaf("n1", "s0"),
 			leaf("n2", "s0"),
 			leaf("n0", "s1"),
@@ -175,8 +175,8 @@ s0 separate up title 31.125x19 min 39.125
 L_s0_s1_0: s0 -> s1
 L_n1_n2_0: n1 -> n2`},
 		{"the search starts at sources", Data{elk.Left, []Node{
-			group("s1", "", elk.Right, &elk.Size{Width: 147, Height: 21}),
-			group("s0", "", elk.Undefined, &elk.Size{Width: 31.125, Height: 21}),
+			subgraph("s1", "", elk.Right, &elk.Size{Width: 147, Height: 21}),
+			subgraph("s0", "", elk.Undefined, &elk.Size{Width: 31.125, Height: 21}),
 			leaf("n1", "s0"),
 			leaf("n3", "s1"),
 			leaf("n4", "s1"),
@@ -208,9 +208,9 @@ L_n0_n3_0: n3 -> n0 reversed
 L_s0_n1_0: s0 -> n1
 L_n4_n0_0: n4 -> n0`},
 		{"edges stop including at their ancestor", Data{elk.Down, []Node{
-			group("s0", "", elk.Undefined, &elk.Size{Width: 189, Height: 21}),
-			group("s1", "s0", elk.Undefined, &elk.Size{Width: 31.125, Height: 21}),
-			group("s2", "s1", elk.Undefined, &elk.Size{Width: 3.890625, Height: 21}),
+			subgraph("s0", "", elk.Undefined, &elk.Size{Width: 189, Height: 21}),
+			subgraph("s1", "s0", elk.Undefined, &elk.Size{Width: 31.125, Height: 21}),
+			subgraph("s2", "s1", elk.Undefined, &elk.Size{Width: 3.890625, Height: 21}),
 			leaf("n4", "s2"),
 			leaf("n5", "s2"),
 			leaf("n6", "s2"),

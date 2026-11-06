@@ -2,7 +2,9 @@ package graphlayout
 
 import "github.com/bencode/sumi/mermaid/internal/elk"
 
-// Data is what a diagram hands to layout (LayoutData).
+// Data is what a diagram hands to layout (LayoutData). Parents must form a tree:
+// a diagram has to turn down subgraphs nested in each other, which Mermaid accepts
+// and, with an edge on them, never returns from.
 type Data struct {
 	Direction elk.Direction // Undefined reads as Down
 	Nodes     []Node        // in the order of the diagram

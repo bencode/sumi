@@ -21,7 +21,7 @@ func elkInput(d Data) (elk.Input, map[string]bool) {
 }
 
 // elkNodes gives siblings and all below them (addVertices, configureSubgraphNodes,
-// render.ts). A group without nodes is left as a plain node of no size.
+// render.ts). A subgraph without nodes is left as a plain node of no size.
 func elkNodes(siblings []Node, children map[string][]Node, h map[string]elk.Hierarchy) []elk.InputNode {
 	all := make([]elk.InputNode, len(siblings))
 	for i, n := range siblings {
@@ -35,7 +35,7 @@ func elkNodes(siblings []Node, children map[string][]Node, h map[string]elk.Hier
 	return all
 }
 
-// title gives a group's title and the width that keeps room for it
+// title gives a subgraph's title and the width that keeps room for it
 // (getMeasuredLabelData, groupTitleWidth, render.ts). Mermaid takes 2 off the
 // measured height.
 func title(n Node) (*elk.Size, float64) {
@@ -81,20 +81,20 @@ func include(h map[string]elk.Hierarchy, t tree, id, ancestor string) {
 // all in the order nestedOrder wants, and the IDs of those it turned
 // (reverseSubgraphFeedbackEdges, orderEdgesByNesting, render.ts).
 func elkEdges(edges []Edge, t tree) ([]elk.InputEdge, map[string]bool) {
-	turned := make([]ends, len(edges))
+	directed := make([]ends, len(edges))
 	for i, e := range edges {
-		turned[i] = ends{e.Start, e.End}
+		directed[i] = ends{e.Start, e.End}
 	}
 	reversed := map[string]bool{}
-	for i, feedback := range feedbackEdges(turned, t) {
+	for i, feedback := range feedbackEdges(directed, t) {
 		if feedback {
-			turned[i] = ends{edges[i].End, edges[i].Start}
+			directed[i] = ends{edges[i].End, edges[i].Start}
 			reversed[edges[i].ID] = true
 		}
 	}
 	all := make([]elk.InputEdge, len(edges))
-	for i, index := range nestedOrder(turned, t) {
-		e := turned[index]
+	for i, index := range nestedOrder(directed, t) {
+		e := directed[index]
 		all[i] = elk.InputEdge{ID: edges[index].ID, Source: e.source, Target: e.target, Label: edges[index].Label}
 	}
 	return all, reversed

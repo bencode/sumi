@@ -17,8 +17,8 @@ type levelEdge struct {
 // form a cycle though the nodes do not. ELK would turn such an edge round and route
 // it around the subgraph, so Mermaid hands it over the other way round. Each edge
 // counts in the graph of its lowest common subgraph. A self loop, or an edge between
-// a subgraph and its own member, has an end there already: it crosses no border and
-// is left out (findSubgraphFeedbackEdges, subgraphFeedbackEdges.ts).
+// a subgraph and its own member, has that subgraph as an end, so it crosses no
+// border and is left out (findSubgraphFeedbackEdges, subgraphFeedbackEdges.ts).
 func feedbackEdges(edges []ends, t tree) []bool {
 	levels := map[string][]levelEdge{}
 	for i, e := range edges {
