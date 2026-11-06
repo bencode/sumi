@@ -134,9 +134,9 @@ func TestPlaceHorizontally(t *testing.T) {
 }
 
 // The height is from elkjs; the width goes through the same sums.
-func TestCollectNodesRoundsSize(t *testing.T) {
+func TestFitGraphRoundsSize(t *testing.T) {
 	g := &Graph{Size: Vec{251.41666666666666, 251.41666666666666}, Padding: Spacing{12, 12, 12, 12}}
-	collectNodes(g)
+	fitGraph(g)
 	if want := (Vec{251.41666666666663, 251.41666666666663}); g.Size != want {
 		t.Errorf("size %v, want %v", g.Size, want)
 	}

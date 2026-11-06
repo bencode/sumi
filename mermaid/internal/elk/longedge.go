@@ -60,7 +60,7 @@ func joinLongEdges(g *Graph) {
 	for _, l := range g.Layers {
 		for _, n := range l.Nodes {
 			if isDummy(n) {
-				joinAt(n, true)
+				joinAt(n, g.Settings.keepBends)
 			}
 		}
 		l.Nodes = slices.DeleteFunc(l.Nodes, isDummy)
@@ -69,7 +69,7 @@ func joinLongEdges(g *Graph) {
 
 // joinAt lets the edge into n run on to where the edge out of n ends. With bend,
 // n leaves a bend behind even on a straight edge, as a long edge dummy does
-// because Mermaid sets unnecessaryBendpoints. A port holds one edge, so ELK's
+// where Mermaid sets unnecessaryBendpoints. A port holds one edge, so ELK's
 // care for the order of a port's edges falls away, and the second half has no
 // labels (LongEdgeJoiner.java line 104).
 func joinAt(n *Node, bend bool) {

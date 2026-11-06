@@ -21,7 +21,7 @@ func placed(size Vec, east, west, north int) *Node {
 			n.Ports = append(n.Ports, &Port{Owner: n, Side: side.side})
 		}
 	}
-	g := &Graph{Layers: []*Layer{{Nodes: []*Node{n}}}}
+	g := &Graph{Settings: rootSettings(), Layers: []*Layer{{Nodes: []*Node{n}}}}
 	positionPorts(g)
 	nodeMargins(g)
 	return n
@@ -94,7 +94,7 @@ func TestPortPositions(t *testing.T) {
 func TestDummyPortsStay(t *testing.T) {
 	n := &Node{Type: typeLongEdge, Size: Vec{0, 5}}
 	n.Ports = []*Port{{Owner: n, Side: sideEast, Pos: Vec{7, 7}}}
-	g := &Graph{Layers: []*Layer{{Nodes: []*Node{n}}}}
+	g := &Graph{Settings: rootSettings(), Layers: []*Layer{{Nodes: []*Node{n}}}}
 	positionPorts(g)
 	if n.Ports[0].Pos != (Vec{7, 7}) {
 		t.Errorf("port at %v", n.Ports[0].Pos)

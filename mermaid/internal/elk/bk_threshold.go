@@ -159,7 +159,7 @@ func (a *alignment) spaceAbove(n *Node, delta float64, near *neighbors) float64 
 	room := delta
 	for _, current := range a.block(n) {
 		if above := near.above(current); above != nil {
-			room = min(room, a.top(current)-(a.bottom(above)+nodeSpacing(current, above)))
+			room = min(room, a.top(current)-(a.bottom(above)+nodeSpacing(near.settings, current, above)))
 		}
 	}
 	return room
@@ -171,7 +171,7 @@ func (a *alignment) spaceBelow(n *Node, delta float64, near *neighbors) float64 
 	room := delta
 	for _, current := range a.block(n) {
 		if below := near.below(current); below != nil {
-			room = min(room, a.top(below)-(a.bottom(current)+nodeSpacing(current, below)))
+			room = min(room, a.top(below)-(a.bottom(current)+nodeSpacing(near.settings, current, below)))
 		}
 	}
 	return room

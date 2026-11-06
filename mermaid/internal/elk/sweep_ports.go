@@ -9,8 +9,7 @@ import (
 
 // rankPorts numbers the input or output ports of a layer top to bottom, input
 // ports backwards within their node (calculatePortRanks,
-// p3order/AbstractBarycenterPortDistributor.java line 123 and
-// p3order/LayerTotalPortDistributor.java line 41).
+// p3order/AbstractBarycenterPortDistributor.java line 123).
 func (s *sweep) rankPorts(layer []*Node, input bool) {
 	used := 0.0
 	for _, n := range layer {
@@ -20,20 +19,47 @@ func (s *sweep) rankPorts(layer []*Node, input bool) {
 				ports = append(ports, p)
 			}
 		}
-		for i, p := range ports {
-			s.ranks[p] = used + float64(i+1)
-			if input {
-				s.ranks[p] = used + float64(len(ports)-i)
-			}
+		if s.nodeRelative {
+			s.rankWithinNode(ports, used, input)
+			used++
+		} else {
+			s.rankInLayer(ports, used, input)
+			used += float64(len(ports))
 		}
-		used += float64(len(ports))
+	}
+}
+
+// rankInLayer gives each port a rank of its own (p3order/LayerTotalPortDistributor.java
+// line 41).
+func (s *sweep) rankInLayer(ports []*Port, used float64, input bool) {
+	for i, p := range ports {
+		s.ranks[p] = used + float64(i+1)
+		if input {
+			s.ranks[p] = used + float64(len(ports)-i)
+		}
+	}
+}
+
+// rankWithinNode shares one rank among a node's ports
+// (p3order/NodeRelativePortDistributor.java line 46). There are no north ports
+// while ordering.
+func (s *sweep) rankWithinNode(ports []*Port, used float64, input bool) {
+	step := 1 / float64(len(ports)+1)
+	rank := used + step
+	if input {
+		rank, step = used+1-step, -step
+	}
+	for _, p := range ports {
+		s.ranks[p] = rank
+		rank += step
 	}
 }
 
 // distribute orders the ports facing each other in the layers free and fixed
 // (distributePortsWhileSweeping,
 // p3order/AbstractBarycenterPortDistributor.java line 83). The fixed layer's
-// ranks are still those orderLayer took.
+// ranks are still those orderLayer took. A subgraph laid out with its parent keeps
+// its ports in the fixed layer (hasNestedGraph, line 100).
 func (s *sweep) distribute(free, fixed int, forward bool) {
 	side := sideWest
 	if !forward {
@@ -44,7 +70,9 @@ func (s *sweep) distribute(free, fixed int, forward bool) {
 	}
 	s.rankPorts(s.layers[free], forward)
 	for _, n := range s.layers[fixed] {
-		s.placePorts(n, opposed[side])
+		if !n.Included {
+			s.placePorts(n, opposed[side])
+		}
 	}
 }
 

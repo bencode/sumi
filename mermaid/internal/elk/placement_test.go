@@ -141,7 +141,7 @@ func TestPlacement(t *testing.T) {
 func TestChoice(t *testing.T) {
 	a := &Node{Size: Vec{Y: 10}, Margin: Spacing{Top: 2, Bottom: 2}}
 	b := &Node{Size: Vec{Y: 10}, Margin: Spacing{Top: 2, Bottom: 2}}
-	g := &Graph{Layers: []*Layer{{Nodes: []*Node{a, b}}}}
+	g := &Graph{Settings: rootSettings(), Layers: []*Layer{{Nodes: []*Node{a, b}}}}
 	layouts := func(ys [4][2]float64) []*alignment {
 		all := make([]*alignment, len(ys))
 		for i, y := range ys {
@@ -192,7 +192,7 @@ func TestNodeSpacing(t *testing.T) {
 		{typeLabel, typeLabel, 20},
 	}
 	for _, tt := range tests {
-		if got := nodeSpacing(&Node{Type: tt.a}, &Node{Type: tt.b}); got != tt.want {
+		if got := nodeSpacing(rootSettings(), &Node{Type: tt.a}, &Node{Type: tt.b}); got != tt.want {
 			t.Errorf("%d %d: got %v, want %v", tt.a, tt.b, got, tt.want)
 		}
 	}

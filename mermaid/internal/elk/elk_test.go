@@ -12,7 +12,11 @@ import (
 // Mermaid's options, reading the graph after the step in question.
 
 var sample = Input{
-	Nodes: []InputNode{{"a", 100, 40}, {"b", 60.5, 30}, {"c", 80, 50}},
+	Nodes: []InputNode{
+		{ID: "a", Width: 100, Height: 40},
+		{ID: "b", Width: 60.5, Height: 30},
+		{ID: "c", Width: 80, Height: 50},
+	},
 	Edges: []InputEdge{
 		{ID: "e0", Source: "a", Target: "b", Label: &Size{30, 10}},
 		{ID: "e1", Source: "a", Target: "c"},
@@ -211,7 +215,7 @@ func TestFromLTRExport(t *testing.T) {
 		want      Result
 	}{
 		{Down, tall, Result{209.25, 224,
-			[]PlacedNode{{"a", 97.25, 12, 100, 40}, {"b", 32, 182, 60.5, 30}, {"c", 117.25, 92, 80, 50}},
+			[]PlacedNode{{ID: "a", X: 97.25, Y: 12, Width: 100, Height: 40}, {ID: "b", X: 32, Y: 182, Width: 60.5, Height: 30}, {ID: "c", X: 117.25, Y: 92, Width: 80, Height: 50}},
 			[]PlacedEdge{
 				labelled(path("e0", Vec{127.25, 52}, Vec{127.25, 72}, Vec{62.25, 72}, Vec{62.25, 182}), PlacedLabel{47.25, 112, 30, 10}),
 				path("e1", Vec{147.25, 52}, Vec{147.25, 92}),
@@ -219,10 +223,10 @@ func TestFromLTRExport(t *testing.T) {
 				path("e3", Vec{167.25, 92}, Vec{167.25, 52}),
 			}}},
 		{Down, shifted, Result{160, 115,
-			[]PlacedNode{{"n0", 12, 66, 136, 37}, {"n1", 15.986706733703613, 12, 14.013293266296387, 14}, {"n2", 70, 12, 14.013293266296387, 14}},
+			[]PlacedNode{{ID: "n0", X: 12, Y: 66, Width: 136, Height: 37}, {ID: "n1", X: 15.986706733703613, Y: 12, Width: 14.013293266296387, Height: 14}, {ID: "n2", X: 70, Y: 12, Width: 14.013293266296387, Height: 14}},
 			[]PlacedEdge{path("e0", Vec{80, 26}, Vec{80, 66})}}},
 		{Right, wide, Result{364.5, 154.5,
-			[]PlacedNode{{"a", 12, 95, 100, 40}, {"b", 292, 32, 60.5, 30}, {"c", 172, 92.5, 80, 50}},
+			[]PlacedNode{{ID: "a", X: 12, Y: 95, Width: 100, Height: 40}, {ID: "b", X: 292, Y: 32, Width: 60.5, Height: 30}, {ID: "c", X: 172, Y: 92.5, Width: 80, Height: 50}},
 			[]PlacedEdge{
 				labelled(path("e0", Vec{112, 110}, Vec{132, 110}, Vec{132, 47}, Vec{292, 47}), PlacedLabel{197, 41.5, 30, 10}),
 				path("e1", Vec{112, 115}, Vec{152, 115}, Vec{152, 112.5}, Vec{172, 112.5}),
@@ -230,7 +234,7 @@ func TestFromLTRExport(t *testing.T) {
 				path("e3", Vec{172, 122.5}, Vec{132, 122.5}, Vec{132, 120}, Vec{112, 120}),
 			}}},
 		{Up, tall, Result{209.25, 224,
-			[]PlacedNode{{"a", 97.25, 172, 100, 40}, {"b", 32, 12, 60.5, 30}, {"c", 117.25, 82, 80, 50}},
+			[]PlacedNode{{ID: "a", X: 97.25, Y: 172, Width: 100, Height: 40}, {ID: "b", X: 32, Y: 12, Width: 60.5, Height: 30}, {ID: "c", X: 117.25, Y: 82, Width: 80, Height: 50}},
 			[]PlacedEdge{
 				labelled(path("e0", Vec{127.25, 172}, Vec{127.25, 152}, Vec{62.25, 152}, Vec{62.25, 42}), PlacedLabel{47.25, 102, 30, 10}),
 				path("e1", Vec{147.25, 172}, Vec{147.25, 132}),
@@ -238,7 +242,7 @@ func TestFromLTRExport(t *testing.T) {
 				path("e3", Vec{167.25, 132}, Vec{167.25, 172}),
 			}}},
 		{Left, wide, Result{364.5, 154.5,
-			[]PlacedNode{{"a", 252.5, 95, 100, 40}, {"b", 12, 32, 60.5, 30}, {"c", 112.5, 92.5, 80, 50}},
+			[]PlacedNode{{ID: "a", X: 252.5, Y: 95, Width: 100, Height: 40}, {ID: "b", X: 12, Y: 32, Width: 60.5, Height: 30}, {ID: "c", X: 112.5, Y: 92.5, Width: 80, Height: 50}},
 			[]PlacedEdge{
 				labelled(path("e0", Vec{252.5, 110}, Vec{232.5, 110}, Vec{232.5, 47}, Vec{72.5, 47}), PlacedLabel{137.5, 41.5, 30, 10}),
 				path("e1", Vec{252.5, 115}, Vec{212.5, 115}, Vec{212.5, 112.5}, Vec{192.5, 112.5}),

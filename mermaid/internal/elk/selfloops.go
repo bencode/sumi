@@ -4,12 +4,6 @@ package elk
 
 import "slices"
 
-// Spacing around self loops, at Mermaid's base value.
-const (
-	loopGap     = 20.0 // spacing.nodeSelfLoop
-	loopLoopGap = 20.0 // spacing.edgeEdge
-)
-
 // selfLoop is a self loop out of the graph, with the ports it left. Each edge
 // has ports of its own, so ELK's hyper loop of edges sharing ports is one edge.
 type selfLoop struct {
@@ -61,15 +55,16 @@ func restoreLoopPorts(g *Graph) {
 // and no slot to share: a node's i-th loop gets slot i, and no random number is
 // drawn. Bends and labels are relative to the node until restoreSelfLoops.
 func routeSelfLoops(g *Graph) {
+	s := g.Settings
 	for _, n := range nodes(g) {
 		margin := n.Margin
-		y := -n.Margin.Top - loopGap
+		y := -n.Margin.Top - s.selfLoop
 		for _, l := range n.Loops {
 			l.edge.Bends = []Vec{{l.source.Pos.X, y}, {l.target.Pos.X, y}}
 			for _, b := range l.edge.Bends {
 				growMargin(&margin, n.Size, b)
 			}
-			y -= placeLoopLabel(l.edge, n, y, &margin) + loopLoopGap
+			y -= placeLoopLabel(l.edge, n, y, s.edgeLabel, &margin) + s.edgeEdge
 		}
 		n.Margin = margin
 	}
@@ -80,7 +75,7 @@ func routeSelfLoops(g *Graph) {
 // OrthogonalSelfLoopRouter.java lines 139, 261; computeCoordinates,
 // intermediate/loops/routing/LabelPlacer.java line 372). A loop on one side
 // drops the label's inline option (LabelPlacer.java line 147).
-func placeLoopLabel(e *Edge, n *Node, y float64, margin *Spacing) float64 {
+func placeLoopLabel(e *Edge, n *Node, y, labelGap float64, margin *Spacing) float64 {
 	if len(e.Labels) == 0 {
 		return 0
 	}

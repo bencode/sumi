@@ -8,12 +8,12 @@ import (
 )
 
 const (
-	tolerance         = 1e-3 // ends closer than this are level
-	criticalConflict  = -1
-	conflictThreshold = 0.5 * slotGap
-	criticalFactor    = 0.2
-	conflictPenalty   = 1
-	crossingPenalty   = 16
+	tolerance        = 1e-3 // ends closer than this are level
+	criticalConflict = -1
+	conflictFactor   = 0.5
+	criticalFactor   = 0.2
+	conflictPenalty  = 1
+	crossingPenalty  = 16
 )
 
 // segment is the vertical part of the edges between two layers, the ports it
@@ -46,6 +46,7 @@ type dependency struct {
 // (p5edges/orthogonal/OrthogonalRoutingGenerator.java).
 type router struct {
 	random   *random
+	slotGap  float64 // edgeSpacing
 	critical float64 // criticalConflictThreshold
 }
 
@@ -72,7 +73,7 @@ func (r *router) route(left, right []*Node, start float64) int {
 			continue
 		}
 		slots = max(slots, s.slot)
-		addBends(s, start)
+		addBends(s, start, r.slotGap)
 	}
 	return slots + 1
 }
@@ -220,7 +221,7 @@ func (r *router) conflicts(a, b []float64) int {
 		if p > q-r.critical && p < q+r.critical {
 			return criticalConflict
 		}
-		if p > q-conflictThreshold && p < q+conflictThreshold {
+		if threshold := conflictFactor * r.slotGap; p > q-threshold && p < q+threshold {
 			count++
 		}
 		switch {
@@ -342,7 +343,7 @@ func number(all []*segment) {
 // split in two. The second half of a split holds no ports, so it adds none
 // (calculateBendPoints,
 // p5edges/orthogonal/direction/WestToEastRoutingStrategy.java line 45).
-func addBends(s *segment, start float64) {
+func addBends(s *segment, start, slotGap float64) {
 	for _, p := range s.ports {
 		from := absolute(p).Y
 		for _, e := range p.Out {

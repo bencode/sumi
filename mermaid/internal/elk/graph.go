@@ -45,10 +45,14 @@ const (
 // until they are given a layer, and back there when layout ends.
 type Graph struct {
 	Size, Offset Vec
+	MinSize      Vec // nodeSize.minimum, never turned with the graph
 	Padding      Spacing
 	Layerless    []*Node
 	Layers       []*Layer
 	Direction    Direction
+	Settings     settings
+	Hierarchical bool    // hierarchyHandling is INCLUDE_CHILDREN
+	Parent       *Node   // the node holding this graph, nil on the root
 	SelfLoops    bool    // GraphProperties.SELF_LOOPS
 	CenterLabels bool    // GraphProperties.CENTER_LABELS
 	Random       *random // InternalProperties.RANDOM
@@ -60,7 +64,10 @@ type Layer struct {
 	Width float64
 }
 
-// Node is a node (graph/LNode.java). Pos is its top left corner.
+// Node is a node (graph/LNode.java). Pos is its top left corner. A subgraph has
+// its graph in Nested, Included when that takes part in the same layout, which
+// is what ELK's LNode.getNestedGraph means. ELK has no LGraph at all for one
+// laid out on its own, and keeps it on the ElkNode.
 type Node struct {
 	ID         string
 	Type       NodeType
@@ -68,7 +75,10 @@ type Node struct {
 	Margin     Spacing
 	Ports      []*Port
 	Loops      []selfLoop // InternalProperties.SELF_LOOP_HOLDER
-	ModelOrder int        // its index in Input.Nodes
+	ModelOrder int        // its index among its siblings
+	Nested     *Graph
+	Included   bool
+	Title      *Label
 }
 
 // Port is where an edge meets a node (graph/LPort.java). Pos is relative to
@@ -90,8 +100,13 @@ type Edge struct {
 	Reversed       bool // InternalProperties.REVERSED
 }
 
-// Label is an edge's label (graph/LLabel.java).
+// Label is an edge's label or a subgraph's title (graph/LLabel.java).
 type Label struct{ Pos, Size Vec }
+
+// actualSize is g's size with its padding (graph/LGraph.java line 98).
+func actualSize(g *Graph) Vec {
+	return Vec{g.Size.X + g.Padding.Left + g.Padding.Right, g.Size.Y + g.Padding.Top + g.Padding.Bottom}
+}
 
 // nodes gives g's nodes, those without a layer first
 // (intermediate/GraphTransformer.java lines 77-80).

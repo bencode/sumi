@@ -107,7 +107,7 @@ func (c *compaction) keepClear(root, n, neighbor *Node, thresh float64, first bo
 		from.outgoing = append(from.outgoing, classEdge{to, c.separation(root, n, neighbor)})
 		return false
 	}
-	spacing := nodeSpacing(n, neighbor)
+	spacing := nodeSpacing(c.near.settings, n, neighbor)
 	if a.up {
 		position := a.y[other] + a.inner[neighbor] - neighbor.Margin.Top - spacing -
 			n.Margin.Bottom - n.Size.Y - a.inner[n]
@@ -134,11 +134,11 @@ func (c *compaction) separation(root, n, neighbor *Node) float64 {
 	a := c.a
 	other := a.root[neighbor]
 	if a.up {
-		return a.y[root] + a.inner[n] + n.Size.Y + n.Margin.Bottom + nodeGap -
+		return a.y[root] + a.inner[n] + n.Size.Y + n.Margin.Bottom + c.near.settings.nodeNode -
 			(a.y[other] + a.inner[neighbor] - neighbor.Margin.Top)
 	}
 	return a.y[root] + a.inner[n] - n.Margin.Top - a.y[other] - a.inner[neighbor] -
-		neighbor.Size.Y - neighbor.Margin.Bottom - nodeGap
+		neighbor.Size.Y - neighbor.Margin.Bottom - c.near.settings.nodeNode
 }
 
 func (c *compaction) classOf(sink *Node) *class {

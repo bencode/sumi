@@ -16,14 +16,19 @@ const (
 	perturbation = float64(float32(0.07))
 )
 
-// sweep is one run of the crossing minimizer: the order it is working on and
-// what it remembers about ports between layers.
+// sweep is the crossing minimizer's work on one graph: the order it is working on
+// and what it remembers about ports between layers. Directions come from the
+// random numbers of the layout's root, whose seed goes back before each graph.
+// All else comes from the graph's own, which never go back: the root's are one
+// and the same (GraphInfoHolder.java line 94).
 type sweep struct {
-	random  *random
-	layers  [][]*Node
-	ranks   map[*Port]float64 // portRanks
-	centers map[*Port]float64 // portBarycenter
-	kept    *snapshot         // currentlyBestNodeAndPortOrder
+	random       *random
+	noise        *random
+	nodeRelative bool // NodeRelativePortDistributor, not LayerTotalPortDistributor
+	layers       [][]*Node
+	ranks        map[*Port]float64 // portRanks
+	centers      map[*Port]float64 // portBarycenter
+	kept         *snapshot         // currentlyBestNodeAndPortOrder
 }
 
 // snapshot is an order of nodes and ports (p3order/SweepCopy.java).
@@ -38,23 +43,41 @@ type centered struct {
 	center float64
 }
 
-// minimizeCrossings orders each layer to cross few edges
-// (p3order/LayerSweepCrossingMinimizer.java lines 109 and 185). It tries
-// thoroughness times, each attempt going on from the order the last one left,
-// and takes the order with the fewest crossings.
-//
-// The random seed comes from ELK's default seed, 1. ELK draws one more bit from
-// it to choose a port distributor, and that bit is always false here, which
-// makes it LayerTotalPortDistributor; then it seeds the generator again.
-func minimizeCrossings(g *Graph) {
-	if len(g.Layers) == 0 {
+// minimizeCrossings orders the layers of root and the graphs laid out with it
+// (process and initialize, p3order/LayerSweepCrossingMinimizer.java lines 109 and
+// 609). Without edges across their borders each graph goes on its own, bottom up.
+func minimizeCrossings(root *Graph) {
+	if ordersNothing(root) {
 		return
 	}
-	s := newSweep(g)
+	seed := root.Random.nextLong()
+	all := graphsBottomUp(root)
+	sweeps := make([]*sweep, len(all))
+	for i, g := range all {
+		sweeps[i] = newSweep(root, g)
+	}
+	for i, g := range all {
+		root.Random.setSeed(seed)
+		sweeps[i].minimize(g)
+	}
+}
+
+// ordersNothing tells whether the minimizer leaves g alone, drawing no random
+// numbers: a graph with no layers, or a single node on its own (process,
+// LayerSweepCrossingMinimizer.java line 109).
+func ordersNothing(g *Graph) bool {
+	single := len(g.Layers) == 1 && len(g.Layers[0].Nodes) == 1
+	return len(g.Layers) == 0 || single && !g.Hierarchical
+}
+
+// minimize tries thoroughness times, each attempt going on from the order the
+// last one left, and takes the order with the fewest crossings
+// (compareDifferentRandomizedLayouts, LayerSweepCrossingMinimizer.java line 185).
+func (s *sweep) minimize(g *Graph) {
 	var result *snapshot
 	fewest := math.MaxInt
 	for i := range thoroughness {
-		count := s.attempt(i == 0)
+		count := s.attempt(i == 0 && g.Settings.modelOrder)
 		if count < fewest {
 			fewest, result = count, s.kept
 		}
@@ -73,11 +96,13 @@ func minimizeCrossings(g *Graph) {
 	}
 }
 
-func newSweep(g *Graph) *sweep {
-	r := newRandom(1)
-	r.setSeed(r.nextLong())
-	g.Random = r
-	s := &sweep{random: r, ranks: map[*Port]float64{}, centers: map[*Port]float64{}}
+// newSweep starts on g, which draws a bit for its port distributor
+// (p3order/ISweepPortDistributor.java line 58).
+func newSweep(root, g *Graph) *sweep {
+	s := &sweep{
+		random: root.Random, noise: g.Random, nodeRelative: g.Random.nextBoolean(),
+		ranks: map[*Port]float64{}, centers: map[*Port]float64{},
+	}
 	for _, l := range g.Layers {
 		s.layers = append(s.layers, slices.Clone(l.Nodes))
 	}
@@ -86,8 +111,9 @@ func newSweep(g *Graph) *sweep {
 
 // attempt sweeps back and forth until crossings stop going down, and gives the
 // count of the order it keeps (minimizeCrossingsWithCounter,
-// p3order/LayerSweepCrossingMinimizer.java line 233). The first attempt starts
-// from the model order, forward, and leaves an order without crossings as it is.
+// p3order/LayerSweepCrossingMinimizer.java line 233). With initial, on the first
+// attempt where model order counts, it starts from that order, forward, and
+// leaves an order without crossings as it is.
 //
 // ELK has flags for a first and a second try, but gave both the same property
 // id (options/InternalProperties.java lines 443 and 451), so clearing the second
@@ -157,7 +183,7 @@ func (s *sweep) shuffle(forward bool) {
 	}
 	all := make([]centered, len(layer))
 	for i, n := range layer {
-		all[i] = centered{n, s.random.nextDouble()}
+		all[i] = centered{n, s.noise.nextDouble()}
 	}
 	sortCentered(layer, all)
 }
@@ -178,7 +204,7 @@ func (s *sweep) barycenters(layer []*Node, forward bool) []centered {
 		}
 		all[i] = centered{n, math.NaN()}
 		if degree > 0 {
-			sum += float64(s.random.nextFloat()*perturbation) - perturbation/2
+			sum += float64(s.noise.nextFloat()*perturbation) - perturbation/2
 			all[i].center = sum / float64(degree)
 		}
 	}
@@ -212,7 +238,7 @@ func (s *sweep) fillRandomly(all []centered) {
 	top += 2
 	for i := range all {
 		if math.IsNaN(all[i].center) {
-			all[i].center = float64(s.random.nextFloat()*top) - 1
+			all[i].center = float64(s.noise.nextFloat()*top) - 1
 		}
 	}
 }
