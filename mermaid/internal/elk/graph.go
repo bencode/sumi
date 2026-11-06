@@ -9,6 +9,8 @@ type Vec struct{ X, Y float64 }
 
 func (v Vec) add(w Vec) Vec { return Vec{v.X + w.X, v.Y + w.Y} }
 
+func (v Vec) sub(w Vec) Vec { return Vec{v.X - w.X, v.Y - w.Y} }
+
 // Spacing is the room around a graph's content (LPadding) or a node (LMargin).
 type Spacing struct{ Top, Right, Bottom, Left float64 }
 
@@ -39,6 +41,19 @@ const (
 	typeNormal NodeType = iota
 	typeLongEdge
 	typeLabel
+	typeExternalPort
+)
+
+// layerConstraint keeps a node in the first or last layer, and the separate
+// kinds in a layer of their own beyond those (options/LayerConstraint.java).
+type layerConstraint int
+
+const (
+	noConstraint layerConstraint = iota
+	firstLayer
+	firstSeparate
+	lastLayer
+	lastSeparate
 )
 
 // Graph is a graph being laid out (graph/LGraph.java). Nodes are in Layerless
@@ -55,7 +70,10 @@ type Graph struct {
 	Parent       *Node   // the node holding this graph, nil on the root
 	SelfLoops    bool    // GraphProperties.SELF_LOOPS
 	CenterLabels bool    // GraphProperties.CENTER_LABELS
+	External     bool    // GraphProperties.EXTERNAL_PORTS
 	Random       *random // InternalProperties.RANDOM
+	Hidden       []*Node // InternalProperties.HIDDEN_NODES
+	Crossing     []*crossEdge
 }
 
 // Layer is one layer's nodes, in order (graph/Layer.java).
@@ -67,18 +85,28 @@ type Layer struct {
 // Node is a node (graph/LNode.java). Pos is its top left corner. A subgraph has
 // its graph in Nested, Included when that takes part in the same layout, which
 // is what ELK's LNode.getNestedGraph means. ELK has no LGraph at all for one
-// laid out on its own, and keeps it on the ElkNode.
+// laid out on its own, and keeps it on the ElkNode. FixedPorts marks a subgraph
+// whose ports stand for dummy nodes in its graph, which fix their sides and
+// positions, and FixedOrder that the graph's order of them has come. Such a dummy
+// node, of typeExternalPort, has its port in Origin.
 type Node struct {
-	ID         string
-	Type       NodeType
-	Pos, Size  Vec
-	Margin     Spacing
-	Ports      []*Port
-	Loops      []selfLoop // InternalProperties.SELF_LOOP_HOLDER
-	ModelOrder int        // its index among its siblings
-	Nested     *Graph
-	Included   bool
-	Title      *Label
+	ID           string
+	Type         NodeType
+	Pos, Size    Vec
+	Margin       Spacing
+	Ports        []*Port
+	Loops        []selfLoop // InternalProperties.SELF_LOOP_HOLDER
+	ModelOrder   int        // its index among its siblings
+	Graph        *Graph     // the graph it sits in, on real and external port nodes
+	Nested       *Graph
+	Included     bool
+	Title        *Label
+	Constraint   layerConstraint
+	FixedPorts   bool
+	FixedOrder   bool
+	ExtSide      PortSide // InternalProperties.EXT_PORT_SIDE
+	Origin       *Port
+	BorderOffset float64 // portBorderOffset
 }
 
 // Port is where an edge meets a node (graph/LPort.java). Pos is relative to
@@ -96,8 +124,10 @@ type Edge struct {
 	Source, Target *Port
 	Bends          []Vec
 	Labels         []*Label
-	ModelOrder     int  // its index in Input.Edges
-	Reversed       bool // InternalProperties.REVERSED
+	ModelOrder     int    // its index in Input.Edges
+	Reversed       bool   // InternalProperties.REVERSED
+	Container      *Graph // the graph holding it (ElkEdge.getContainingNode)
+	Opposite       *Port  // InternalProperties.ORIGINAL_OPPOSITE_PORT
 }
 
 // Label is an edge's label or a subgraph's title (graph/LLabel.java).
@@ -106,6 +136,20 @@ type Label struct{ Pos, Size Vec }
 // actualSize is g's size with its padding (graph/LGraph.java line 98).
 func actualSize(g *Graph) Vec {
 	return Vec{g.Size.X + g.Padding.Left + g.Padding.Right, g.Size.Y + g.Padding.Top + g.Padding.Bottom}
+}
+
+// included tells whether g's layout started higher up, as its node takes part.
+func included(g *Graph) bool { return g.Parent != nil && g.Parent.Included }
+
+// isDescendant tells whether n sits in ancestor, at any depth, not counting
+// ancestor itself (graph/LGraphUtil.java line 1036).
+func isDescendant(n, ancestor *Node) bool {
+	for g := n.Graph; g.Parent != nil; g = g.Parent.Graph {
+		if g.Parent == ancestor {
+			return true
+		}
+	}
+	return false
 }
 
 // nodes gives g's nodes, those without a layer first

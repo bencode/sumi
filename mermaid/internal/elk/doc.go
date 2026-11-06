@@ -15,17 +15,24 @@
 // which it orders on their own and then puts in rows (components.go). Included
 // ones run alongside their parent, which never splits: first each graph bottom up
 // to the end of the steps before ordering, then crossing minimization over them
-// all, then each graph bottom up to the end.
+// all, then each graph bottom up to the end. An edge across an included subgraph's
+// border is cut there into one segment per graph, with a dummy node standing for the
+// place it crosses and a port on the subgraph (cross.go). The segments are laid out
+// like any edge and joined up at the end (cross_stitch.go).
 //
 // The steps of one graph, in the order they run:
 //
 //	toLTR             any direction -> left to right         direction.go
+//	reverseConstrainedEdges edges to fit external ports      constraints.go
 //	hideSelfLoops     self loops off the graph               selfloops.go
 //	breakCycles       reverse the edges closing a cycle      cycles.go
 //	insertLabelDummies a dummy node per label                labels.go
+//	hideSeparateNodes external port dummies off the graph    constraints.go
 //	assignLayers      Layerless -> Layers                    layering.go
+//	placeConstrainedNodes those dummies in layers of their own constraints.go
 //	splitLongEdges    a dummy node per layer crossed         longedge.go
 //	assignPortSides   incoming west, outgoing east           portorder.go
+//	invertPorts       a dummy node per port the wrong way    inverted.go
 //	sortPortLists     ports grouped by side                  portorder.go
 //	sortByModelOrder  layers and ports as the input has them modelorder.go
 //	minimizeCrossings an order of layers with few crossings  sweep.go
@@ -45,25 +52,30 @@
 //	restoreReversed   reversed edges back                    cycles.go
 //	collectNodes      all nodes back in Layerless            route.go
 //	fitGraph          the graph's minimum size               layout.go
+//	portsToNode       ports placed on the subgraph's node    external.go
 //	fromLTR           left to right -> the input's direction direction.go
 //
 // Around them run importGraph (import.go), Input -> Graph, and export (export.go),
 // Graph -> Result. In a layout of components, fitGraph comes last, after they
 // are back together.
 //
-// Nothing calls this package yet. ELK also runs three layer constraint processors
-// here. Mermaid sets no layer constraints, so they do nothing and are left out.
-// The same goes for InLayerConstraintProcessor, and for the parts of crossing
-// minimization that serve in-layer edges, north and south ports, several edges
-// on a port and constraints between nodes. ELK sizes nodes around their labels in
+// Nothing calls this package yet. Mermaid sets no layer constraints, so only those
+// of external port dummies exist, and InLayerConstraintProcessor does nothing and is
+// left out. Edges within a layer come only from inverted ports, the ports of a
+// subgraph that an edge reaches from the wrong side. Crossing minimization leaves
+// out what serves north and south ports, several edges on a port and constraints
+// between nodes, and works bottom up: ELK's sweeps into subgraphs are not done
+// yet, so graphs that take them still differ. ELK sizes nodes around their labels in
 // a system of cells, but Mermaid's nodes come sized, with no labels of their own,
 // so only the placing of ports and titles remains. Node placement is the balanced
-// layout with the one edge straightening Mermaid gets: fixed alignments, edge
-// priorities and what serves in-layer edges are left out. Edge routing runs west
-// to east only and leaves out junction points. Only inline center labels are
-// taken: the head and tail labels Mermaid sends for a class diagram's
-// multiplicities are not yet. Self loops all stay on the north side, so what ELK
-// does for their other sides and shapes is left out too.
+// layout with the one edge straightening Mermaid gets: fixed alignments and edge
+// priorities are left out. Edge routing runs west to east only and leaves out
+// junction points. Only inline center labels are taken: the head and tail labels
+// Mermaid sends for a class diagram's multiplicities are not yet. Self loops all
+// stay on the north side, so what ELK does for their other sides and shapes is
+// left out too. A self loop on a subgraph with external ports has its ports on
+// opposite sides, as in ELK, but runs over the top without ELK's room at the sides,
+// so that loop and the space around the subgraph differ from ELK.
 //
 // Layout has to match elkjs, which is ELK compiled to JavaScript, not ELK on a
 // JVM: a float there is a double, and ELK's random numbers are seeded the same
@@ -75,7 +87,7 @@
 // ports between them, and tell them apart by identity.
 //
 // What Mermaid's input never holds is left out: ports of its own, edges with
-// several ends, and ELK's general property table. An edge across a subgraph's
-// border panics, as its layout is not done yet, nor are a subgraph's own
-// algorithm (@{algorithm}) and the labels of leaf nodes.
+// several ends, and ELK's general property table. An edge across the border of a
+// subgraph laid out on its own panics, as ELK refuses it too. A subgraph's own
+// algorithm (@{algorithm}) and the labels of leaf nodes are not done yet.
 package elk

@@ -2,7 +2,10 @@
 
 package elk
 
-import "math"
+import (
+	"math"
+	"slices"
+)
 
 // measureLayers gives each layer its width and g its height, moving the top of
 // the drawing to where the graph starts
@@ -18,36 +21,78 @@ func measureLayers(g *Graph) {
 			l.Width = max(l.Width, n.Size.X+n.Margin.Left+n.Margin.Right)
 		}
 		first, last := l.Nodes[0], l.Nodes[len(l.Nodes)-1]
-		low = min(low, first.Pos.Y-first.Margin.Top)
-		high = max(high, last.Pos.Y+last.Size.Y+last.Margin.Bottom)
+		top, bottom := first.Pos.Y-first.Margin.Top, last.Pos.Y+last.Size.Y+last.Margin.Bottom
+		if first.Type == typeExternalPort {
+			top -= g.Settings.portsSurrounding
+		}
+		if last.Type == typeExternalPort {
+			bottom += g.Settings.portsSurrounding
+		}
+		low = min(low, top)
+		high = max(high, bottom)
 	}
 	g.Size.Y = high - low
 	g.Offset.Y -= low
 }
 
 // routeEdges places the layers from left to right and routes the edges between
-// each two, which take as much room as they need (process,
-// p5edges/OrthogonalEdgeRouter.java line 217). With no ports outside the
-// layers, nothing routes before the first layer or after the last, and two
-// side gaps are never less than ELK's minimum of a layer gap.
+// each two, which take as much room as they need, and those before the first
+// layer and after the last, where inverted ports go round (process,
+// p5edges/OrthogonalEdgeRouter.java line 217). Two side gaps are never less than
+// ELK's minimum of a layer gap.
 func routeEdges(g *Graph) {
 	s := g.Settings
 	r := &router{random: g.Random, slotGap: s.edgeEdgeLayers}
 	x := 0.0
-	for i, left := range g.Layers {
-		placeHorizontally(left, x)
-		x += left.Width
-		if i == len(g.Layers)-1 {
-			break
+	var left *Layer
+	for i := 0; i <= len(g.Layers); i++ {
+		var right *Layer
+		if i < len(g.Layers) {
+			right = g.Layers[i]
 		}
-		slots := r.route(left.Nodes, g.Layers[i+1].Nodes, x+s.edgeNodeLayers)
-		gap := s.nodeLayers
-		if slots > 0 {
-			gap = s.edgeNodeLayers + float64(slots-1)*s.edgeEdgeLayers + s.edgeNodeLayers
+		start := x
+		if left != nil {
+			placeHorizontally(left, x)
+			x += left.Width
+			start = x + s.edgeNodeLayers
 		}
-		x += gap
+		x += routingWidth(s, left, right, r.route(nodesOf(left), nodesOf(right), start))
+		left = right
 	}
 	g.Size.X = x
+}
+
+// routingWidth is the room between two layers with slots slots. Either may be
+// missing, on the outside of the graph.
+func routingWidth(s settings, left, right *Layer, slots int) float64 {
+	if slots == 0 {
+		if externalLayer(left) || externalLayer(right) {
+			return 0
+		}
+		return s.nodeLayers
+	}
+	width := float64(slots-1) * s.edgeEdgeLayers
+	if left != nil {
+		width += s.edgeNodeLayers
+	}
+	if right != nil {
+		width += s.edgeNodeLayers
+	}
+	return width
+}
+
+func nodesOf(l *Layer) []*Node {
+	if l == nil {
+		return nil
+	}
+	return l.Nodes
+}
+
+// externalLayer tells whether l holds external port dummies alone, a missing
+// layer counting as such (PRED_EXTERNAL_WEST_OR_EAST_PORT,
+// p5edges/PolylineEdgeRouter.java line 65).
+func externalLayer(l *Layer) bool {
+	return l == nil || !slices.ContainsFunc(l.Nodes, func(n *Node) bool { return n.Type != typeExternalPort })
 }
 
 // placeHorizontally gives l's nodes their x, each nearer the side with more of

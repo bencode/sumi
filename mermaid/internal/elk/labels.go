@@ -67,8 +67,8 @@ func switchLabelDummies(g *Graph) {
 	}
 }
 
-// longEdgeThrough gives the dummy nodes of n's long edge from left to right,
-// one per layer, n among them (LabelDummyInfo, LabelDummySwitcher.java line 665).
+// longEdgeThrough gives the dummy nodes of n's long edge from source to target,
+// n among them (LabelDummyInfo, LabelDummySwitcher.java line 665).
 func longEdgeThrough(n *Node) []*Node {
 	chain := []*Node{n}
 	for m := incoming(n)[0].Source.Owner; m.Type == typeLongEdge; m = incoming(m)[0].Source.Owner {

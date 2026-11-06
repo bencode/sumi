@@ -9,11 +9,12 @@ import (
 
 // assignPortSides puts ports with incoming edges on the west side of their
 // node and the others on the east (intermediate/PortSideProcessor.java lines
-// 52 and 99). Dummy nodes have their sides already.
+// 52 and 99). Dummy nodes, and subgraphs with external ports, have their sides
+// already.
 func assignPortSides(g *Graph) {
 	for _, l := range g.Layers {
 		for _, n := range l.Nodes {
-			if n.Type != typeNormal {
+			if n.Type != typeNormal || n.FixedPorts {
 				continue
 			}
 			for _, p := range n.Ports {

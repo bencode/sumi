@@ -56,8 +56,10 @@ func (s *straightener) takesIncoming(p *pending) bool {
 }
 
 // pick chooses the first edge of p to a placed block, unless p's block has an
-// edge made straight already (pickEdge, p4nodes/bk/ThresholdStrategy.java line
-// 227).
+// edge made straight already. An edge within a layer only counts in a block of
+// dummy nodes, as nothing else may tie that to the rest (pickEdge,
+// p4nodes/bk/ThresholdStrategy.java line 227). ELK checks again in postProcess
+// (line 352), where what pick leaves always passes.
 func (s *straightener) pick(p *pending) {
 	p.edge, p.hasEdges = nil, false
 	if s.a.used[s.a.root[p.free]] {
@@ -67,13 +69,23 @@ func (s *straightener) pick(p *pending) {
 	if s.takesIncoming(p) {
 		all, other = incoming(p.free), func(e *Edge) *Node { return e.Source.Owner }
 	}
+	onlyDummies := s.a.onlyDummies(s.a.root[p.free])
 	for _, e := range all {
+		if !onlyDummies && s.near.inLayer(e) {
+			continue
+		}
 		p.hasEdges = true
 		if s.finished[s.a.root[other(e)]] {
 			p.edge = e
 			return
 		}
 	}
+}
+
+// onlyDummies tells whether root's block took on long edge dummies alone, its own
+// type not counting (od, p4nodes/bk/BKAligner.java line 135).
+func (a *alignment) onlyDummies(root *Node) bool {
+	return !slices.ContainsFunc(a.block(root)[1:], func(n *Node) bool { return n.Type != typeLongEdge })
 }
 
 // bound gives the position making an edge at n straight and marks the blocks at
