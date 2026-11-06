@@ -48,9 +48,10 @@
 // the placing of ports remains. Node placement is the balanced layout with the
 // one edge straightening Mermaid gets: fixed alignments, edge priorities and
 // what serves in-layer edges are left out. Edge routing runs west to east only
-// and leaves out junction points. Labels are all inline and at the center, and
-// self loops all stay on the north side, so what ELK does for the other label
-// placements, sides and shapes of loops is left out too.
+// and leaves out junction points. Only inline center labels are taken: the head
+// and tail labels Mermaid sends for a class diagram's multiplicities are not yet.
+// Self loops all stay on the north side, so what ELK does for their other sides
+// and shapes is left out too.
 //
 // Layout has to match elkjs, which is ELK compiled to JavaScript, not ELK on a
 // JVM: a float there is a double, and ELK's random numbers are seeded the same

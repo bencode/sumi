@@ -8,17 +8,17 @@ import (
 )
 
 // labelGap is spacing.edgeLabel at Mermaid's base value. spacing.labelLabel is 0
-// there, and an edge has one label at most, so nothing separates labels.
+// there, and Input holds one label per edge, so nothing separates labels.
 const labelGap = 4.0
 
 func vertical(d Direction) bool { return d == Down || d == Up }
 
 // insertLabelDummies cuts each edge with a label in two around a dummy node the
 // size of the label, so that the label takes room in the layers (process,
-// intermediate/LabelDummyInserter.java line 65). Mermaid places all labels at
-// the center, and self loops are out of the way by now. ELK moves a label to the
-// dummy and back to the edge; here it stays on the edge, as that half is the one
-// to survive when the dummy goes.
+// intermediate/LabelDummyInserter.java line 65). Input's labels are center ones,
+// the only kind this package takes, and self loops are out of the way by now.
+// ELK moves a label to the dummy and back to the edge; here it stays on the edge,
+// as that half is the one to survive when the dummy goes.
 func insertLabelDummies(g *Graph) {
 	var dummies []*Node
 	for _, n := range g.Layerless {
