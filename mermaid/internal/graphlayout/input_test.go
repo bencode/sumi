@@ -20,7 +20,7 @@ func subgraph(id, parent string, direction elk.Direction, title *elk.Size) Node 
 func edge(id, start, end string) Edge { return Edge{ID: id, Start: start, End: end} }
 
 func labelled(id, start, end string, width, height float64) Edge {
-	return Edge{id, start, end, &elk.Size{Width: width, Height: height}}
+	return Edge{ID: id, Start: start, End: end, Label: &elk.Size{Width: width, Height: height}}
 }
 
 var directionNames = map[elk.Direction]string{elk.Down: "down", elk.Up: "up", elk.Right: "right", elk.Left: "left"}
