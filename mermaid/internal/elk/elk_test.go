@@ -57,13 +57,6 @@ func TestImport(t *testing.T) {
 	if want := (Spacing{12, 12, 12, 12}); g.Padding != want {
 		t.Errorf("padding %v, want %v", g.Padding, want)
 	}
-	if !g.SelfLoops || !g.CenterLabels {
-		t.Errorf("self loops %v, center labels %v", g.SelfLoops, g.CenterLabels)
-	}
-	plain := importGraph(Input{Nodes: sample.Nodes, Edges: sample.Edges[1:2]})
-	if plain.SelfLoops || plain.CenterLabels {
-		t.Errorf("plain: self loops %v, center labels %v", plain.SelfLoops, plain.CenterLabels)
-	}
 }
 
 func TestToLTR(t *testing.T) {

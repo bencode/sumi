@@ -68,8 +68,6 @@ type Graph struct {
 	Settings     settings
 	Hierarchical bool    // hierarchyHandling is INCLUDE_CHILDREN
 	Parent       *Node   // the node holding this graph, nil on the root
-	SelfLoops    bool    // GraphProperties.SELF_LOOPS
-	CenterLabels bool    // GraphProperties.CENTER_LABELS
 	External     bool    // GraphProperties.EXTERNAL_PORTS
 	Random       *random // InternalProperties.RANDOM
 	Hidden       []*Node // InternalProperties.HIDDEN_NODES

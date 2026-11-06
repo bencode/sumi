@@ -169,10 +169,8 @@ func importEdge(g *Graph, source, target *Node, e InputEdge, order int) {
 	edge.Source, edge.Target = newPort(source, side), newPort(target, opposed[side])
 	edge.Source.Out = append(edge.Source.Out, edge)
 	edge.Target.In = append(edge.Target.In, edge)
-	g.SelfLoops = g.SelfLoops || source == target
 	if e.Label != nil {
 		edge.Labels = []*Label{{Size: Vec{e.Label.Width, e.Label.Height}}}
-		g.CenterLabels = true
 	}
 }
 
