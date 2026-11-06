@@ -10,7 +10,8 @@ import "slices"
 // clockwise, so west ports go in reverse. ELK takes labelPortVertical, as the
 // height of the empty cells above and below, off the top and bottom of
 // portsSurrounding (updateVerticalInsidePortLabelCellPadding,
-// nodespacing/internal/algorithm/CellSystemConfigurator.java line 142).
+// nodespacing/internal/algorithm/CellSystemConfigurator.java line 142). A subgraph
+// with external ports has them in place already, by portsToNode.
 func positionPorts(g *Graph) {
 	s := g.Settings
 	endPadding := s.portsSurrounding - s.labelPort
@@ -18,16 +19,8 @@ func positionPorts(g *Graph) {
 		if n.Type != typeNormal {
 			continue
 		}
-		east, west, north := portsOn(n, sideEast), portsOn(n, sideWest), portsOn(n, sideNorth)
-		slices.Reverse(west)
-		for i, y := range spread(n.Size.Y, len(east), endPadding, s.portPort) {
-			east[i].Pos = Vec{n.Size.X, y}
-		}
-		for i, y := range spread(n.Size.Y, len(west), endPadding, s.portPort) {
-			west[i].Pos = Vec{0, y}
-		}
-		for i, x := range spread(n.Size.X, len(north), s.portsSurrounding, s.portPort) {
-			north[i].Pos = Vec{x, 0}
+		if !n.FixedPorts {
+			spreadPorts(n, s, endPadding)
 		}
 		if n.Title != nil {
 			n.Title.Pos = titlePosition(n, g.Direction)
@@ -54,6 +47,20 @@ func titlePosition(n *Node, d Direction) Vec {
 		return Vec{n.Size.X - titleGap - size.X, center(n.Size.Y, size.Y)}
 	}
 	return Vec{center(n.Size.X, size.X), titleGap}
+}
+
+func spreadPorts(n *Node, s settings, endPadding float64) {
+	east, west, north := portsOn(n, sideEast), portsOn(n, sideWest), portsOn(n, sideNorth)
+	slices.Reverse(west)
+	for i, y := range spread(n.Size.Y, len(east), endPadding, s.portPort) {
+		east[i].Pos = Vec{n.Size.X, y}
+	}
+	for i, y := range spread(n.Size.Y, len(west), endPadding, s.portPort) {
+		west[i].Pos = Vec{0, y}
+	}
+	for i, x := range spread(n.Size.X, len(north), s.portsSurrounding, s.portPort) {
+		north[i].Pos = Vec{x, 0}
+	}
 }
 
 func portsOn(n *Node, side PortSide) []*Port {

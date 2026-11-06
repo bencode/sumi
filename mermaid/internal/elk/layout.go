@@ -13,13 +13,14 @@ const activationThreshold = 40
 // its nodes placed and back in Layerless.
 var (
 	stepsBeforeOrdering = []func(*Graph){
-		toLTR, hideSelfLoops, breakCycles, insertLabelDummies, assignLayers, splitLongEdges,
-		assignPortSides, sortPortLists,
+		toLTR, reverseConstrainedEdges, hideSelfLoops, breakCycles, insertLabelDummies,
+		hideSeparateNodes, assignLayers, placeConstrainedNodes, splitLongEdges, assignPortSides,
+		invertPorts, sortPortLists,
 	}
 	stepsAfterOrdering = []func(*Graph){
 		restoreLoopPorts, positionPorts, nodeMargins, routeSelfLoops, switchLabelDummies,
-		sizeLabelDummies, placeNodes, measureLayers, routeEdges, joinLongEdges, restoreSelfLoops,
-		removeLabelDummies, restoreReversed, collectNodes,
+		sizeLabelDummies, placeNodes, measureLayers, routeEdges, joinLongEdges,
+		restoreSelfLoops, removeLabelDummies, restoreReversed, collectNodes,
 	}
 )
 
@@ -70,8 +71,10 @@ func layoutOwnSubgraphs(g *Graph) {
 // layoutHierarchy runs the graphs of one layout side by side: each up to crossing
 // minimization, bottom up, then that over them all, then each to the end
 // (doCompoundLayout and hierarchicalLayout, ElkLayered.java lines 179 and 214).
-// A subgraph ends with its size on its node, for its parent's second half.
+// A subgraph ends with its size and ports on its node, for its parent's second
+// half. Edges across borders go in pieces, one per graph, until all are done.
 func layoutHierarchy(root *Graph) {
+	splitCrossEdges(root)
 	all := graphsBottomUp(root)
 	for _, g := range all {
 		run(g, stepsBeforeOrdering)
@@ -86,8 +89,10 @@ func layoutHierarchy(root *Graph) {
 		if g.Parent != nil {
 			g.Parent.Size = actualSize(g)
 		}
+		portsToNode(g)
 		fromLTR(g)
 	}
+	stitchEdges(root)
 }
 
 // layoutFlat lays out g's connected components one by one and puts them side by
@@ -138,6 +143,8 @@ func graphsBottomUp(root *Graph) []*Graph {
 // minimum. ELK always adds the padding and takes it off again, which can change
 // the last bit of the size. The minimum never turns with the graph, so where
 // the graph is turned, as in a hierarchy going down, it holds the other axis.
+// ELK also moves east port dummies by what the graph grew, which portsToNode
+// overwrites.
 func fitGraph(g *Graph) {
 	size := actualSize(g)
 	p := g.Padding

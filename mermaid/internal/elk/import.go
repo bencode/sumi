@@ -23,9 +23,7 @@ func importGraph(in Input) *Graph {
 	g.Hierarchical = true
 	byID := map[string]located{}
 	importNodes(g, in.Nodes, Include, byID)
-	for i, e := range in.Edges {
-		importEdge(byID, e, i)
-	}
+	importEdges(g, in.Edges, byID)
 	return g
 }
 
@@ -49,7 +47,7 @@ func layoutDirection(d Direction) Direction {
 // importNodes adds all to g, whose hierarchy is the one given.
 func importNodes(g *Graph, all []InputNode, hierarchy Hierarchy, byID map[string]located) {
 	for i, n := range all {
-		node := &Node{ID: n.ID, Size: Vec{n.Width, n.Height}, ModelOrder: i}
+		node := &Node{ID: n.ID, Size: Vec{n.Width, n.Height}, ModelOrder: i, Graph: g}
 		if n.Title != nil {
 			node.Title = &Label{Size: Vec{n.Title.Width, n.Title.Height}}
 		}
@@ -101,25 +99,77 @@ func minimumSize(n InputNode) Vec {
 	return Vec{max(n.MinWidth, n.Title.Width+2*titleGap), n.Title.Height + n.Title.Height + 2*titleGap}
 }
 
-// importEdge adds e with a new port at each end, the source's first, to the graph
-// holding both ends (transformEdge, ElkGraphImporter.java line 1084). An unknown
-// end panics, as ELK throws: the parser declares every node an edge names.
-func importEdge(byID map[string]located, e InputEdge, order int) {
-	source, sourceKnown := byID[e.Source]
-	target, targetKnown := byID[e.Target]
-	if !sourceKnown || !targetKnown {
-		panic(fmt.Sprintf("elk: edge %s has an unknown end", e.ID))
+// importEdges adds all edges to the graphs holding them, breadth first and in
+// input order within a graph, which sets the order of a node's ports
+// (importHierarchicalGraph, graph/transform/ElkGraphImporter.java line 309).
+func importEdges(root *Graph, all []InputEdge, byID map[string]located) {
+	held := map[*Graph][]int{}
+	for i, e := range all {
+		source, sourceKnown := byID[e.Source]
+		target, targetKnown := byID[e.Target]
+		if !sourceKnown || !targetKnown {
+			panic(fmt.Sprintf("elk: edge %s has an unknown end", e.ID))
+		}
+		if layoutRoot(source.graph) != layoutRoot(target.graph) {
+			panic(fmt.Sprintf("elk: edge %s crosses the border of a subgraph laid out on its own", e.ID))
+		}
+		g := edgeContainer(source, target)
+		held[g] = append(held[g], i)
 	}
-	if source.graph != target.graph {
-		panic(fmt.Sprintf("elk: edge %s crosses a subgraph boundary", e.ID))
+	for queue := []*Graph{root}; len(queue) > 0; queue = queue[1:] {
+		g := queue[0]
+		for _, i := range held[g] {
+			importEdge(g, byID[all[i].Source].node, byID[all[i].Target].node, all[i], i)
+		}
+		for _, n := range g.Layerless {
+			if n.Nested != nil {
+				queue = append(queue, n.Nested)
+			}
+		}
 	}
-	g := source.graph
+}
+
+// layoutRoot gives the graph at the top of g's layout.
+func layoutRoot(g *Graph) *Graph {
+	for included(g) {
+		g = g.Parent.Graph
+	}
+	return g
+}
+
+// edgeContainer gives the graph holding an edge between two nodes: the lowest
+// that holds both, or the inside of one that holds the other
+// (findBestEdgeContainment, org.eclipse.elk.graph util/ElkGraphUtil.java line 334,
+// which the JSON importer applies to every edge).
+func edgeContainer(source, target located) *Graph {
+	switch {
+	case isDescendant(target.node, source.node):
+		return source.node.Nested
+	case isDescendant(source.node, target.node):
+		return target.node.Nested
+	}
+	for g := source.graph; ; g = g.Parent.Graph {
+		for h := target.graph; ; h = h.Parent.Graph {
+			if g == h {
+				return g
+			}
+			if h.Parent == nil {
+				break
+			}
+		}
+	}
+}
+
+// importEdge adds e with a new port at each end, the source's first (transformEdge,
+// ElkGraphImporter.java line 1084). The edge may cross borders: splitCrossEdges
+// takes care of that.
+func importEdge(g *Graph, source, target *Node, e InputEdge, order int) {
 	side := sideOf[g.Direction]
-	edge := &Edge{ID: e.ID, ModelOrder: order}
-	edge.Source, edge.Target = newPort(source.node, side), newPort(target.node, opposed[side])
+	edge := &Edge{ID: e.ID, ModelOrder: order, Container: g}
+	edge.Source, edge.Target = newPort(source, side), newPort(target, opposed[side])
 	edge.Source.Out = append(edge.Source.Out, edge)
 	edge.Target.In = append(edge.Target.In, edge)
-	g.SelfLoops = g.SelfLoops || source.node == target.node
+	g.SelfLoops = g.SelfLoops || source == target
 	if e.Label != nil {
 		edge.Labels = []*Label{{Size: Vec{e.Label.Width, e.Label.Height}}}
 		g.CenterLabels = true

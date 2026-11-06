@@ -13,13 +13,16 @@ type selfLoop struct {
 
 // hideSelfLoops takes self loops and their ports off their nodes, to keep them
 // out of the way of layering and ordering (process and hidePorts,
-// intermediate/SelfLoopPreProcessor.java lines 51, 88).
+// intermediate/SelfLoopPreProcessor.java lines 51, 88). A subgraph with external
+// ports keeps the ports, which have dummy nodes inside it.
 func hideSelfLoops(g *Graph) {
 	for _, n := range g.Layerless {
 		for _, e := range outgoing(n) {
 			if e.Target.Owner == n {
 				n.Loops = append(n.Loops, selfLoop{e, e.Source, e.Target})
-				n.Ports = slices.DeleteFunc(n.Ports, func(p *Port) bool { return p == e.Source || p == e.Target })
+				if !n.FixedPorts {
+					n.Ports = slices.DeleteFunc(n.Ports, func(p *Port) bool { return p == e.Source || p == e.Target })
+				}
 				setSource(e, nil)
 				setTarget(e, nil)
 			}
@@ -36,6 +39,9 @@ func hideSelfLoops(g *Graph) {
 // North ports come first on a node, which has none of its own.
 func restoreLoopPorts(g *Graph) {
 	for _, n := range nodes(g) {
+		if n.FixedPorts {
+			continue
+		}
 		var sources, targets []*Port
 		for _, l := range n.Loops {
 			l.source.Side, l.target.Side = sideNorth, sideNorth

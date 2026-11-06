@@ -350,14 +350,14 @@ func TestEmptyGraph(t *testing.T) {
 	}
 }
 
-func TestEdgeAcrossSubgraphPanics(t *testing.T) {
+func TestEdgeAcrossSeparateSubgraphPanics(t *testing.T) {
 	defer func() {
 		if recover() == nil {
 			t.Error("no panic")
 		}
 	}()
 	Layout(Input{
-		Nodes: []InputNode{box("a", 10, 10), {ID: "s", Children: []InputNode{box("b", 10, 10)}}},
+		Nodes: []InputNode{box("a", 10, 10), {ID: "s", Hierarchy: Separate, Children: []InputNode{box("b", 10, 10)}}},
 		Edges: edgesOf("a>b"),
 	})
 }

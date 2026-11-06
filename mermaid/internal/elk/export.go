@@ -2,6 +2,8 @@
 
 package elk
 
+import "slices"
+
 // export reads the finished layout out of g, whose nodes are all back in
 // Layerless (applyLayout, graph/transform/ElkGraphLayoutTransferrer.java line
 // 67). ELK writes onto the input graph's objects; here ModelOrder gives each
@@ -21,18 +23,26 @@ func export(g *Graph) Result {
 // below it to byOrder.
 func exportNodes(g *Graph, byOrder map[int]PlacedEdge) []PlacedNode {
 	offset := Vec{g.Offset.X + g.Padding.Left, g.Offset.Y + g.Padding.Top}
-	container := ""
-	if g.Parent != nil {
-		container = g.Parent.ID
-	}
 	for _, e := range edges(g) {
-		byOrder[e.ModelOrder] = exportEdge(e, offset, container)
+		byOrder[e.ModelOrder] = exportEdge(e, offset, containerID(g))
 	}
-	placed := make([]PlacedNode, len(g.Layerless))
-	for _, n := range g.Layerless {
+	for _, c := range g.Crossing {
+		byOrder[c.edge.ModelOrder] = c.placed
+	}
+	own := slices.DeleteFunc(slices.Clone(g.Layerless), func(n *Node) bool { return n.Type != typeNormal })
+	placed := make([]PlacedNode, len(own))
+	for _, n := range own {
 		placed[n.ModelOrder] = exportNode(n, offset, byOrder)
 	}
 	return placed
+}
+
+// containerID names the node holding g, the root having none.
+func containerID(g *Graph) string {
+	if g.Parent == nil {
+		return ""
+	}
+	return g.Parent.ID
 }
 
 // exportNode is applyNodeLayout (ElkGraphLayoutTransferrer.java line 159).

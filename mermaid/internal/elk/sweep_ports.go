@@ -80,8 +80,15 @@ func (s *sweep) distribute(free, fixed int, forward bool) {
 // connect to on side (distributePorts and sortPorts,
 // p3order/AbstractBarycenterPortDistributor.java lines 152, 179 and 351). A port
 // has one edge, and ranks start at 1, so ELK's special case for a barycenter of
-// 0 sorts the same.
+// 0 sorts the same. Only a subgraph with external ports can hold other ports than
+// these, without edges or with an edge within the layer. Its graph has ordered its
+// ports by then: only the root may keep its initial order and skip that. This leaves
+// ELK's barycenters for ports within a layer (line 238) nothing to sort. An external
+// port dummy has one port, maybe with no edge.
 func (s *sweep) placePorts(n *Node, side PortSide) {
+	if n.FixedOrder || len(n.Ports) < 2 {
+		return
+	}
 	for _, p := range n.Ports {
 		if p.Side != side {
 			continue
@@ -97,45 +104,101 @@ func (s *sweep) placePorts(n *Node, side PortSide) {
 	})
 }
 
+// farEnd gives the port at the other end of p's edge, if it has one: a port holds
+// one edge at most.
+func farEnd(p *Port) *Port {
+	switch {
+	case len(p.In) > 0:
+		return p.In[0].Source
+	case len(p.Out) > 0:
+		return p.Out[0].Target
+	}
+	return nil
+}
+
 // crossings counts the crossings of an order (countAllCrossings,
-// p3order/counting/AllCrossingsCounter.java line 61). Edges join neighboring
-// layers only, so what ELK counts within the first and last layer is always 0.
+// p3order/counting/AllCrossingsCounter.java line 61). The outer sides of the first
+// and last layer hold only edges within those layers, inverted ports having moved
+// all others, so ELK's count of edges leaving the side falls away
+// (countInLayerCrossingsOnPorts, p3order/counting/CrossingsCounter.java line 387).
 func crossings(layers [][]*Node) int {
-	total := 0
+	total := crossingsOn(portsInOrder(layers[0], sideWest, true))
+	total += crossingsOn(portsInOrder(layers[len(layers)-1], sideEast, true))
 	for i := 1; i < len(layers); i++ {
-		total += crossingsBetween(layers[i-1], layers[i])
+		left, right := portsInOrder(layers[i-1], sideEast, true), portsInOrder(layers[i], sideWest, false)
+		total += crossingsOn(slices.Concat(left, right))
 	}
 	return total
 }
 
-// crossingsBetween counts pairs of edges crossing between two layers, numbering
-// the right layer's ports from the bottom up and adding up, in a binary indexed
-// tree, the edges so far that end below (p3order/counting/CrossingsCounter.java
-// lines 169 and 366).
-func crossingsBetween(left, right []*Node) int {
-	position := map[*Port]int{}
-	for _, n := range slices.Backward(right) {
-		for _, p := range n.Ports {
-			if p.Side == sideWest {
-				position[p] = len(position)
-			}
+// portsInOrder lists the ports on side of nodes, top down or bottom up
+// (initPositions, CrossingsCounter.java line 460). West sides run bottom to top.
+func portsInOrder(nodes []*Node, side PortSide, topDown bool) []*Port {
+	var all []*Port
+	add := func(n *Node) {
+		ports := portsOn(n, side)
+		if (side == sideWest) == topDown {
+			slices.Reverse(ports)
+		}
+		all = append(all, ports...)
+	}
+	if topDown {
+		for _, n := range nodes {
+			add(n)
+		}
+	} else {
+		for _, n := range slices.Backward(nodes) {
+			add(n)
 		}
 	}
-	tree := make([]int, len(position)+1)
+	return all
+}
+
+// crossingsOn counts pairs of edges crossing on a line of ports: going down it,
+// the edges still open that end before the one that starts here
+// (countCrossingsOnPorts, CrossingsCounter.java line 366).
+func crossingsOn(ports []*Port) int {
+	position := make(map[*Port]int, len(ports))
+	for i, p := range ports {
+		position[p] = i
+	}
+	tree := newIndexTree(len(ports))
 	total := 0
-	for _, n := range left {
-		for _, p := range n.Ports {
-			if p.Side != sideEast {
-				continue
-			}
-			end := position[p.Out[0].Target]
-			for i := end; i > 0; i -= i & -i {
-				total += tree[i]
-			}
-			for i := end + 1; i < len(tree); i += i & -i {
-				tree[i]++
-			}
+	for i, p := range ports {
+		tree.removeAll(i)
+		if end := farEnd(p); end != nil && position[end] > i {
+			total += tree.rank(position[end])
+			tree.add(position[end])
 		}
+	}
+	return total
+}
+
+// indexTree counts numbers below a given one
+// (p3order/counting/BinaryIndexedTree.java).
+type indexTree struct {
+	sums, counts []int
+}
+
+func newIndexTree(size int) *indexTree {
+	return &indexTree{make([]int, size+1), make([]int, size)}
+}
+
+func (t *indexTree) change(at, by int) {
+	t.counts[at] += by
+	for i := at + 1; i < len(t.sums); i += i & -i {
+		t.sums[i] += by
+	}
+}
+
+func (t *indexTree) add(at int) { t.change(at, 1) }
+
+func (t *indexTree) removeAll(at int) { t.change(at, -t.counts[at]) }
+
+func (t *indexTree) rank(at int) int {
+	total := 0
+	for i := at; i > 0; i -= i & -i {
+		total += t.sums[i]
 	}
 	return total
 }

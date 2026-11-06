@@ -29,6 +29,7 @@ type neighbors struct {
 	settings    settings
 	index       map[*Node]int
 	layer       map[*Node][]*Node
+	layerIndex  map[*Node]int
 	left, right map[*Node][]neighbor
 }
 
@@ -104,15 +105,15 @@ func reversed[T any](all []T) []T {
 
 // neighborsOf looks up the order of g's layers and each node's neighbors, top
 // to bottom (buildFor, p4nodes/bk/NeighborhoodInformation.java line 89, and
-// lines 131 and 164). Edges only join neighboring layers at this point.
+// lines 131 and 164). An edge within a layer makes no neighbors.
 func neighborsOf(g *Graph) *neighbors {
 	near := &neighbors{
 		settings: g.Settings, index: map[*Node]int{}, layer: map[*Node][]*Node{},
-		left: map[*Node][]neighbor{}, right: map[*Node][]neighbor{},
+		layerIndex: map[*Node]int{}, left: map[*Node][]neighbor{}, right: map[*Node][]neighbor{},
 	}
-	for _, l := range g.Layers {
-		for i, n := range l.Nodes {
-			near.index[n], near.layer[n] = i, l.Nodes
+	for i, l := range g.Layers {
+		for j, n := range l.Nodes {
+			near.index[n], near.layer[n], near.layerIndex[n] = j, l.Nodes, i
 		}
 	}
 	sorted := func(all []neighbor) []neighbor {
@@ -124,14 +125,22 @@ func neighborsOf(g *Graph) *neighbors {
 	for _, n := range nodes(g) {
 		var left, right []neighbor
 		for _, e := range incoming(n) {
-			left = append(left, neighbor{e.Source.Owner, e})
+			if !near.inLayer(e) {
+				left = append(left, neighbor{e.Source.Owner, e})
+			}
 		}
 		for _, e := range outgoing(n) {
-			right = append(right, neighbor{e.Target.Owner, e})
+			if !near.inLayer(e) {
+				right = append(right, neighbor{e.Target.Owner, e})
+			}
 		}
 		near.left[n], near.right[n] = sorted(left), sorted(right)
 	}
 	return near
+}
+
+func (near *neighbors) inLayer(e *Edge) bool {
+	return near.layerIndex[e.Source.Owner] == near.layerIndex[e.Target.Owner]
 }
 
 func (near *neighbors) above(n *Node) *Node {
@@ -276,10 +285,13 @@ func (a *alignment) extent(g *Graph) float64 {
 // nodeSpacing is the room between neighbors in a layer (getVerticalSpacing,
 // options/Spacings.java line 195, with the table from line 62).
 func nodeSpacing(s settings, a, b *Node) float64 {
+	either := func(t NodeType) bool { return a.Type == t || b.Type == t }
 	switch {
+	case a.Type == typeExternalPort: // they have layers of their own
+		return s.portPort
 	case a.Type == b.Type && a.Type != typeNormal:
 		return s.edgeEdge
-	case a.Type == typeLongEdge || b.Type == typeLongEdge:
+	case either(typeLongEdge):
 		return s.edgeNode
 	}
 	return s.nodeNode

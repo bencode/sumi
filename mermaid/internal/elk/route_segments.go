@@ -19,8 +19,8 @@ const (
 // segment is the vertical part of the edges between two layers, the ports it
 // joins and where they meet it (p5edges/orthogonal/HyperEdgeSegment.java). in
 // holds coordinates coming from the left, out those leaving to the right, both
-// sorted. A port holds one edge here, so a segment serves one edge, and each
-// list one coordinate.
+// sorted. A port holds one edge here, so a segment serves one edge. An edge within
+// a layer has both ends on one side, so its segment has only in or only out.
 type segment struct {
 	ports              []*Port
 	mark, slot         int

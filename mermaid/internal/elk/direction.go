@@ -39,26 +39,31 @@ func fromLTR(g *Graph) {
 // mirrorX flips g left to right (mirrorAllX and mirrorX, GraphTransformer.java
 // lines 157, 187).
 func mirrorX(g *Graph) {
-	mirror(g, func(v *Vec) *float64 { return &v.X }, map[PortSide]PortSide{sideEast: sideWest, sideWest: sideEast})
+	far := func(m Spacing) float64 { return m.Right }
+	mirror(g, func(v *Vec) *float64 { return &v.X }, far, map[PortSide]PortSide{sideEast: sideWest, sideWest: sideEast})
 	g.Padding.Left, g.Padding.Right = g.Padding.Right, g.Padding.Left
 }
 
 // mirrorY flips g top to bottom (mirrorAllY and mirrorY, GraphTransformer.java
 // lines 163, 399).
 func mirrorY(g *Graph) {
-	mirror(g, func(v *Vec) *float64 { return &v.Y }, map[PortSide]PortSide{sideNorth: sideSouth, sideSouth: sideNorth})
+	far := func(m Spacing) float64 { return m.Bottom }
+	mirror(g, func(v *Vec) *float64 { return &v.Y }, far, map[PortSide]PortSide{sideNorth: sideSouth, sideSouth: sideNorth})
 	g.Padding.Top, g.Padding.Bottom = g.Padding.Bottom, g.Padding.Top
 }
 
-// mirror flips g along the axis that at picks. swapped gives the sides that
-// trade places. ELK also mirrors the placement of node labels; here that is the
+// mirror flips g along the axis that at picks. far is the margin on the far side
+// of a node, and swapped gives the sides that trade places. ELK also mirrors the placement of node labels; here that is the
 // direction titlePosition looks at.
-func mirror(g *Graph, at func(*Vec) *float64, swapped map[PortSide]PortSide) {
+func mirror(g *Graph, at func(*Vec) *float64, far func(Spacing) float64, swapped map[PortSide]PortSide) {
 	all := nodes(g)
-	offset := mirrorOffset(g, all, at)
+	offset := mirrorOffset(g, all, at, far)
 	flip := func(v *Vec, across float64) { *at(v) = across - *at(v) }
 	for _, n := range all {
 		flip(&n.Pos, offset-*at(&n.Size))
+		if side, ok := swapped[n.ExtSide]; ok {
+			n.ExtSide = side
+		}
 		if n.Title != nil {
 			flip(&n.Title.Pos, *at(&n.Size)-*at(&n.Title.Size))
 		}
@@ -80,14 +85,14 @@ func mirror(g *Graph, at func(*Vec) *float64, swapped map[PortSide]PortSide) {
 }
 
 // mirrorOffset gives the coordinate g flips across. With no size yet that is
-// the far edge of the nodes. Once sized, ELK subtracts the offset twice
-// (GraphTransformer.java lines 199-212). g has no size only on the way in,
-// before nodes have margins, so the margin ELK adds here is left out.
-func mirrorOffset(g *Graph, all []*Node, at func(*Vec) *float64) float64 {
+// the far edge of the nodes, as on the way in, or on the way out when all nodes
+// have no size. Once sized, ELK subtracts the offset twice (GraphTransformer.java
+// lines 199-212). ELK never turns margins, so they keep the sides they got.
+func mirrorOffset(g *Graph, all []*Node, at func(*Vec) *float64, far func(Spacing) float64) float64 {
 	offset := 0.0
 	if *at(&g.Size) == 0 {
 		for _, n := range all {
-			offset = max(offset, *at(&n.Pos)+*at(&n.Size))
+			offset = max(offset, *at(&n.Pos)+*at(&n.Size)+far(n.Margin))
 		}
 	} else {
 		offset = *at(&g.Size) - *at(&g.Offset)
@@ -101,6 +106,7 @@ func transpose(g *Graph) {
 	for _, n := range nodes(g) {
 		swap(&n.Pos)
 		swap(&n.Size)
+		n.ExtSide = transposedSide[n.ExtSide]
 		if n.Title != nil {
 			swap(&n.Title.Pos)
 			swap(&n.Title.Size)

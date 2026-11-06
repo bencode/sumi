@@ -37,10 +37,14 @@ type snapshot struct {
 	ports  map[*Node][]*Port
 }
 
-// centered is a node with its barycenter, NaN while it has none.
+// centered is a node with its barycenter, NaN while it has none, and what that
+// came from (BarycenterState, p3order/BarycenterHeuristic.java line 287).
 type centered struct {
-	node   *Node
-	center float64
+	node    *Node
+	center  float64
+	sum     float64
+	degree  int
+	visited bool
 }
 
 // minimizeCrossings orders the layers of root and the graphs laid out with it
@@ -92,6 +96,29 @@ func (s *sweep) minimize(g *Graph) {
 		l.Nodes = result.layers[i]
 		for _, n := range l.Nodes {
 			n.Ports = result.ports[n]
+		}
+	}
+	if g.External {
+		sortPortsByDummies(result.layers[len(result.layers)-1], g.Parent, sideEast)
+		sortPortsByDummies(reversed(result.layers[0]), g.Parent, sideWest)
+		g.Parent.FixedOrder = true
+	}
+}
+
+// sortPortsByDummies orders the ports on side of parent as the dummy nodes of a
+// layer came out, for the graph around it to work with (setPortOrderOnParentGraph and
+// sortPortsByDummyPositionsInLastLayer,
+// p3order/LayerSweepCrossingMinimizer.java lines 162 and 504). The first and last
+// layer may hold no such dummies.
+func sortPortsByDummies(dummies []*Node, parent *Node, side PortSide) {
+	if dummies[0].Type != typeExternalPort {
+		return
+	}
+	next := 0
+	for i, p := range parent.Ports {
+		if p.Side == side {
+			parent.Ports[i] = dummies[next].Origin
+			next++
 		}
 	}
 }
@@ -147,8 +174,8 @@ func (s *sweep) attempt(initial bool) int {
 
 // pass orders each layer by its neighbor already done (sweepReducingCrossings,
 // p3order/LayerSweepCrossingMinimizer.java line 450). ELK distributes ports in
-// the layer it starts from too, but on the side facing away, where there are
-// none.
+// the layer it starts from too, but on the side facing away, where only subgraphs
+// have ports, and those are in order already.
 func (s *sweep) pass(forward, first bool) {
 	start, step := 0, 1
 	if !forward {
@@ -161,12 +188,13 @@ func (s *sweep) pass(forward, first bool) {
 }
 
 // orderLayer sorts the layer free by barycenter (minimizeCrossings,
-// p3order/BarycenterHeuristic.java lines 77 and 336). ELK's constraint resolver
-// has no constraints to apply here.
+// p3order/BarycenterHeuristic.java lines 77 and 336). A layer of external ports
+// keeps nodes without one in place, even on the first sweep. ELK's constraint
+// resolver has no constraints to apply here.
 func (s *sweep) orderLayer(free, fixed int, forward, first bool) {
 	s.rankPorts(s.layers[fixed], !forward)
 	all := s.barycenters(s.layers[free], forward)
-	if first {
+	if first && s.layers[free][0].Type != typeExternalPort {
 		s.fillRandomly(all)
 	} else {
 		fillBetween(all)
@@ -183,32 +211,52 @@ func (s *sweep) shuffle(forward bool) {
 	}
 	all := make([]centered, len(layer))
 	for i, n := range layer {
-		all[i] = centered{n, s.noise.nextDouble()}
+		all[i] = centered{node: n, center: s.noise.nextDouble()}
 	}
 	sortCentered(layer, all)
 }
 
-// barycenters averages the ranks of the ports each node connects to in the
-// fixed layer, with some noise (calculateBarycenter,
-// p3order/BarycenterHeuristic.java line 218). The conversion keeps Go from fusing
-// the multiplication and subtraction, which JavaScript rounds apart.
+// barycenters gives each node of layer its barycenter (calculateBarycenters,
+// p3order/BarycenterHeuristic.java line 191).
 func (s *sweep) barycenters(layer []*Node, forward bool) []centered {
 	all := make([]centered, len(layer))
+	byNode := map[*Node]*centered{}
 	for i, n := range layer {
-		sum, degree := 0.0, 0
-		for _, p := range n.Ports {
-			for _, q := range fixedEnds(p, forward) {
-				sum += s.ranks[q]
-				degree++
-			}
-		}
-		all[i] = centered{n, math.NaN()}
-		if degree > 0 {
-			sum += float64(s.noise.nextFloat()*perturbation) - perturbation/2
-			all[i].center = sum / float64(degree)
-		}
+		all[i] = centered{node: n, center: math.NaN()}
+		byNode[n] = &all[i]
+	}
+	for _, n := range layer {
+		s.barycenter(byNode[n], forward, byNode)
 	}
 	return all
+}
+
+// barycenter averages the ranks of the ports c's node connects to in the fixed
+// layer, with some noise. A node of the same layer lends what it has, working
+// that out first, and noise follows that order (calculateBarycenter,
+// p3order/BarycenterHeuristic.java line 218). The conversion keeps Go from fusing
+// the multiplication and subtraction, which JavaScript rounds apart.
+func (s *sweep) barycenter(c *centered, forward bool, byNode map[*Node]*centered) {
+	if c.visited {
+		return
+	}
+	c.visited = true
+	for _, p := range c.node.Ports {
+		for _, q := range fixedEnds(p, forward) {
+			if other := byNode[q.Owner]; other != nil {
+				s.barycenter(other, forward, byNode)
+				c.sum += other.sum
+				c.degree += other.degree
+			} else {
+				c.sum += s.ranks[q]
+				c.degree++
+			}
+		}
+	}
+	if c.degree > 0 {
+		c.sum += float64(s.noise.nextFloat()*perturbation) - perturbation/2
+		c.center = c.sum / float64(c.degree)
+	}
 }
 
 // fixedEnds gives the ports p connects to on the side a sweep comes from.
