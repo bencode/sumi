@@ -1,25 +1,59 @@
 package syntax
 
 import (
+	"regexp"
 	"strings"
 )
 
 // Prepare readies a diagram's source for its lexer as Mermaid does
 // (preprocessDiagram, preprocess.ts, and Diagram.fromText, Diagram.ts): it
-// turns CRLF and CR into LF, takes off the front matter, drops %%{...}%%
-// directives and the lines that are %% comments, sets entity codes aside
-// (see Decode), and ends the source with a line break. A %% comment after
-// something on its line is left for the lexer. It returns the source and
-// the front matter's title, if any. Whatever it drops leaves its line
-// breaks behind, so positions in the source it returns are those in src.
+// turns CRLF and CR into LF, makes the quotes of HTML attributes single, takes
+// off the front matter, drops %%{...}%% directives and the lines that are %%
+// comments, drops the ; after a color, sets entity codes aside (see Decode),
+// and ends the source with a line break. A %% comment after something on its
+// line is left for the lexer. It returns the source and the front matter's
+// title, if any. Whatever it drops leaves its line breaks behind, so lines in
+// the source it returns are those in src.
 //
 // Only the front matter's title is read; the rest of it, config included,
 // is not supported yet and passed over, as are directives.
 func Prepare(src string) (body, title string) {
 	src = strings.ReplaceAll(src, "\r\n", "\n")
 	src = strings.ReplaceAll(src, "\r", "\n")
+	src = htmlTag.ReplaceAllStringFunc(src, func(tag string) string {
+		return htmlAttr.ReplaceAllString(tag, "='${1}'")
+	})
 	src, title = frontMatter(src)
-	return encodeEntities(stripComments(stripDirectives(src))) + "\n", title
+	return encodeEntities(dropColorEnds(stripComments(stripDirectives(src)))) + "\n", title
+}
+
+// An attribute of an HTML tag has its double quotes made single, which a parser would
+// take for the end of a string (cleanupText, preprocess.ts).
+var (
+	htmlTag  = regexp.MustCompile(`<\w+[^>]*>`)
+	htmlAttr = regexp.MustCompile(`="([^"]*)"`)
+)
+
+// A statement that sets a color loses the ; that ends it, so that the color is
+// not read as an entity code. The patterns are encodeEntities' in utils.ts,
+// with . and \S as JavaScript reads them.
+var colorStatements = []*regexp.Regexp{
+	regexp.MustCompile(`style` + jsDot + `*:` + jsNonSpace + `*#` + jsDot + `*;`),
+	regexp.MustCompile(`classDef` + jsDot + `*:` + jsNonSpace + `*#` + jsDot + `*;`),
+}
+
+const (
+	jsDot      = `[^\n\r\x{2028}\x{2029}]`
+	jsNonSpace = `[^\t\n\x{0b}\f\r \x{a0}\x{1680}\x{2000}-\x{200a}\x{2028}\x{2029}\x{202f}\x{205f}\x{3000}\x{feff}]`
+)
+
+// dropColorEnds takes the last ; off each statement that sets a color, so
+// columns after it on its line are one short.
+func dropColorEnds(src string) string {
+	for _, re := range colorStatements {
+		src = re.ReplaceAllStringFunc(src, func(s string) string { return s[:len(s)-1] })
+	}
+	return src
 }
 
 // frontMatter takes off the YAML block between two --- lines that src may

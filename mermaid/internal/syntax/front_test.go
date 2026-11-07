@@ -18,6 +18,9 @@ func TestPrepare(t *testing.T) {
 		{"a comment on the last line goes", "a\n%% b", "a\n\n", ""},
 		{"directive", "%%{init: {\n'theme': 'dark'}}%%\nx", "\n\nx\n", ""},
 		{"entity", "A->>B: I #9829; you #59;", "A->>B: I \uE0009829\uE001 you \uE00059\uE001\n", ""},
+		{"html attribute", "A[<img src=\"x\" a=\"b\">] \"c\"", "A[<img src='x' a='b'>] \"c\"\n", ""},
+		{"style with a color", "style A fill:#f00;\nB", "style A fill:#f00\nB\n", ""},
+		{"classDef with a color", "classDef c fill:#123,color:#fff;", "classDef c fill:#123,color:#fff\n", ""},
 	}
 	for _, tt := range tests {
 		body, title := Prepare(tt.src)

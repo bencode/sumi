@@ -1,0 +1,42 @@
+// Package flowchart reads Mermaid flowcharts into what Mermaid's getData gives, sizes
+// aside. So far nothing draws them. A diagram goes through a pipeline, each step taking
+// values and returning new ones:
+//
+//	Lex      source -> tokens              lex.go, rules.go, letters.go
+//	Parse    tokens -> statements          parse.go, chain.go, click.go, arrow.go
+//	Resolve  statements -> nodes and edges resolve.go, metadata.go, subgraph.go, data.go
+//
+// The lexer follows the rules Jison compiles from flow.jison, which are not always
+// those written there; rules.go says where. The parser is a recursive descent over
+// this grammar, from flow.jison with its left recursion written as repetition and
+// the tokens the lexer never makes left out. Upper case names are tokens.
+//
+//	diagram   = { SPACE | NEWLINE } GRAPH ( NODIR | DIR ( SEMI | { SPACE } NEWLINE ) ) document ;
+//	document  = { statement | SEMI | NEWLINE | SPACE } ;
+//	statement = chain sep
+//	          | STYLE SPACE id SPACE styles sep
+//	          | LINKSTYLE SPACE ( DEFAULT | nums ) SPACE
+//	              ( styles | INTERPOLATE SPACE alnum [ SPACE styles ] ) sep
+//	          | CLASSDEF SPACE id SPACE styles sep
+//	          | CLASS SPACE id SPACE id sep
+//	          | click sep
+//	          | SUBGRAPH SPACE title [ SQS text SQE ] sep document END
+//	          | DIRECTION
+//	          | ACC_TITLE VALUE | ACC_DESCR VALUE | ACC_DESCR_BLOCK ;
+//	sep       = NEWLINE | SEMI ;
+//	chain     = node { link node } ;
+//	node      = styled [ data ] { SPACE } { AMP SPACE { SPACE } styled [ data ] { SPACE } } ;
+//	styled    = vertex [ STYLE_SEPARATOR id ] ;
+//	vertex    = id [ shape ] ;
+//	link      = [ LINK_ID ] LINK [ PIPE text PIPE [ SPACE ] ]
+//	          | [ LINK_ID ] START_LINK edgetext LINK ;
+//	data      = SHAPE_DATA { SHAPE_DATA } ;
+//
+// A & needs a SPACE before it as well, and shape is one of the fifteen brackets of
+// chain.go. Mermaid's grammar also has a subgraph with no title, which crashes
+// addSubGraph, so here it is an error.
+//
+// Three things are read and dropped, as they change nothing Mermaid draws by default:
+// linkStyle's interpolate and @{ curve } set a curve, which render.ts overrides on every
+// edge with a route, and the length of a link is a hint only other layouts take.
+package flowchart
