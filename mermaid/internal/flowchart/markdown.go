@@ -67,13 +67,14 @@ func readMarkdown(s string, at syntax.Pos) ([][]Span, error) {
 	if what := notRead(s); what != "" {
 		return nil, syntax.Unsupported(at, what)
 	}
-	var lines [][]Span
+	var lines, last [][]Span
 	for _, p := range paragraphBreak.Split(brTag.ReplaceAllString(s, "<br>"), -1) {
 		if strings.Trim(p, " \t") != "" {
-			lines = append(lines, closed(lined(inline([]rune(strings.TrimSuffix(p, "\n")), false, false)))...)
+			lines = append(lines, closed(last)...)
+			last = lined(inline([]rune(strings.TrimSuffix(p, "\n")), false, false))
 		}
 	}
-	return lines, nil
+	return append(lines, last...), nil
 }
 
 // A piece is what inline makes of a token: text in a style, or a line break.

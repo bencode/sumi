@@ -43,7 +43,7 @@ func readLabel(l Label, at syntax.Pos) ([][]Span, error) {
 	for _, s := range newLines.Split(brTag.ReplaceAllString(l.Text, "\n"), -1) {
 		lines = append(lines, spans([]Span{{Text: s}}))
 	}
-	return closed(lines), nil
+	return lines, nil
 }
 
 // readEdgeLabel is readLabel for the label of an edge, whose line breaks the ELK layout
@@ -57,7 +57,9 @@ func readEdgeLabel(l Label, at syntax.Pos) ([][]Span, error) {
 	return readLabel(l, at)
 }
 
-// closed is lines without the blank line after a last <br>, which takes no room.
+// closed is the lines of a paragraph that another follows, without the blank line after
+// its last <br>. That takes no room unless the label wraps, which sumi leaves out; at the
+// end of a label setLabel decides.
 func closed(lines [][]Span) [][]Span {
 	if n := len(lines); n > 1 && blank(lines[n-1]) {
 		return lines[:n-1]

@@ -3,8 +3,9 @@ package scene
 // Arial measures text from a table of Arial's advance widths, with no font at
 // hand: for SVG meant to be viewed in a browser, and for tests, which get the
 // same widths on every machine. An East Asian wide character takes an em,
-// another character past ASCII 0.58 of one, and monospaced text 0.6 of an em
-// a character (1.2 a wide one). Italic text is measured as upright.
+// another character past ASCII 0.58 of one, the no-break space that of the
+// space, and monospaced text 0.6 of an em a character (1.2 a wide one). Italic
+// text is measured as upright.
 //
 // The widths of printable ASCII are those of limu (github.com/firede/limu,
 // text/measure.go), which took them from Pele's src/text/metrics.ts
@@ -58,6 +59,9 @@ func (arial) Measure(s string, f Font) Metrics {
 
 // advance is c's width in thousandths of an em.
 func advance(c rune, table *[95]uint16, mono bool) int {
+	if c == '\u00a0' {
+		c = ' '
+	}
 	switch {
 	case c < 32 || isZeroWidth(c):
 		return 0
