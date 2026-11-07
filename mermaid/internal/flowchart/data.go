@@ -38,7 +38,7 @@ const (
 // and what that shows.
 type Label struct {
 	Text, Kind string   // Text has its entity codes as syntax.Prepare left them
-	Lines      [][]Span // the lines a browser shows, before any wrapping
+	Lines      [][]Span // the lines its <br>s part, as written; setLabel decides what the last one takes
 }
 
 // A Node is a vertex, or a subgraph if it is a Group.

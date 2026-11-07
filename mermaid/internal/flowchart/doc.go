@@ -6,6 +6,7 @@
 //	Parse    tokens -> statements          parse.go, chain.go, click.go, arrow.go
 //	Resolve  statements -> nodes and edges resolve.go, metadata.go, subgraph.go, data.go
 //	Label    text -> lines of styled spans label.go, markdown.go
+//	Box      lines -> wrapped lines, a box box.go, linebreak
 //
 // The lexer follows the rules Jison compiles from flow.jison, which are not always
 // those written there; rules.go says where. The parser is a recursive descent over
