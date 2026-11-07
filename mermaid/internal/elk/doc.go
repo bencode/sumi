@@ -59,7 +59,7 @@
 // Graph -> Result. In a layout of components, fitGraph comes last, after they
 // are back together.
 //
-// Nothing calls Layout yet. Mermaid sets no layer constraints, so only those
+// Only graphlayout calls Layout. Mermaid sets no layer constraints, so only those
 // of external port dummies exist, and InLayerConstraintProcessor does nothing and is
 // left out. Edges within a layer come only from inverted ports, the ports of a
 // subgraph that an edge reaches from the wrong side. Crossing minimization leaves
