@@ -575,6 +575,10 @@ func TestRefused(t *testing.T) {
 		{"a number for a label", "flowchart TD\nA@{ label: 5 }", 2, 2, true},
 		{"animation", "flowchart TD\nA e1@--> B\ne1@{ animate: true }", 3, 3, true},
 		{"a collapsed subgraph", "flowchart TD\nsubgraph s\nend\ns@{ view: collapsed }", 4, 2, true},
+		{"HTML in a label", "flowchart TD\nA[\"<b>x</b>\"]", 2, 1, true},
+		{"a label given after its node", "flowchart TD\nA\nB --> A[\"fa:fa-car\"]", 3, 7, true},
+		{"HTML on an edge", "flowchart TD\nA -->|\"<b>x</b>\"| B", 2, 2, true},
+		{"HTML in a title", "flowchart TD\n\nsubgraph s[\"<i>x</i>\"]\nend", 3, 1, true},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			body, _ := syntax.Prepare(c.src)

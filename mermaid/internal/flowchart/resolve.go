@@ -13,7 +13,7 @@ import (
 const maxEdges = 500
 
 type vertex struct {
-	at      syntax.Pos // where its shape was given
+	at      syntax.Pos // where its label or shape was last given
 	id      string
 	label   Label
 	shape   Shape
@@ -22,6 +22,7 @@ type vertex struct {
 }
 
 type edge struct {
+	at             syntax.Pos
 	id, start, end string
 	label          Label
 	kind, stroke   string
@@ -84,7 +85,7 @@ func (t *tables) document(body []Stmt) (members []string, dir string, err error)
 		case *Direction:
 			dir = s.Value
 		case *Style:
-			if v := t.vertex(s.ID); v != nil {
+			if v := t.vertex(s.ID, s.Pos); v != nil {
 				v.styles = append(v.styles, s.Styles...)
 			}
 		case *LinkStyle:
@@ -130,15 +131,15 @@ func (t *tables) edge(id string) *edge {
 	return nil
 }
 
-// vertex is the vertex id, new if need be, or nil if id is an edge's: addVertex then
-// makes no vertex.
-func (t *tables) vertex(id string) *vertex {
+// vertex is the vertex id, new if need be, first named at at, or nil if id is an edge's:
+// addVertex then makes no vertex.
+func (t *tables) vertex(id string, at syntax.Pos) *vertex {
 	if t.edge(id) != nil {
 		return nil
 	}
 	v := t.byID[id]
 	if v == nil {
-		v = &vertex{id: id, label: Label{id, "text"}}
+		v = &vertex{at: at, id: id, label: Label{Text: id, Kind: "text"}}
 		t.byID[id] = v
 		t.vertices = append(t.vertices, v)
 	}
@@ -147,11 +148,11 @@ func (t *tables) vertex(id string) *vertex {
 
 // addVertex is addVertex with what the grammar's vertex rule gives it.
 func (t *tables) addVertex(s *Vertex) {
-	v := t.vertex(s.ID)
+	v := t.vertex(s.ID, s.Pos)
 	if v == nil || s.Text == nil {
 		return
 	}
-	v.label = Label{unquote(trim(s.Text.Text)), s.Text.Kind}
+	v.label = Label{Text: unquote(trim(s.Text.Text)), Kind: s.Text.Kind}
 	v.shape, v.at = s.Shape, s.Pos
 }
 
@@ -189,7 +190,7 @@ func (t *tables) addData(d *Data) error {
 		v.shape = shape
 	}
 	if text := m["label"]; text != "" {
-		v.label = Label{text, labelKind(m["labelType"])}
+		v.label, v.at = Label{Text: text, Kind: labelKind(m["labelType"])}, d.Pos
 	}
 	return nil
 }
@@ -231,9 +232,9 @@ func (t *tables) addLink(l *Link) error {
 
 // addSingleLink adds an edge from start to end, with the id if it is free.
 func (t *tables) addSingleLink(l *Link, start, end, id string) error {
-	e := &edge{id: id, start: start, end: end, label: Label{"", "text"}, kind: l.Type, stroke: l.Stroke}
+	e := &edge{at: l.Pos, id: id, start: start, end: end, label: Label{Kind: "text"}, kind: l.Type, stroke: l.Stroke}
 	if l.Text != nil {
-		e.label = Label{trim(l.Text.Text), l.Text.Kind}
+		e.label = Label{Text: trim(l.Text.Text), Kind: l.Text.Kind}
 	}
 	if id == "" || t.edge(id) != nil {
 		e.id = t.edgeID(start, end)

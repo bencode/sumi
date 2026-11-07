@@ -5,6 +5,7 @@
 //	Lex      source -> tokens              lex.go, rules.go, letters.go
 //	Parse    tokens -> statements          parse.go, chain.go, click.go, arrow.go
 //	Resolve  statements -> nodes and edges resolve.go, metadata.go, subgraph.go, data.go
+//	Label    text -> lines of styled spans label.go, markdown.go
 //
 // The lexer follows the rules Jison compiles from flow.jison, which are not always
 // those written there; rules.go says where. The parser is a recursive descent over
@@ -35,6 +36,11 @@
 // A & needs a SPACE before it as well, and shape is one of the fifteen brackets of
 // chain.go. Mermaid's grammar also has a subgraph with no title, which crashes
 // addSubGraph, so here it is an error.
+//
+// A label is read into what a browser shows of it: its entity codes, its line breaks, and
+// of Markdown its paragraphs, emphasis and escapes. Mermaid gives labels to the browser as
+// HTML, and all else that takes, icons, formulas and Markdown's blocks among them, sumi
+// does not draw, so it is an error here; markdown.go lists it.
 //
 // Three things are read and dropped, as they change nothing Mermaid draws by default:
 // linkStyle's interpolate and @{ curve } set a curve, which render.ts overrides on every

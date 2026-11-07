@@ -127,11 +127,11 @@ func Decode(s string) string {
 }
 
 func entity(code string) string {
-	if n, err := strconv.Atoi(code); err == nil {
-		if n <= 0 || n > unicode.MaxRune {
-			return string(utf8.RuneError)
-		}
-		return string(rune(n))
+	if strings.Trim(code, "0123456789") != "" {
+		return html.UnescapeString("&" + code + ";")
 	}
-	return html.UnescapeString("&" + code + ";")
+	if n, err := strconv.Atoi(code); err != nil || n > unicode.MaxRune {
+		return string(utf8.RuneError)
+	}
+	return html.UnescapeString("&#" + code + ";")
 }
