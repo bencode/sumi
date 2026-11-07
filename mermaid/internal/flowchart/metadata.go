@@ -32,10 +32,16 @@ type metadata map[string]string
 // typed are the keys whose values Resolve reads.
 var typed = map[string]bool{"shape": true, "label": true, "labelType": true}
 
+// nonPrintable is what js-yaml refuses anywhere in a stream.
+var nonPrintable = regexp.MustCompile(`[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x84\x86-\x9f\x{fffe}\x{ffff}]`)
+
 // readMetadata reads the YAML of an @{...} (addVertex): a flow mapping if it is on one
 // line, and a block mapping if not. It takes the part of YAML people write there, keys
 // and scalars, and leaves the rest as not supported.
 func readMetadata(d *Data) (metadata, error) {
+	if nonPrintable.MatchString(d.Text) {
+		return nil, syntax.Errorf(d.Pos, "a character YAML does not take in @{...}")
+	}
 	read := flowEntries
 	if strings.Contains(d.Text, "\n") {
 		read = blockEntries
@@ -190,7 +196,7 @@ func readScalar(s string, flow bool) (scalar, string, bool) {
 	return scalar{text, !notString.MatchString(text)}, s[end:], true
 }
 
-// readQuoted reads a single quoted string, in which ” is a '.
+// readQuoted reads a single quoted string, in which two quotes in a row are one.
 func readQuoted(s string) (scalar, string, bool) {
 	var b strings.Builder
 	for i := 1; i < len(s); i++ {
@@ -207,13 +213,16 @@ func readQuoted(s string) (scalar, string, bool) {
 	return scalar{}, s, false
 }
 
+// indicator is a colon that ends a key, or a # that starts a comment.
+var indicator = regexp.MustCompile(`:[ \t]|:$|[ \t]#`)
+
 // plain reports whether s is a plain scalar with nothing in it that YAML reads as more
 // than text. A flow mapping takes fewer characters.
 func plain(s string, flow bool) bool {
 	if s != "" && strings.ContainsRune("&*!|>'\"%@`#?[]{}-,:\t", rune(s[0])) {
 		return false
 	}
-	if strings.Contains(s, ": ") || strings.HasSuffix(s, ":") || strings.Contains(s, " #") {
+	if indicator.MatchString(s) {
 		return false
 	}
 	return !flow || !strings.ContainsAny(s, "[]{}")

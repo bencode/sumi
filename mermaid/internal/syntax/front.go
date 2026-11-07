@@ -47,8 +47,8 @@ const (
 	jsNonSpace = `[^\t\n\x{0b}\f\r \x{a0}\x{1680}\x{2000}-\x{200a}\x{2028}\x{2029}\x{202f}\x{205f}\x{3000}\x{feff}]`
 )
 
-// dropColorEnds takes the last ; off each statement that sets a color. It is
-// the one thing Prepare takes out of a line, so columns after it are one short.
+// dropColorEnds takes the last ; off each statement that sets a color, so
+// columns after it on its line are one short.
 func dropColorEnds(src string) string {
 	for _, re := range colorStatements {
 		src = re.ReplaceAllStringFunc(src, func(s string) string { return s[:len(s)-1] })

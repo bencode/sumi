@@ -151,8 +151,17 @@ func (t *tables) addVertex(s *Vertex) {
 	if v == nil || s.Text == nil {
 		return
 	}
-	v.label = Label{trim(s.Text.Text), s.Text.Kind}
+	v.label = Label{unquote(trim(s.Text.Text)), s.Text.Kind}
 	v.shape, v.at = s.Shape, s.Pos
+}
+
+// unquote takes the quotes off s, if it has one at each end. Only the text of a trapezoid
+// can: there a " after a blank is not a string.
+func unquote(s string) string {
+	if len(s) >= 2 && s[0] == '"' && s[len(s)-1] == '"' {
+		return s[1 : len(s)-1]
+	}
+	return s
 }
 
 // addData is addVertex with metadata, which goes to the subgraph or the edge of that id

@@ -97,7 +97,7 @@ func (t *tables) data(dir string) (*Diagram, error) {
 		d.Edges = append(d.Edges, Edge{
 			ID: e.id, Start: e.start, End: e.end, Label: e.label, Stroke: e.stroke,
 			StartMarker: from, EndMarker: to,
-			Styles:   append(append([]string{}, t.defaultStyle...), e.styles...),
+			Styles:   slices.Concat(t.defaultStyle, e.styles),
 			Compiled: t.compiled(e.classes),
 		})
 	}

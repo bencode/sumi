@@ -428,6 +428,17 @@ var readCases = []struct {
 		"TB",
 		"node A rect \"A\"/text",
 	}},
+	{"quotes in a trapezoid", "flowchart TD\nA[/ \"x\"/]\nB[\\ \"y\" \\]\nC[/ \"/]\nD[/ \"a\" b/]", []string{
+		"TB",
+		"node A leanright \"x\"/text",
+		"node B leanleft \"y\"/text",
+		"node C leanright \"\\\"\"/text",
+		"node D leanright \"\\\"a\\\" b\"/text",
+	}},
+	{"a tab after a colon", "flowchart TD\nA@{ shape:\tcircle }", []string{
+		"TB",
+		"node A circle \"A\"/text",
+	}},
 	{"a left arrow", "flowchart >\nA", []string{
 		"LR",
 		"node A rect \"A\"/text",
@@ -554,6 +565,8 @@ func TestRefused(t *testing.T) {
 		{"a shape Mermaid has not got", "flowchart TD\nA@{ shape: nope }", 2, 2, true},
 		{"an icon", "flowchart TD\nA@{ icon: x }", 2, 2, true},
 		{"YAML past keys and scalars", "flowchart TD\nA@{ label: [a] }", 2, 2, true},
+		{"a control character in metadata", "flowchart TD\nA@{ label: a\x01b }", 2, 2, false},
+		{"a comment after a tab", "flowchart TD\nA@{ label: x\t# c }", 2, 2, true},
 		{"a bracket in a plain value", "flowchart TD\nA@{ label: a[b] }", 2, 2, true},
 		{"a backslash in a string", "flowchart TD\nA@{ label: \"x\\ny\" }", 2, 2, true},
 		{"a block with two indents", "flowchart TD\nA@{\n  label: x\n    shape: cyl\n}", 2, 2, true},
