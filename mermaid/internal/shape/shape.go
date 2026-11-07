@@ -3,9 +3,9 @@
 // size, its outline, where its label goes, and where a line toward the node
 // meets its outline.
 //
-// Mermaid takes a node's size from the getBBox of the element it draws, so the
-// size is a float32 Chrome worked out from the strings JS wrote: Set follows
-// those steps, so that layout gets the very size Mermaid's does.
+// Mermaid takes most shapes' sizes from the getBBox of the element it draws, so
+// such a size is a float32 Chrome worked out from the strings JS wrote: Set
+// follows those steps, so that layout gets the very size Mermaid's does.
 package shape
 
 import "github.com/bencode/sumi/scene"
@@ -66,7 +66,8 @@ var setters = [...]func(w, h, padding float64) Node{
 
 // WidensLabel reports whether a label in k is widened to the diagram's least
 // width. Circles are not, as they size from both sides of the label
-// (labelHelper's ignoreMinWidth), and an empty label never is.
+// (labelHelper's ignoreMinWidth). An empty label is not widened in any shape,
+// which is the caller's to check.
 func (k Kind) WidensLabel() bool {
 	return k != Circle && k != DoubleCircle
 }

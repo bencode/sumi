@@ -36,6 +36,7 @@ func cylinderRect(w, h, rx, ry float64) rectF {
 		for _, c := range arc(at, to, rx32, ry32, false, false) {
 			b.addConic(c)
 		}
+		b.add(to) // the arc's end, also when arc gives no conics for a line
 		at = to
 	}
 	lineBy := func(dy float32) {

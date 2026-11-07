@@ -22,6 +22,12 @@ func polygon(pts []scene.Point, off scene.Point) Node {
 	}
 }
 
+// inserted places pts as insertPolygonShape does, by the box w by h they are
+// drawn about.
+func inserted(w, h float64, pts []scene.Point) Node {
+	return polygon(pts, scene.Point{X: -w / 2, Y: h / 2})
+}
+
 // pointsRect is the getBBox of a polygon or path through pts.
 func pointsRect(pts []scene.Point) rectF {
 	b := newBox(pt{svg(pts[0].X), svg(pts[0].Y)})

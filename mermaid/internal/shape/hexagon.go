@@ -9,7 +9,7 @@ func hexagon(lw, lh, _ float64) Node {
 	h := lh + padH
 	m := h / f
 	w := lw + 2*m + padW
-	return polygon([]scene.Point{
+	return inserted(w, h, []scene.Point{
 		{X: m, Y: 0}, {X: w - m, Y: 0}, {X: w, Y: -h / 2}, {X: w - m, Y: -h}, {X: m, Y: -h}, {X: 0, Y: -h / 2},
-	}, scene.Point{X: -w / 2, Y: h / 2})
+	})
 }
