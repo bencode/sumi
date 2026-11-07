@@ -9,6 +9,7 @@ import (
 )
 
 type subgraph struct {
+	at      syntax.Pos
 	id      string
 	label   Label
 	dir     string
@@ -41,7 +42,7 @@ func (t *tables) addSubgraph(s *Subgraph) (string, error) {
 		sg.nodes = append(sg.nodes, nodes...)
 	} else {
 		t.subgraphs = append(t.subgraphs, &subgraph{
-			id: id, label: Label{trim(s.Title.Text), s.Title.Kind}, dir: dir, nodes: nodes,
+			at: s.Pos, id: id, label: Label{Text: trimTitle(s.Title.Text), Kind: s.Title.Kind}, dir: dir, nodes: nodes,
 		})
 	}
 	if t.inCycle(id) {
@@ -84,4 +85,13 @@ func (t *tables) inCycle(id string) bool {
 			return true
 		}
 	}
+}
+
+// trimTitle is a title trimmed after sanitizeText, as addSubGraph does: beside a <, that
+// has written a no-break space as &nbsp;.
+func trimTitle(s string) string {
+	if !strings.Contains(s, "<") {
+		return trim(s)
+	}
+	return strings.TrimFunc(s, func(c rune) bool { return c != '\u00a0' && isSpace(c) })
 }

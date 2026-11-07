@@ -38,6 +38,7 @@ type Link struct {
 
 // A Style is a style statement.
 type Style struct {
+	Pos    syntax.Pos
 	ID     string
 	Styles []string
 }

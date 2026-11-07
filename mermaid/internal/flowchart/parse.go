@@ -99,7 +99,7 @@ func parseStatement(ts []syntax.Token) (Stmt, []syntax.Token, error) {
 	switch t.Kind {
 	case kStyle:
 		id, styles, rest, err := parseIDStyles(ts[1:])
-		return &Style{id, styles}, rest, err
+		return &Style{t.Pos, id, styles}, rest, err
 	case kLinkStyle:
 		return parseLinkStyle(ts[1:])
 	case kClassDef:
