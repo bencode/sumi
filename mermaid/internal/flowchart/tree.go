@@ -46,12 +46,14 @@ type Style struct {
 // A LinkStyle is a linkStyle statement. It has no Styles when all it sets is the
 // curve, which nothing reads (the package doc says why).
 type LinkStyle struct {
+	Pos       syntax.Pos
 	Positions []syntax.Token // none for default
 	Styles    []string
 }
 
 // A ClassDef is a classDef statement.
 type ClassDef struct {
+	Pos    syntax.Pos
 	IDs    string
 	Styles []string
 }

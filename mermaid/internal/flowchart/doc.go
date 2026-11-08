@@ -10,8 +10,10 @@
 //	Place    boxes -> shapes, a layout     layout.go, shape, graphlayout
 //	Draw     a layout -> a scene           draw.go, edge.go, text.go
 //
-// Styles, classDef, style and linkStyle, are read and not yet drawn: every color is the
-// theme's.
+// Styles, classDef, style and linkStyle, draw what they set of fill, stroke,
+// stroke-width, stroke-dasharray and color (style.go); what else would change how
+// Chrome draws, fonts among it, is refused, and the rest of CSS left out as Chrome
+// leaves it.
 //
 // The lexer follows the rules Jison compiles from flow.jison, which are not always
 // those written there; rules.go says where. The parser is a recursive descent over

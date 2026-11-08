@@ -85,13 +85,20 @@ func (t *tables) document(body []Stmt) (members []string, dir string, err error)
 		case *Direction:
 			dir = s.Value
 		case *Style:
+			if err = checkStyles(s.Pos, s.Styles); err != nil {
+				break
+			}
 			if v := t.vertex(s.ID, s.Pos); v != nil {
 				v.styles = append(v.styles, s.Styles...)
 			}
 		case *LinkStyle:
-			err = t.updateLink(s)
+			if err = checkStyles(s.Pos, s.Styles); err == nil {
+				err = t.updateLink(s)
+			}
 		case *ClassDef:
-			t.addClass(s)
+			if err = checkStyles(s.Pos, classStyles(s)); err == nil {
+				t.addClass(s)
+			}
 		case *Class:
 			t.setClass(s)
 		}
@@ -287,11 +294,17 @@ func (t *tables) updateLink(s *LinkStyle) error {
 	return nil
 }
 
-// addClass is addClass: a , with a \ before it stays in the style it is in.
-func (t *tables) addClass(s *ClassDef) {
+// classStyles are s's styles as addClass splits them: a , with a \ before it stays
+// in the style it is in.
+func classStyles(s *ClassDef) []string {
 	joined := strings.ReplaceAll(strings.Join(s.Styles, ","), `\,`, "§§§")
 	joined = strings.ReplaceAll(joined, ",", ";")
-	styles := strings.Split(strings.ReplaceAll(joined, "§§§", ","), ";")
+	return strings.Split(strings.ReplaceAll(joined, "§§§", ","), ";")
+}
+
+// addClass is addClass.
+func (t *tables) addClass(s *ClassDef) {
+	styles := classStyles(s)
 	for _, id := range strings.Split(s.IDs, ",") {
 		c := t.classes[id]
 		if c == nil {
