@@ -182,10 +182,10 @@ func span(segs []scene.Seg, from, to float64) []scene.Seg {
 // butt ends, drawn with st's round ones: each subpath takes the array from its start
 // again, an odd one twice, and each dash is drawn in from its ends by as far as the
 // round cap reaches out, so that it covers what Chrome's covers. A dash shorter than
-// the stroke is wide is a dot at its middle; one of no length draws nothing. So is
-// what the subpath's end leaves of a dash when that is shorter than the stroke is
-// wide, as it is all along roughjs's short pieces of a curve. turn is how much of each
-// subpath's length Chrome's starts past where segs's does.
+// the stroke is wide is a dot at its middle, and so is what the subpath's end leaves
+// of a dash when that is shorter than the stroke is wide, as it is all along
+// roughjs's short pieces of a curve; a dash of no length draws nothing. turn is how
+// much of each subpath's length Chrome's starts past where segs's does.
 func dashed(segs []scene.Seg, dash []float64, st scene.Stroke, turn float64) []scene.Path {
 	if len(dash)%2 == 1 {
 		dash = append(append([]float64{}, dash...), dash...)
