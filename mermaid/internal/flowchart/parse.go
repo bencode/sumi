@@ -101,10 +101,10 @@ func parseStatement(ts []syntax.Token) (Stmt, []syntax.Token, error) {
 		id, styles, rest, err := parseIDStyles(ts[1:])
 		return &Style{t.Pos, id, styles}, rest, err
 	case kLinkStyle:
-		return parseLinkStyle(ts[1:])
+		return parseLinkStyle(t.Pos, ts[1:])
 	case kClassDef:
 		ids, styles, rest, err := parseIDStyles(ts[1:])
-		return &ClassDef{ids, styles}, rest, err
+		return &ClassDef{t.Pos, ids, styles}, rest, err
 	case kClass:
 		return parseClass(ts[1:])
 	case kClick:
@@ -177,13 +177,13 @@ func parseClass(ts []syntax.Token) (Stmt, []syntax.Token, error) {
 	return &Class{ids, class}, ts, err
 }
 
-// parseLinkStyle reads a linkStyle statement past its keyword.
-func parseLinkStyle(ts []syntax.Token) (Stmt, []syntax.Token, error) {
+// parseLinkStyle reads a linkStyle statement past its keyword, which is at at.
+func parseLinkStyle(at syntax.Pos, ts []syntax.Token) (Stmt, []syntax.Token, error) {
 	_, ts, err := syntax.Expect(ts, kSpace, "a space")
 	if err != nil {
 		return nil, ts, err
 	}
-	s := &LinkStyle{}
+	s := &LinkStyle{Pos: at}
 	if is(ts, kDefault) {
 		ts = ts[1:]
 	} else if s.Positions, ts, err = parseNumbers(ts); err != nil {

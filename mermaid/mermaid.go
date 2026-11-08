@@ -1,6 +1,7 @@
 // Package mermaid lays out diagrams written in Mermaid's syntax as scenes,
 // drawing what Mermaid v12.3.0 draws. So far it knows sequence diagrams and
-// flowcharts; a flowchart's classDef, style and linkStyle are read but not yet drawn.
+// flowcharts. A flowchart's styles draw their fills, strokes, widths, dashes and text
+// colors; fonts and the rest of CSS that changes how Chrome draws are not supported.
 //
 //	s, err := mermaid.Layout("sequenceDiagram\nAlice->>Bob: Hello", mermaid.Options{})
 //	if err != nil {

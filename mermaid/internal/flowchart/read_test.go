@@ -209,9 +209,9 @@ var readCases = []struct {
 		"TB",
 		"node A rect \"A\"/text compiled=fill:#f00|stroke:#00f",
 	}},
-	{"classes with color, and an escaped comma", "flowchart TD\nclassDef c fill:a\\,b,color:c\nA:::c", []string{
+	{"classes with color, and an escaped comma", "flowchart TD\nclassDef c stroke-dasharray:5\\,5,color:red\nA:::c", []string{
 		"TB",
-		"node A rect \"A\"/text compiled=fill:a,b|color:c|color:c",
+		"node A rect \"A\"/text compiled=stroke-dasharray:5,5|color:red|color:red",
 	}},
 	{"a class on two ids", "flowchart TD\nA\nB\nclass A,B c\nclassDef c fill:#f00", []string{
 		"TB",

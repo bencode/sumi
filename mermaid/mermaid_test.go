@@ -52,6 +52,12 @@ func TestLayoutErrors(t *testing.T) {
 			`line 7:1: unexpected "end", expected a statement`, false},
 		{"a link to an edge's id, which Mermaid's ELK does not find", "flowchart LR\n  A e1@--> B\n  B --> e1",
 			`line 3:4: the link ends at "e1", an edge's id, not a node`, false},
+		{"a style sumi does not draw", "flowchart LR\n  A\n  style A fill:#f9f,opacity:0.5",
+			`line 3:3: opacity in a style is not supported yet`, true},
+		{"a font sumi does not draw", "flowchart LR\n  A\n  style A font-size:20px",
+			`line 3:3: font-size in a style is not supported yet`, true},
+		{"a color sumi does not read", "flowchart LR\n  A:::c\n  classDef c fill:currentColor",
+			`line 3:3: fill:currentColor in a style is not supported yet`, true},
 	}
 	for _, tt := range tests {
 		_, err := mermaid.Layout(tt.src, mermaid.Options{})

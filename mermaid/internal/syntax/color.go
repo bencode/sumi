@@ -10,14 +10,17 @@ import (
 )
 
 // Color reads s as a CSS color, as a browser reads the fill Mermaid writes
-// out for it: one of CSS's names, transparent, or rgb(), rgba(), hsl() or
-// hsla(), their arguments apart by commas, or by spaces with the alpha after
-// a slash. Case does not matter. Hex colors are left out, as Mermaid's
-// lines end at a #.
+// out for it: one of CSS's names, transparent, a hex color of 3, 4, 6 or 8
+// digits, or rgb(), rgba(), hsl() or hsla(), their arguments apart by commas,
+// or by spaces with the alpha after a slash. Case does not matter. A sequence
+// diagram's lines end at a #, so hex colors reach here only from a flowchart.
 func Color(s string) (scene.Color, bool) {
 	s = strings.ToLower(strings.TrimSpace(s))
 	if s == "transparent" {
 		return scene.Color{}, true
+	}
+	if digits, ok := strings.CutPrefix(s, "#"); ok {
+		return hexColor(digits)
 	}
 	if hex, ok := colorNames[s]; ok {
 		return scene.Color{R: uint8(hex >> 16), G: uint8(hex >> 8), B: uint8(hex), A: 255}, true
@@ -50,6 +53,26 @@ func Color(s string) (scene.Color, bool) {
 		return scene.Color{}, false
 	}
 	return scene.Color{R: byte255(r), G: byte255(g), B: byte255(b), A: byte255(a)}, true
+}
+
+// hexColor is a hex color's digits: #rgb and #rgba each digit twice, #rrggbb and
+// #rrggbbaa as written, the alpha 255 when it has none.
+func hexColor(digits string) (scene.Color, bool) {
+	if len(digits) == 3 || len(digits) == 4 {
+		var b strings.Builder
+		for _, d := range digits {
+			b.WriteString(string([]rune{d, d}))
+		}
+		digits = b.String()
+	}
+	if len(digits) == 6 {
+		digits += "ff"
+	}
+	n, err := strconv.ParseUint(digits, 16, 32)
+	if len(digits) != 8 || err != nil {
+		return scene.Color{}, false
+	}
+	return scene.Color{R: uint8(n >> 24), G: uint8(n >> 16), B: uint8(n >> 8), A: uint8(n)}, true
 }
 
 // arguments are a color function's three or four arguments, and whether

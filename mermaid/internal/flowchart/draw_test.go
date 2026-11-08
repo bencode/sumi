@@ -1,6 +1,7 @@
 package flowchart
 
 import (
+	"fmt"
 	"math"
 	"slices"
 	"strings"
@@ -32,6 +33,16 @@ type wantText struct {
 	starts []float64 // where each run of the line starts
 }
 
+// wantStyle is what a diagram's styles paint on an item. A color is "#rrggbbaa", ""
+// for the theme's; a text's may be "on", the black or white that reads on the item's
+// fill, sumi's choice where Chrome keeps the theme's.
+type wantStyle struct {
+	fill, stroke, text string
+	width              float64   // of the stroke, none when it paints nothing
+	marks              []string  // a line's markers, its start's first
+	dashes             []float64 // how many, then the first's ends and the last's: x, y, …
+}
+
 type drawCase struct {
 	name, src string
 	size      [2]float64
@@ -40,6 +51,7 @@ type drawCase struct {
 	labels    map[string][2]float64
 	texts     []wantText
 	title     []float64 // its middle and baseline
+	styles    map[string]wantStyle
 }
 
 var drawCases = []drawCase{
@@ -47,7 +59,7 @@ var drawCases = []drawCase{
 		name: "lines and markers", src: "flowchart LR\n  A[Start] -->|yes| B(Round)\n  B -.-> C{Choose}\n  C ==>|long| D([Stadium])\n  C --o E((Circle))\n  C --x F[(DB)]\n  A <--> G\n  G o--o H\n  H x--x I\n  I ~~~ J\n  J o-.-o K\n  K <-.-> L\n  L -.- M",
 		size: [2]float64{1550.2269, 373.1372},
 		edges: map[string]wantEdge{
-			"L_A_B_0": {box: [4]float64{160, 118.2443, 229, 108.0298}, width: 2, solids: []float64{160, 226.2741, 162, 226.2741, 383, 118.2443, 385, 118.2443}, dots: []float64{},
+			"L_A_B_0": {box: [4]float64{160, 118.2443, 229, 108.0298}, width: 2, solids: []float64{160, 226.2741, 162, 226.2741, 382.9995, 118.2443, 384.9995, 118.2443}, dots: []float64{},
 				marks: []float64{378.5, 111.853, 389, 118.2443, 378.5, 124.6356}, rings: []float64{}, cross: 0},
 			"L_B_C_0": {box: [4]float64{543, 118.2443, 37, 0}, width: 2, solids: []float64{575, 118.2443, 577, 118.2443, 577, 118.2443, 579, 118.2443}, dots: []float64{8, 544, 118.2443, 572, 118.2443},
 				marks: []float64{569.5, 111.853, 580, 118.2443, 569.5, 124.6356}, rings: []float64{}, cross: 0},
@@ -55,9 +67,9 @@ var drawCases = []drawCase{
 				marks: []float64{972.5, 24.1087, 983, 30.5, 972.5, 36.8913}, rings: []float64{}, cross: 0},
 			"L_C_E_0": {box: [4]float64{755, 118.2443, 40, 0}, width: 2, solids: []float64{755, 118.2443, 757, 118.2443, 780.5, 118.2443, 782.5, 118.2443}, dots: []float64{},
 				marks: []float64{}, rings: []float64{784.85, 118.2443, 7}, cross: 0},
-			"L_C_F_0": {box: [4]float64{717.25, 155.9943, 77.75, 81.5686}, width: 2, solids: []float64{717.25, 155.9943, 719.25, 155.9943, 780.5042, 237.4648, 782.5, 237.5629}, dots: []float64{},
+			"L_C_F_0": {box: [4]float64{717.25, 155.9943, 77.75, 81.5686}, width: 2, solids: []float64{717.25, 155.9943, 719.25, 155.9943, 780.5039, 237.4648, 782.4996, 237.5629}, dots: []float64{},
 				marks: []float64{781.64, 232.3629, 792.04, 242.7629, 781.64, 242.7629, 792.04, 232.3629}, rings: []float64{}, cross: 2},
-			"L_A_G_0": {box: [4]float64{164, 234.6074, 32, 108.0298}, width: 2, solids: []float64{168, 234.6074, 170, 234.6074, 190, 342.6372, 192, 342.6372}, dots: []float64{},
+			"L_A_G_0": {box: [4]float64{164, 234.6074, 32, 108.0298}, width: 2, solids: []float64{168, 234.6074, 170, 234.6074, 190.0004, 342.6372, 192.0004, 342.6372}, dots: []float64{},
 				marks: []float64{163, 234.6074, 174.5, 241.6074, 174.5, 227.6074, 185.5, 336.2459, 196, 342.6372, 185.5, 349.0285}, rings: []float64{}, cross: 0},
 			"L_G_H_0": {box: [4]float64{352, 342.6372, 40, 0}, width: 2, solids: []float64{364.5, 342.6372, 366.5, 342.6372, 377.5, 342.6372, 379.5, 342.6372}, dots: []float64{},
 				marks: []float64{}, rings: []float64{361.8, 342.6372, 7, 381.85, 342.6372, 7}, cross: 0},
@@ -229,6 +241,221 @@ var drawCases = []drawCase{
 		texts:  []wantText{},
 	},
 	{
+		name: "node styles", src: "flowchart LR\n  A:::c --> B --> C --> D --> E --> F\n  classDef c fill:#f00\n  style A fill:#0f0,fill:#00f\n  style B Fill:#fde68a,STROKE:#b45309\n  style C fill:#1e3a8a,color:#fca5a5\n  style D fill:#33669980,stroke:none,stroke-width:3px\n  style E color:none,fill:#000\n  style F fill:#abc,stroke:#0a0f,stroke-width:1px",
+		size: [2]float64{1128, 61},
+		edges: map[string]wantEdge{
+			"L_A_B_0": {box: [4]float64{160, 30.5, 36, 0}, width: 2, solids: []float64{160, 30.5, 162, 30.5, 190, 30.5, 192, 30.5}, dots: []float64{},
+				marks: []float64{185.5, 24.1087, 196, 30.5, 185.5, 36.8913}, rings: []float64{}, cross: 0},
+			"L_B_C_0": {box: [4]float64{352, 30.5, 36, 0}, width: 2, solids: []float64{352, 30.5, 354, 30.5, 382, 30.5, 384, 30.5}, dots: []float64{},
+				marks: []float64{377.5, 24.1087, 388, 30.5, 377.5, 36.8913}, rings: []float64{}, cross: 0},
+			"L_C_D_0": {box: [4]float64{544, 30.5, 36, 0}, width: 2, solids: []float64{544, 30.5, 546, 30.5, 574, 30.5, 576, 30.5}, dots: []float64{},
+				marks: []float64{569.5, 24.1087, 580, 30.5, 569.5, 36.8913}, rings: []float64{}, cross: 0},
+			"L_D_E_0": {box: [4]float64{736, 30.5, 36, 0}, width: 2, solids: []float64{736, 30.5, 738, 30.5, 766, 30.5, 768, 30.5}, dots: []float64{},
+				marks: []float64{761.5, 24.1087, 772, 30.5, 761.5, 36.8913}, rings: []float64{}, cross: 0},
+			"L_E_F_0": {box: [4]float64{928, 30.5, 36, 0}, width: 2, solids: []float64{928, 30.5, 930, 30.5, 958, 30.5, 960, 30.5}, dots: []float64{},
+				marks: []float64{953.5, 24.1087, 964, 30.5, 953.5, 36.8913}, rings: []float64{}, cross: 0},
+		},
+		groups: map[string][4]float64{},
+		labels: map[string][2]float64{},
+		texts: []wantText{
+			{"node A", 22, []float64{79.3281}},
+			{"node B", 22, []float64{271.3281}},
+			{"node C", 22, []float64{462.9375}},
+			{"node D", 22, []float64{654.9375}},
+			{"node E", 22, []float64{847.3281}},
+			{"node F", 22, []float64{1039.7188}},
+		},
+		styles: map[string]wantStyle{
+			"node A":       {fill: "#0000ffff", stroke: "", text: "on", width: 2},
+			"node B":       {fill: "#fde68aff", stroke: "#b45309ff", text: "on", width: 2},
+			"node C":       {fill: "#1e3a8aff", stroke: "", text: "#fca5a5ff", width: 2},
+			"node D":       {fill: "#33669980", stroke: "#00000000", text: "", width: 0},
+			"node E":       {fill: "#000000ff", stroke: "", text: "on", width: 2},
+			"node F":       {fill: "#aabbccff", stroke: "#00aa00ff", text: "on", width: 1},
+			"edge L_A_B_0": {fill: "#00000000", stroke: "", text: "", width: 2, marks: []string{""}},
+			"edge L_B_C_0": {fill: "#00000000", stroke: "", text: "", width: 2, marks: []string{""}},
+			"edge L_C_D_0": {fill: "#00000000", stroke: "", text: "", width: 2, marks: []string{""}},
+			"edge L_D_E_0": {fill: "#00000000", stroke: "", text: "", width: 2, marks: []string{""}},
+			"edge L_E_F_0": {fill: "#00000000", stroke: "", text: "", width: 2, marks: []string{""}},
+		},
+	},
+	{
+		name: "subgraph styles", src: "flowchart LR\n  subgraph s [Title]\n    a --> b\n  end\n  style s fill:#ecfeff,stroke:#0891b2,stroke-dasharray:6 3,color:#0e7490\n  subgraph t [Dark]\n    c\n  end\n  style t fill:#111,stroke:#444",
+		size: [2]float64{392, 290},
+		edges: map[string]wantEdge{
+			"L_a_b_0": {box: [4]float64{184, 235.5, 20, 0}, width: 2, solids: []float64{184, 235.5, 186, 235.5, 198, 235.5, 200, 235.5}, dots: []float64{},
+				marks: []float64{193.5, 229.1087, 204, 235.5, 193.5, 241.8913}, rings: []float64{}, cross: 0},
+		},
+		groups: map[string][4]float64{
+			"t": {96, 8, 200, 117},
+			"s": {8, 165, 376, 117},
+		},
+		labels: map[string][2]float64{},
+		texts: []wantText{
+			{"node a", 227, []float64{104.0938}},
+			{"node b", 227, []float64{280.0938}},
+			{"node c", 70, []float64{192.5}},
+			{"group t", 10, []float64{181.2188}},
+			{"group s", 167, []float64{182.7734}},
+		},
+		styles: map[string]wantStyle{
+			"node a":       {fill: "", stroke: "", text: "", width: 2},
+			"node b":       {fill: "", stroke: "", text: "", width: 2},
+			"node c":       {fill: "", stroke: "", text: "", width: 2},
+			"group t":      {fill: "#111111ff", stroke: "#444444ff", text: "on", width: 1},
+			"group s":      {fill: "#ecfeffff", stroke: "#0891b2ff", text: "#0e7490ff", width: 1, dashes: []float64{110, 8.5, 165, 13.5, 165, 8, 169.5, 8, 165.5}},
+			"edge L_a_b_0": {fill: "#00000000", stroke: "", text: "", width: 2, marks: []string{""}},
+		},
+	},
+	{
+		name: "dashes on shapes", src: "flowchart LR\n  A[r] --> B((c)) --> C([s]) --> D>f] --> E{{h}} --> F[z]\n  style A stroke-dasharray:5 5\n  style B stroke-dasharray:6 2,stroke-width:3\n  style C stroke-dasharray:4 4\n  style D stroke-dasharray:6 2\n  style E stroke-dasharray:3,stroke-width:1\n  style F stroke-dasharray:0 4 6 4",
+		size: [2]float64{1122.6128, 107},
+		edges: map[string]wantEdge{
+			"L_A_B_0": {box: [4]float64{160, 53.5, 36, 0}, width: 2, solids: []float64{160, 53.5, 162, 53.5, 190, 53.5, 192, 53.5}, dots: []float64{},
+				marks: []float64{185.5, 47.1087, 196, 53.5, 185.5, 59.8913}, rings: []float64{}, cross: 0},
+			"L_B_C_0": {box: [4]float64{254.136, 53.5, 36, 0}, width: 2, solids: []float64{254.136, 53.5, 256.136, 53.5, 284.136, 53.5, 286.136, 53.5}, dots: []float64{},
+				marks: []float64{279.636, 47.1087, 290.136, 53.5, 279.636, 59.8913}, rings: []float64{}, cross: 0},
+			"L_C_D_0": {box: [4]float64{465.3627, 53.5, 47.2501, 0}, width: 2, solids: []float64{465.3627, 53.5, 467.3627, 53.5, 506.6128, 53.5, 508.6129, 53.5}, dots: []float64{},
+				marks: []float64{502.1129, 47.1087, 512.6129, 53.5, 502.1129, 59.8913}, rings: []float64{}, cross: 0},
+			"L_D_E_0": {box: [4]float64{678.6129, 53.5, 36, 0}, width: 2, solids: []float64{678.6129, 53.5, 680.6129, 53.5, 708.6129, 53.5, 710.6129, 53.5}, dots: []float64{},
+				marks: []float64{704.1129, 47.1087, 714.6129, 53.5, 704.1129, 59.8913}, rings: []float64{}, cross: 0},
+			"L_E_F_0": {box: [4]float64{922.6129, 53.5, 36, 0}, width: 2, solids: []float64{922.6129, 53.5, 924.6129, 53.5, 952.6129, 53.5, 954.6129, 53.5}, dots: []float64{},
+				marks: []float64{948.1129, 47.1087, 958.6129, 53.5, 948.1129, 59.8913}, rings: []float64{}, cross: 0},
+		},
+		groups: map[string][4]float64{},
+		labels: map[string][2]float64{},
+		texts: []wantText{
+			{"node A", 45, []float64{81.656}},
+			{"node B", 45, []float64{223.5673}},
+			{"node C", 45, []float64{376.2482}},
+			{"node D", 45, []float64{595.6579}},
+			{"node E", 45, []float64{816.7041}},
+			{"node F", 45, []float64{1035.1096}},
+		},
+		styles: map[string]wantStyle{
+			"node A":       {fill: "", stroke: "", text: "", width: 2, dashes: []float64{40, 9, 31, 12, 31, 8, 34, 8, 32}},
+			"node B":       {fill: "", stroke: "", text: "", width: 3, dashes: []float64{22, 254.0982, 54.9297, 253.7826, 57.8596, 254.1274, 52.8187, 254.1274, 52.8187}},
+			"node C":       {fill: "", stroke: "", text: "", width: 2, dashes: []float64{180, 317.6244, 31, 319.6244, 31, 315.9036, 31.0231, 315.9036, 31.0231}},
+			"node D":       {fill: "", stroke: "", text: "", width: 2, dashes: []float64{114, 505.8101, 31.8944, 507.5989, 35.4721, 509.6129, 31, 506.3629, 31}},
+			"node E":       {fill: "", stroke: "", text: "", width: 1, dashes: []float64{86, 745.1129, 99, 747.1129, 99, 743.0655, 96.2922, 744.0578, 98.0287}},
+			"node F":       {fill: "", stroke: "", text: "", width: 2, dashes: []float64{28, 967.6128, 31, 971.6128, 31, 962.6128, 42, 962.6128, 38}},
+			"edge L_A_B_0": {fill: "#00000000", stroke: "", text: "", width: 2, marks: []string{""}},
+			"edge L_B_C_0": {fill: "#00000000", stroke: "", text: "", width: 2, marks: []string{""}},
+			"edge L_C_D_0": {fill: "#00000000", stroke: "", text: "", width: 2, marks: []string{""}},
+			"edge L_D_E_0": {fill: "#00000000", stroke: "", text: "", width: 2, marks: []string{""}},
+			"edge L_E_F_0": {fill: "#00000000", stroke: "", text: "", width: 2, marks: []string{""}},
+		},
+	},
+	{
+		name: "line styles", src: "flowchart LR\n  A --> B\n  A --o C\n  A --x D\n  A -.-> E\n  A --- F\n  A ~~~ G\n  A ~~~ H\n  A <--> I\n  A -->|l| J\n  linkStyle 0 stroke:#f00,stroke:#0f0\n  linkStyle 1 stroke:#16a34a,stroke-width:3px\n  linkStyle 2 Stroke:#2563eb\n  linkStyle 3 stroke-dasharray:5 5\n  linkStyle 4 fill:#ff08,stroke-dasharray:none\n  linkStyle 5 stroke-width:3\n  linkStyle 6 stroke-width:2px,stroke:red\n  linkStyle 7 stroke:#f00\n  linkStyle 8 color:#dc2626",
+		size: [2]float64{612, 729.5},
+		edges: map[string]wantEdge{
+			"L_A_B_0": {box: [4]float64{160, 30.5, 96, 330}, width: 2, solids: []float64{160, 360.5, 162, 360.5, 250.0003, 30.5, 252.0003, 30.5}, dots: []float64{},
+				marks: []float64{245.5, 24.1087, 256, 30.5, 245.5, 36.8913}, rings: []float64{}, cross: 0},
+			"L_A_C_0": {box: [4]float64{160, 115.5, 100, 247.5}, width: 3, solids: []float64{160, 363, 162, 363, 245.5003, 115.5, 247.5003, 115.5}, dots: []float64{},
+				marks: []float64{}, rings: []float64{249.85, 115.5, 7}, cross: 0},
+			"L_A_D_0": {box: [4]float64{160, 200.5, 100, 165}, width: 2, solids: []float64{160, 365.5, 162, 365.5, 245.5003, 200.5, 247.5003, 200.5}, dots: []float64{},
+				marks: []float64{246.64, 195.3, 257.04, 205.7, 246.64, 205.7, 257.04, 195.3}, rings: []float64{}, cross: 2},
+			"L_A_E_0": {box: [4]float64{160, 285.5, 96, 82.5}, width: 2, solids: []float64{}, dots: []float64{},
+				marks: []float64{245.5, 279.1087, 256, 285.5, 245.5, 291.8913}, rings: []float64{}, cross: 0},
+			"L_A_F_0": {box: [4]float64{160, 370.5, 100, 0}, width: 2, solids: []float64{160, 370.5, 162, 370.5, 258, 370.5, 260, 370.5}, dots: []float64{},
+				marks: []float64{}, rings: []float64{}, cross: 0},
+			"L_A_G_0": {box: [4]float64{160, 373, 100, 82.5}, width: 0, solids: []float64{}, dots: []float64{},
+				marks: []float64{}, rings: []float64{}, cross: 0},
+			"L_A_H_0": {box: [4]float64{160, 375.5, 100, 165}, width: 2, solids: []float64{160, 375.5, 162, 375.5, 258, 540.5, 260, 540.5}, dots: []float64{},
+				marks: []float64{}, rings: []float64{}, cross: 0},
+			"L_A_I_0": {box: [4]float64{164, 378, 92, 247.5}, width: 2, solids: []float64{168, 378, 170, 378, 250.0002, 625.5, 252.0002, 625.5}, dots: []float64{},
+				marks: []float64{163, 378, 174.5, 385, 174.5, 371, 245.5, 619.1087, 256, 625.5, 245.5, 631.8913}, rings: []float64{}, cross: 0},
+			"L_A_J_0": {box: [4]float64{160, 380.5, 288, 318.5}, width: 2, solids: []float64{160, 380.5, 162, 380.5, 442.0002, 699, 444.0002, 699}, dots: []float64{},
+				marks: []float64{437.5, 692.6087, 448, 699, 437.5, 705.3913}, rings: []float64{}, cross: 0},
+		},
+		groups: map[string][4]float64{},
+		labels: map[string][2]float64{
+			"L_A_J_0": {336, 698.5},
+		},
+		texts: []wantText{
+			{"node A", 362, []float64{79.3281}},
+			{"node B", 22, []float64{331.3281}},
+			{"node C", 107, []float64{330.9375}},
+			{"node D", 192, []float64{330.9375}},
+			{"node E", 277, []float64{331.3281}},
+			{"node F", 362, []float64{331.7188}},
+			{"node G", 447, []float64{330.5469}},
+			{"node H", 532, []float64{330.9375}},
+			{"node I", 617, []float64{334.0469}},
+			{"node J", 690.5, []float64{524.5}},
+			{"label L_A_J_0", 690, []float64{334.4375}},
+		},
+		styles: map[string]wantStyle{
+			"node A":        {fill: "", stroke: "", text: "", width: 2},
+			"node B":        {fill: "", stroke: "", text: "", width: 2},
+			"node C":        {fill: "", stroke: "", text: "", width: 2},
+			"node D":        {fill: "", stroke: "", text: "", width: 2},
+			"node E":        {fill: "", stroke: "", text: "", width: 2},
+			"node F":        {fill: "", stroke: "", text: "", width: 2},
+			"node G":        {fill: "", stroke: "", text: "", width: 2},
+			"node H":        {fill: "", stroke: "", text: "", width: 2},
+			"node I":        {fill: "", stroke: "", text: "", width: 2},
+			"node J":        {fill: "", stroke: "", text: "", width: 2},
+			"edge L_A_B_0":  {fill: "#00000000", stroke: "#00ff00ff", text: "", width: 2, marks: []string{"#ff0000ff"}},
+			"edge L_A_C_0":  {fill: "#00000000", stroke: "#16a34aff", text: "", width: 3, marks: []string{""}},
+			"edge L_A_D_0":  {fill: "#00000000", stroke: "#2563ebff", text: "", width: 2, marks: []string{""}},
+			"edge L_A_E_0":  {fill: "#00000000", stroke: "", text: "", width: 2, marks: []string{""}, dashes: []float64{18, 161, 368, 164, 368, 253.8283, 285.5, 255, 285.5}},
+			"edge L_A_F_0":  {fill: "#ffff0088", stroke: "", text: "", width: 2},
+			"edge L_A_G_0":  {fill: "#00000000", stroke: "#00000000", text: "", width: 0},
+			"edge L_A_H_0":  {fill: "#00000000", stroke: "#ff0000ff", text: "", width: 2},
+			"edge L_A_I_0":  {fill: "#00000000", stroke: "#ff0000ff", text: "", width: 2, marks: []string{"", "#ff0000ff"}},
+			"edge L_A_J_0":  {fill: "#00000000", stroke: "", text: "", width: 2, marks: []string{""}},
+			"label L_A_J_0": {text: "#dc2626ff"},
+		},
+	},
+	{
+		name: "a color in capitals", src: "flowchart LR\n  A --> B --> C\n  D e1@-->|l| E\n  subgraph s [T]\n    F\n  end\n  subgraph t [U]\n    G\n  end\n  style A Color:#f00\n  classDef c COLOR:#0a0\n  class B,s c\n  class e1 c\n  linkStyle 0 Color:#f00\n  style s fill:#eee,stroke:#444\n  style t fill:#eee,stroke:#444,Color:#f00",
+		size: [2]float64{600, 460},
+		edges: map[string]wantEdge{
+			"L_A_B_0": {box: [4]float64{208, 344.5, 36, 0}, width: 2, solids: []float64{208, 344.5, 210, 344.5, 238, 344.5, 240, 344.5}, dots: []float64{},
+				marks: []float64{233.5, 338.1087, 244, 344.5, 233.5, 350.8913}, rings: []float64{}, cross: 0},
+			"L_B_C_0": {box: [4]float64{400, 344.5, 36, 0}, width: 2, solids: []float64{400, 344.5, 402, 344.5, 430, 344.5, 432, 344.5}, dots: []float64{},
+				marks: []float64{425.5, 338.1087, 436, 344.5, 425.5, 350.8913}, rings: []float64{}, cross: 0},
+			"e1": {box: [4]float64{208, 429.5, 228, 0}, width: 2, solids: []float64{208, 429.5, 210, 429.5, 430, 429.5, 432, 429.5}, dots: []float64{},
+				marks: []float64{425.5, 423.1087, 436, 429.5, 425.5, 435.8913}, rings: []float64{}, cross: 0},
+		},
+		groups: map[string][4]float64{
+			"t": {8, 8, 200, 117},
+			"s": {8, 165, 200, 117},
+		},
+		labels: map[string][2]float64{
+			"e1": {324, 429},
+		},
+		texts: []wantText{
+			{"node A", 336, []float64{127.3281}},
+			{"node B", 336, []float64{319.3281}},
+			{"node C", 336, []float64{510.9375}},
+			{"node D", 421, []float64{126.9375}},
+			{"node E", 421, []float64{511.3281}},
+			{"node F", 227, []float64{103.7188}},
+			{"node G", 70, []float64{102.5469}},
+			{"label e1", 420.5, []float64{322.4375}},
+			{"group t", 10, []float64{102.9375}},
+			{"group s", 167, []float64{103.7188}},
+		},
+		styles: map[string]wantStyle{
+			"node A":       {fill: "", stroke: "", text: "", width: 2},
+			"node B":       {fill: "", stroke: "", text: "#00aa00ff", width: 2},
+			"node C":       {fill: "", stroke: "", text: "", width: 2},
+			"node D":       {fill: "", stroke: "", text: "", width: 2},
+			"node E":       {fill: "", stroke: "", text: "", width: 2},
+			"node F":       {fill: "", stroke: "", text: "", width: 2},
+			"node G":       {fill: "", stroke: "", text: "", width: 2},
+			"group t":      {fill: "#eeeeeeff", stroke: "#444444ff", text: "on", width: 1},
+			"group s":      {fill: "#eeeeeeff", stroke: "#444444ff", text: "on", width: 1},
+			"edge L_A_B_0": {fill: "#00000000", stroke: "", text: "", width: 2, marks: []string{""}},
+			"edge L_B_C_0": {fill: "#00000000", stroke: "", text: "", width: 2, marks: []string{""}},
+			"edge e1":      {fill: "#00000000", stroke: "", text: "", width: 2, marks: []string{""}},
+			"label e1":     {text: ""},
+		},
+	},
+	{
 		name: "a point twice in a row", src: "flowchart TD\n  n0[\\\\marker/]\n  n1{{arrow an}}\n  n1 -. yes .-> n0\n  n0 o--o|marker| n1\n  n1 --- n2\n  n4 o--o n0\n  n2 --- n0\n  n2 ==> n4\n  n5 --- n2\n  n0 o--o|no| n1\n  subgraph s1 [\"`**Bold** group title that is long`\"]\n    n0\n    n1\n    subgraph s2\n      n2\n    end\n  end",
 		size: [2]float64{372.3133, 839},
 		edges: map[string]wantEdge{
@@ -238,7 +465,7 @@ var drawCases = []drawCase{
 				marks: []float64{}, rings: []float64{152.24, 489.8, 7, 152.24, 610.85, 7}, cross: 0},
 			"L_n1_n2_0": {box: [4]float64{44.68, 202, 173.9, 419}, width: 2, solids: []float64{79.28, 621, 79.28, 619, 218.58, 288, 218.58, 290}, dots: []float64{},
 				marks: []float64{}, rings: []float64{}, cross: 0},
-			"L_n4_n0_0": {box: [4]float64{236, 480, 16.34, 306}, width: 2, solids: []float64{252.34, 773.5, 252.34, 771.5, 236, 494.5, 236, 492.5}, dots: []float64{},
+			"L_n4_n0_0": {box: [4]float64{236, 480, 16.34, 306}, width: 2, solids: []float64{252.34, 773.5, 252.34, 771.5, 236, 494.4997, 236, 492.4997}, dots: []float64{},
 				marks: []float64{}, rings: []float64{252.34, 776.2, 7, 236, 490.15, 7}, cross: 0},
 			"L_n2_n0_0": {box: [4]float64{173.18, 335, 45.4, 94}, width: 2, solids: []float64{218.58, 335, 218.58, 337, 173.18, 427, 173.18, 429}, dots: []float64{},
 				marks: []float64{}, rings: []float64{}, cross: 0},
@@ -246,7 +473,7 @@ var drawCases = []drawCase{
 				marks: []float64{302.7313, 771.5, 296.34, 782, 289.9487, 771.5}, rings: []float64{}, cross: 0},
 			"L_n5_n2_0": {box: [4]float64{262.0467, 53, 0, 237}, width: 2, solids: []float64{262.0467, 53, 262.0467, 55, 262.0467, 288, 262.0467, 290}, dots: []float64{},
 				marks: []float64{}, rings: []float64{}, cross: 0},
-			"L_n0_n1_2": {box: [4]float64{188.72, 480, 5.4, 141}, width: 2, solids: []float64{194.12, 492.5, 194.12, 494.5, 188.72, 606.5, 188.72, 608.5}, dots: []float64{},
+			"L_n0_n1_2": {box: [4]float64{188.72, 480, 5.4, 141}, width: 2, solids: []float64{194.12, 492.5, 194.12, 494.5, 188.72, 606.5005, 188.72, 608.5005}, dots: []float64{},
 				marks: []float64{}, rings: []float64{194.12, 489.8, 7, 188.72, 610.85, 7}, cross: 0},
 		},
 		groups: map[string][4]float64{
@@ -300,7 +527,9 @@ func edgeOf(it scene.Item) wantEdge {
 			}
 			curved = curved || s.Op == scene.CubeTo
 		}
+		closed := slices.ContainsFunc(p.Segs, func(s scene.Seg) bool { return s.Op == scene.Close })
 		switch {
+		case p.Fill != (scene.Paint{}) && !curved && !closed: // the line's own fill
 		case p.Fill != (scene.Paint{}) && curved:
 			b := bounds(p.Segs)
 			g.rings = append(g.rings, b.X+b.W/2, b.Y+b.H/2, b.W/2)
@@ -313,6 +542,8 @@ func edgeOf(it scene.Item) wantEdge {
 					g.marks = append(g.marks, s.Pts[0].X, s.Pts[0].Y)
 				}
 			}
+		case len(p.Stroke.Dash) > 0 && p.Stroke.Dash[0] != 0: // the author's: see wantStyle
+			g.width = p.Stroke.Width
 		case len(p.Stroke.Dash) > 0:
 			g.width = p.Stroke.Width
 			for l := 0.0; l <= arcLength(p.Segs)+1e-9; l += p.Stroke.Dash[0] + p.Stroke.Dash[1] {
@@ -333,13 +564,96 @@ func edgeOf(it scene.Item) wantEdge {
 	return g
 }
 
+func colorOf(p scene.Paint) string {
+	if p.Token != scene.None {
+		return ""
+	}
+	return fmt.Sprintf("#%02x%02x%02x%02x", p.Color.R, p.Color.G, p.Color.B, p.Color.A)
+}
+
+// styleOf is what an item paints, as wantStyle has it. A line's paths are its fill
+// when it has one, its strokes, then its markers.
+func styleOf(it scene.Item) wantStyle {
+	g := wantStyle{fill: colorOf(scene.Paint{}), stroke: colorOf(scene.Paint{})}
+	if len(it.Texts) > 0 {
+		g.text = colorOf(it.Texts[0].Paint)
+	}
+	var dashes [][4]float64
+	for i, p := range it.Paths {
+		closed := slices.ContainsFunc(p.Segs, func(s scene.Seg) bool { return s.Op == scene.Close })
+		curved := slices.ContainsFunc(p.Segs, func(s scene.Seg) bool { return s.Op == scene.CubeTo })
+		moves := 0
+		for _, s := range p.Segs {
+			if s.Op == scene.MoveTo {
+				moves++
+			}
+		}
+		switch {
+		case it.Kind == scene.Edge && p.Fill != (scene.Paint{}) && (closed || curved):
+			g.marks = append(g.marks, colorOf(p.Fill))
+			continue
+		case it.Kind == scene.Edge && moves > 1:
+			g.marks = append(g.marks, colorOf(p.Stroke.Paint))
+			continue
+		case i == 0 && p.Fill != (scene.Paint{}):
+			g.fill = colorOf(p.Fill)
+		}
+		if p.Stroke.Width > 0 && p.Stroke.Paint != (scene.Paint{}) && g.width == 0 {
+			g.stroke, g.width = colorOf(p.Stroke.Paint), p.Stroke.Width
+		}
+		if p.Stroke.Width > 0 && len(p.Stroke.Dash) == 0 && len(p.Segs) > 0 && arcLength(p.Segs) == 0 { // a dot
+			q := p.Segs[0].Pts[0]
+			dashes = append(dashes, [4]float64{q.X, q.Y, q.X, q.Y})
+		}
+		if d := p.Stroke.Dash; len(d) > 0 && p.Stroke.Paint != (scene.Paint{}) {
+			l := arcLength(p.Segs)
+			for a, k := 0.0, 0; a <= l+1e-9; k++ {
+				if k%2 == 0 {
+					q, r := along(p.Segs, a), along(p.Segs, min(a+d[k%len(d)], l))
+					dashes = append(dashes, [4]float64{q.X, q.Y, r.X, r.Y})
+				}
+				a += d[k%len(d)]
+			}
+		}
+	}
+	if n := len(dashes); n > 0 {
+		first, last := dashes[0], dashes[n-1]
+		g.dashes = append(append([]float64{float64(n)}, first[:]...), last[:]...)
+	}
+	return g
+}
+
+// sameStyle says how an item's paint differs from w's, or "". A curve's dashes may be
+// up to 1 off: Chrome measures a curve as coarse chords, and sumi its length.
+func sameStyle(it scene.Item, w wantStyle) string {
+	g := styleOf(it)
+	if w.text == "on" {
+		c := it.Paths[0].Fill.Color
+		w.text = colorOf(scene.Fixed(scene.TextOn(c)))
+	}
+	tol := 0.01
+	if len(it.Paths) > 0 && slices.ContainsFunc(it.Paths[0].Segs, func(s scene.Seg) bool { return s.Op == scene.CubeTo }) {
+		tol = 1
+	}
+	dashes := w.dashes == nil || near(g.dashes, w.dashes, tol)
+	switch {
+	case it.Kind == scene.Label:
+		if g.text != w.text {
+			return fmt.Sprintf("text %s", g.text)
+		}
+	case g.fill != w.fill || g.stroke != w.stroke || g.text != w.text || math.Abs(g.width-w.width) > 0.01 || !slices.Equal(g.marks, w.marks) || !dashes:
+		return fmt.Sprintf("%+v", g)
+	}
+	return ""
+}
+
 // along is the point at length l along segs.
 func along(segs []scene.Seg, l float64) scene.Point {
 	if rest := span(segs, l, math.Inf(1)); len(rest) > 0 {
 		return rest[0].Pts[0]
 	}
 	bs := bends(segs)
-	return bs[len(bs)-1].to
+	return bs[len(bs)-1].end()
 }
 
 func near(got, want []float64, tol float64) bool {
@@ -417,6 +731,11 @@ func TestDraw(t *testing.T) {
 			if !near(g.box[:], w.box[:], 0.01) || math.Abs(g.width-w.width) > 0.01 || !near(g.solids, w.solids, 0.01) || !near(g.dots, w.dots, 0.01) ||
 				!holds(g.marks, w.marks) || !near(g.rings, w.rings, 0.01) || math.Abs(g.cross-w.cross) > 0.01 {
 				t.Errorf("%s: edge %s draws\n %+v\nwant %+v", c.name, id, g, w)
+			}
+		}
+		for key, w := range c.styles {
+			if m := sameStyle(items[key], w); m != "" {
+				t.Errorf("%s: %s paints %s\nwant %+v", c.name, key, m, w)
 			}
 		}
 		for id, w := range c.groups {

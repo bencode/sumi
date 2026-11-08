@@ -2,6 +2,7 @@ package flowchart
 
 import (
 	"math"
+	"slices"
 
 	"github.com/bencode/sumi/mermaid/internal/graphlayout"
 	"github.com/bencode/sumi/scene"
@@ -56,7 +57,7 @@ func draw(p placed, title string, m scene.Measurer) *scene.Scene {
 }
 
 // drawNode is node i in its shape at b: the outline about b's center, the label in
-// its box. Its box is getBBox's of the two.
+// its box, as its styles say. Its box is getBBox's of the two.
 func drawNode(p placed, i int, b graphlayout.Box, m scene.Measurer) scene.Item {
 	n, s, l := p.d.Nodes[i], p.shapes[i], p.labels[i]
 	outline := make([]scene.Seg, len(s.Outline))
@@ -68,18 +69,42 @@ func drawNode(p placed, i int, b graphlayout.Box, m scene.Measurer) scene.Item {
 	}
 	top := scene.Point{X: b.X + s.Label.X - l.W/2, Y: b.Y + s.Label.Y - l.H/2}
 	label := scene.Rect{X: top.X, Y: top.Y, W: l.W, H: l.H}
+	st := nodeStyling(n.Compiled, n.Styles)
+	turn := 0.0
+	if n.Shape == Circle || n.Shape == DoubleCircle {
+		turn = 0.25 // a <circle> starts at its right, Ellipse at its top
+	}
+	paths := st.outline(outline, scene.NodeFill, scene.NodeStroke, 2, turn)
+	if n.Shape == Stadium || n.Shape == Odd {
+		paths = append(paths, roughStroke(outline, st)...)
+	}
 	return scene.Item{
 		Kind: scene.Node, ID: n.ID, Parent: n.Parent,
-		Box: union(bounds(outline), label),
-		Paths: []scene.Path{{Segs: outline, Fill: scene.Use(scene.NodeFill),
-			Stroke: scene.Stroke{Paint: scene.Use(scene.NodeStroke), Width: 2}}},
-		Texts: texts(m, l, top),
+		Box:   union(bounds(outline), label),
+		Paths: paths,
+		Texts: texts(m, l, top, st.text()),
 	}
 }
 
-// drawGroup is a subgraph's rect and title (clusters.js rect). A Markdown title is
-// set again in the width layout gave the subgraph; the rect widens about its
-// center to the title and the padding when they are wider; the title sits
+// roughStroke is the second path roughjs draws of a stadium or an odd shape
+// (stadium.ts, rectLeftInvArrow.ts): its outline stroked again, each piece a subpath
+// of its own, so that dashes start again at each. Mermaid styles it as the first, so
+// it is filled too, but only between each piece and its chord, under the stroke.
+func roughStroke(segs []scene.Seg, s styling) []scene.Path {
+	var ps []scene.Seg
+	for _, b := range bends(segs) {
+		ps = append(ps, scene.Seg{Op: scene.MoveTo, Pts: [3]scene.Point{b[0]}}, scene.Seg{Op: scene.LineTo, Pts: [3]scene.Point{b.end()}})
+	}
+	st := s.pen(scene.NodeStroke, 2)
+	if s.dashed {
+		return dashed(ps, s.dash, st, 0)
+	}
+	return []scene.Path{{Segs: ps, Stroke: st}}
+}
+
+// drawGroup is a subgraph's rect and title (clusters.js rect), as its styles say. A
+// Markdown title is set again in the width layout gave the subgraph; the rect widens
+// about its center to the title and the padding when they are wider; the title sits
 // centered on the rect's top.
 func drawGroup(n Node, title Box, b graphlayout.Box, m scene.Measurer) scene.Item {
 	if n.Label.Kind == "markdown" {
@@ -94,22 +119,23 @@ func drawGroup(n Node, title Box, b graphlayout.Box, m scene.Measurer) scene.Ite
 	}
 	r := scene.Rect{X: b.X - w/2, Y: b.Y - b.Height/2, W: w, H: b.Height}
 	top := scene.Point{X: b.X - title.W/2, Y: r.Y}
+	st := nodeStyling(n.Compiled, n.Styles)
 	return scene.Item{
 		Kind: scene.Group, ID: n.ID, Parent: n.Parent,
-		Box: union(r, scene.Rect{X: top.X, Y: top.Y, W: title.W, H: title.H}),
-		Paths: []scene.Path{{Segs: scene.RoundRect(r, 0), Fill: scene.Use(scene.GroupFill),
-			Stroke: scene.Stroke{Paint: scene.Use(scene.GroupStroke), Width: 1}}},
-		Texts: texts(m, title, top),
+		Box:   union(r, scene.Rect{X: top.X, Y: top.Y, W: title.W, H: title.H}),
+		Paths: st.outline(scene.RoundRect(r, 0), scene.GroupFill, scene.GroupStroke, 1, 0),
+		Texts: texts(m, title, top, st.text()),
 	}
 }
 
-// drawEdgeLabel is an edge's label about c, on a patch of the background its size.
+// drawEdgeLabel is an edge's label about c, on a patch of the background its size, in
+// the color the edge's styles give it.
 func drawEdgeLabel(e Edge, l Box, c scene.Point, m scene.Measurer) scene.Item {
 	r := scene.Rect{X: c.X - l.W/2, Y: c.Y - l.H/2, W: l.W, H: l.H}
 	return scene.Item{
 		Kind: scene.Label, ID: e.ID, Box: r,
 		Paths: []scene.Path{{Segs: scene.RoundRect(r, 0), Fill: scene.Use(scene.Background)}},
-		Texts: texts(m, l, scene.Point{X: r.X, Y: r.Y}),
+		Texts: texts(m, l, scene.Point{X: r.X, Y: r.Y}, paint(edgeStyling(e).color, scene.TextColor)),
 	}
 }
 
@@ -139,12 +165,12 @@ func bounds(segs []scene.Seg) scene.Rect {
 			at = s.Pts[0]
 		case scene.QuadTo:
 			for _, t := range quadTurns(at, s.Pts[0], s.Pts[1]) {
-				add(bend{from: at, ctrl: s.Pts[0], to: s.Pts[1], curve: true}.at(t))
+				add(bend{at, s.Pts[0], s.Pts[1]}.at(t))
 			}
 			at = s.Pts[1]
 		case scene.CubeTo:
 			for _, t := range cubeTurns(at, s.Pts[0], s.Pts[1], s.Pts[2]) {
-				add(cubeAt(at, s.Pts[0], s.Pts[1], s.Pts[2], t))
+				add(bend{at, s.Pts[0], s.Pts[1], s.Pts[2]}.at(t))
 			}
 			at = s.Pts[2]
 		default:
@@ -196,11 +222,6 @@ func cubeTurns(p0, c1, c2, p1 scene.Point) []float64 {
 	return ts
 }
 
-func cubeAt(p0, c1, c2, p1 scene.Point, t float64) scene.Point {
-	a, b, c := lerp(p0, c1, t), lerp(c1, c2, t), lerp(c2, p1, t)
-	return lerp(lerp(a, b, t), lerp(b, c, t), t)
-}
-
 // union is the box that holds a and b, as gfx::RectF::Union unites the boxes of
 // getBBox: a box with no width or no height holds nothing.
 func union(a, b scene.Rect) scene.Rect {
@@ -220,13 +241,15 @@ func moved(items []scene.Item, dx, dy float64) []scene.Item {
 	for i := range items {
 		it := &items[i]
 		it.Box.X, it.Box.Y = it.Box.X+dx, it.Box.Y+dy
-		for _, p := range it.Paths {
-			for j := range p.Segs {
-				for k := range p.Segs[j].Pts {
-					p.Segs[j].Pts[k].X += dx
-					p.Segs[j].Pts[k].Y += dy
+		for pi := range it.Paths {
+			segs := slices.Clone(it.Paths[pi].Segs) // a fill and a stroke may share theirs
+			for j := range segs {
+				for k := range segs[j].Pts {
+					segs[j].Pts[k].X += dx
+					segs[j].Pts[k].Y += dy
 				}
 			}
+			it.Paths[pi].Segs = segs
 		}
 		for _, t := range it.Texts {
 			for j := range t.Lines {
