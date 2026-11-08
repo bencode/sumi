@@ -1,5 +1,6 @@
 // Package mermaid lays out diagrams written in Mermaid's syntax as scenes,
-// drawing what Mermaid v12.3.0 draws. So far it knows sequence diagrams.
+// drawing what Mermaid v12.3.0 draws. So far it knows sequence diagrams and
+// flowcharts; a flowchart's classDef, style and linkStyle are read but not yet drawn.
 //
 //	s, err := mermaid.Layout("sequenceDiagram\nAlice->>Bob: Hello", mermaid.Options{})
 //	if err != nil {
@@ -17,6 +18,7 @@ package mermaid
 import (
 	"strings"
 
+	"github.com/bencode/sumi/mermaid/internal/flowchart"
 	"github.com/bencode/sumi/mermaid/internal/sequence"
 	"github.com/bencode/sumi/mermaid/internal/syntax"
 	"github.com/bencode/sumi/scene"
@@ -35,9 +37,12 @@ type Options struct {
 type Error = syntax.Error
 
 // kinds are the diagrams Layout knows, by the word a diagram starts with,
-// as Mermaid's detectors match it (sequenceDetector.ts).
+// as Mermaid's detectors match it (sequenceDetector.ts, flowDetector-v2.ts).
+// "flowchart" takes flowchart-elk too, which Mermaid 12 lays out with ELK as well.
 var kinds = map[string]func(body, title string, m scene.Measurer) (*scene.Scene, error){
 	"sequenceDiagram": sequence.Layout,
+	"graph":           flowchart.Layout,
+	"flowchart":       flowchart.Layout,
 }
 
 // Layout lays out the diagram src, picking its kind by its first word.
