@@ -1,10 +1,12 @@
 package flowchart
 
 import (
-	"math"
 	"slices"
 
 	"github.com/bencode/sumi/mermaid/internal/graphlayout"
+	"github.com/bencode/sumi/mermaid/internal/label"
+	"github.com/bencode/sumi/mermaid/internal/line"
+	"github.com/bencode/sumi/mermaid/internal/style"
 	"github.com/bencode/sumi/scene"
 )
 
@@ -41,7 +43,7 @@ func draw(p placed, title string, m scene.Measurer) *scene.Scene {
 			lines[i] = append(lines[i], scene.Point{X: v.X, Y: v.Y})
 		}
 	}
-	cs := crossings(lines)
+	cs := line.Crossings(lines)
 	for i, pe := range p.r.Edges {
 		e := p.d.Edges[i]
 		edges = append(edges, drawEdge(e, lines[i], cs[i]))
@@ -75,21 +77,21 @@ func drawNode(p placed, i int, b graphlayout.Box, m scene.Measurer) scene.Item {
 		}
 	}
 	top := scene.Point{X: b.X + s.Label.X - l.W/2, Y: b.Y + s.Label.Y - l.H/2}
-	label := scene.Rect{X: top.X, Y: top.Y, W: l.W, H: l.H}
-	st := nodeStyling(n.Compiled, n.Styles)
+	text := scene.Rect{X: top.X, Y: top.Y, W: l.W, H: l.H}
+	st := style.ForNode(n.Compiled, n.Styles)
 	turn := 0.0
 	if n.Shape == Circle || n.Shape == DoubleCircle {
 		turn = 0.25 // a <circle> starts at its right, Ellipse at its top
 	}
-	paths := st.outline(outline, scene.NodeFill, scene.NodeStroke, 2, turn)
+	paths := st.Outline(outline, scene.NodeFill, scene.NodeStroke, 2, turn)
 	if n.Shape == Stadium || n.Shape == Odd {
 		paths = append(paths, roughStroke(outline, st)...)
 	}
 	return scene.Item{
 		Kind: scene.Node, ID: n.ID, Parent: n.Parent,
-		Box:   union(bounds(outline), label),
+		Box:   union(line.Bounds(outline), text),
 		Paths: paths,
-		Texts: texts(m, l, top, st.text()),
+		Texts: label.Texts(m, l, top, st.Text()),
 	}
 }
 
@@ -97,14 +99,14 @@ func drawNode(p placed, i int, b graphlayout.Box, m scene.Measurer) scene.Item {
 // (stadium.ts, rectLeftInvArrow.ts): its outline stroked again, each piece a subpath
 // of its own, so that dashes start again at each. Mermaid styles it as the first, so
 // it is filled too, but only between each piece and its chord, under the stroke.
-func roughStroke(segs []scene.Seg, s styling) []scene.Path {
+func roughStroke(segs []scene.Seg, s style.Styling) []scene.Path {
 	var ps []scene.Seg
-	for _, b := range bends(segs) {
-		ps = append(ps, scene.Seg{Op: scene.MoveTo, Pts: [3]scene.Point{b[0]}}, scene.Seg{Op: scene.LineTo, Pts: [3]scene.Point{b.end()}})
+	for _, b := range line.Bends(segs) {
+		ps = append(ps, scene.Seg{Op: scene.MoveTo, Pts: [3]scene.Point{b[0]}}, scene.Seg{Op: scene.LineTo, Pts: [3]scene.Point{b.End()}})
 	}
-	st := s.pen(scene.NodeStroke, 2)
-	if s.dashed {
-		return dashed(ps, s.dash, st, 0)
+	st := s.Pen(scene.NodeStroke, 2)
+	if s.Dashed {
+		return line.Dashed(ps, s.Dash, st, 0)
 	}
 	return []scene.Path{{Segs: ps, Stroke: st}}
 }
@@ -113,36 +115,36 @@ func roughStroke(segs []scene.Seg, s styling) []scene.Path {
 // Markdown title is set again in the width layout gave the subgraph; the rect widens
 // about its center to the title and the padding when they are wider; the title sits
 // centered on the rect's top.
-func drawGroup(n Node, title Box, b graphlayout.Box, m scene.Measurer) scene.Item {
+func drawGroup(n Node, title label.Box, b graphlayout.Box, m scene.Measurer) scene.Item {
 	if n.Label.Kind == "markdown" {
-		title = setLabel(m, n.Label.Lines, b.Width, 0)
+		title = label.Set(m, n.Label.Lines, b.Width, 0)
 	}
 	w := b.Width
 	if n.Label.Text == "" {
-		title = Box{}
+		title = label.Box{}
 	}
 	if w <= title.W+groupPadding {
 		w = title.W + groupPadding
 	}
 	r := scene.Rect{X: b.X - w/2, Y: b.Y - b.Height/2, W: w, H: b.Height}
 	top := scene.Point{X: b.X - title.W/2, Y: r.Y}
-	st := nodeStyling(n.Compiled, n.Styles)
+	st := style.ForNode(n.Compiled, n.Styles)
 	return scene.Item{
 		Kind: scene.Group, ID: n.ID, Parent: n.Parent,
 		Box:   union(r, scene.Rect{X: top.X, Y: top.Y, W: title.W, H: title.H}),
-		Paths: st.outline(scene.RoundRect(r, 0), scene.GroupFill, scene.GroupStroke, 1, 0),
-		Texts: texts(m, title, top, st.text()),
+		Paths: st.Outline(scene.RoundRect(r, 0), scene.GroupFill, scene.GroupStroke, 1, 0),
+		Texts: label.Texts(m, title, top, st.Text()),
 	}
 }
 
 // drawEdgeLabel is an edge's label about c, on a patch of the background its size, in
 // the color the edge's styles give it.
-func drawEdgeLabel(e Edge, l Box, c scene.Point, m scene.Measurer) scene.Item {
+func drawEdgeLabel(e Edge, l label.Box, c scene.Point, m scene.Measurer) scene.Item {
 	r := scene.Rect{X: c.X - l.W/2, Y: c.Y - l.H/2, W: l.W, H: l.H}
 	return scene.Item{
 		Kind: scene.Label, ID: e.ID, Box: r,
 		Paths: []scene.Path{{Segs: scene.RoundRect(r, 0), Fill: scene.Use(scene.Background)}},
-		Texts: texts(m, l, scene.Point{X: r.X, Y: r.Y}, paint(edgeStyling(e).color, scene.TextColor)),
+		Texts: label.Texts(m, l, scene.Point{X: r.X, Y: r.Y}, style.Paint(edgeStyling(e).Color, scene.TextColor)),
 	}
 }
 
@@ -150,83 +152,13 @@ func drawEdgeLabel(e Edge, l Box, c scene.Point, m scene.Measurer) scene.Item {
 func drawTitle(title string, x float64, m scene.Measurer) scene.Item {
 	f := scene.Font{Size: titleSize}
 	w := m.Measure(title, f).Width
-	a, d := extent(m, f)
+	a, d := label.Extent(m, f)
 	return scene.Item{
 		Kind: scene.Label,
 		Box:  scene.Rect{X: x - w/2, Y: titleBase - a, W: w, H: a + d},
 		Texts: []scene.Text{{Font: f, Paint: scene.Use(scene.TextColor),
 			Lines: []scene.Line{{S: title, X: x - w/2, Baseline: titleBase}}}},
 	}
-}
-
-// bounds is the tight box of a path: its ends, and where its curves turn.
-func bounds(segs []scene.Seg) scene.Rect {
-	x0, y0, x1, y1 := math.Inf(1), math.Inf(1), math.Inf(-1), math.Inf(-1)
-	add := func(p scene.Point) {
-		x0, y0, x1, y1 = min(x0, p.X), min(y0, p.Y), max(x1, p.X), max(y1, p.Y)
-	}
-	var at scene.Point
-	for _, s := range segs {
-		switch s.Op {
-		case scene.MoveTo, scene.LineTo:
-			at = s.Pts[0]
-		case scene.QuadTo:
-			for _, t := range quadTurns(at, s.Pts[0], s.Pts[1]) {
-				add(bend{at, s.Pts[0], s.Pts[1]}.at(t))
-			}
-			at = s.Pts[1]
-		case scene.CubeTo:
-			for _, t := range cubeTurns(at, s.Pts[0], s.Pts[1], s.Pts[2]) {
-				add(bend{at, s.Pts[0], s.Pts[1], s.Pts[2]}.at(t))
-			}
-			at = s.Pts[2]
-		default:
-			continue
-		}
-		add(at)
-	}
-	if x0 > x1 {
-		return scene.Rect{}
-	}
-	return scene.Rect{X: x0, Y: y0, W: x1 - x0, H: y1 - y0}
-}
-
-// quadTurns are where a quadratic curve's x or y turns, inside (0, 1).
-func quadTurns(p0, c, p1 scene.Point) []float64 {
-	var ts []float64
-	for _, v := range [][3]float64{{p0.X, c.X, p1.X}, {p0.Y, c.Y, p1.Y}} {
-		if d := v[0] - 2*v[1] + v[2]; d != 0 {
-			if t := (v[0] - v[1]) / d; t > 0 && t < 1 {
-				ts = append(ts, t)
-			}
-		}
-	}
-	return ts
-}
-
-// cubeTurns are where a cubic curve's x or y turns, inside (0, 1): the roots of
-// its derivative, a·t² + b·t + c.
-func cubeTurns(p0, c1, c2, p1 scene.Point) []float64 {
-	var ts []float64
-	for _, v := range [][4]float64{{p0.X, c1.X, c2.X, p1.X}, {p0.Y, c1.Y, c2.Y, p1.Y}} {
-		a := -v[0] + 3*v[1] - 3*v[2] + v[3]
-		b := 2 * (v[0] - 2*v[1] + v[2])
-		c := v[1] - v[0]
-		var roots []float64
-		switch disc := b*b - 4*a*c; {
-		case math.Abs(a) < 1e-12 && b != 0:
-			roots = []float64{-c / b}
-		case math.Abs(a) >= 1e-12 && disc >= 0:
-			q := math.Sqrt(disc)
-			roots = []float64{(-b + q) / (2 * a), (-b - q) / (2 * a)}
-		}
-		for _, t := range roots {
-			if t > 0 && t < 1 {
-				ts = append(ts, t)
-			}
-		}
-	}
-	return ts
 }
 
 // union is the box that holds a and b, as gfx::RectF::Union unites the boxes of

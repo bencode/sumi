@@ -1,4 +1,4 @@
-package flowchart
+package label
 
 import (
 	"math"
@@ -27,12 +27,12 @@ type Box struct {
 	W, H  float64
 }
 
-// setLabel sets lines in a box wrap wide, no narrower than least, as addHtmlSpan does.
+// Set sets lines in a box wrap wide, no narrower than least, as addHtmlSpan does.
 // A label narrower than wrap keeps its lines, set with white-space: nowrap; one that
 // reaches wrap is set again with white-space: break-spaces in a table as wide as wrap
 // or its widest piece, whichever is wider. wrap is math.Inf(1) for a label that never
 // wraps.
-func setLabel(m scene.Measurer, lines [][]Span, wrap, least float64) Box {
+func Set(m scene.Measurer, lines [][]Span, wrap, least float64) Box {
 	// An empty line after a last <br> takes no room, and a line of spaces there takes
 	// none until the label wraps. A line a <br> ends takes one either way.
 	n := len(lines)

@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/bencode/sumi/mermaid/internal/style"
 	"github.com/bencode/sumi/mermaid/internal/syntax"
 )
 
@@ -85,18 +86,18 @@ func (t *tables) document(body []Stmt) (members []string, dir string, err error)
 		case *Direction:
 			dir = s.Value
 		case *Style:
-			if err = checkStyles(s.Pos, s.Styles); err != nil {
+			if err = style.Check(s.Pos, s.Styles); err != nil {
 				break
 			}
 			if v := t.vertex(s.ID, s.Pos); v != nil {
 				v.styles = append(v.styles, s.Styles...)
 			}
 		case *LinkStyle:
-			if err = checkStyles(s.Pos, s.Styles); err == nil {
+			if err = style.Check(s.Pos, s.Styles); err == nil {
 				err = t.updateLink(s)
 			}
 		case *ClassDef:
-			if err = checkStyles(s.Pos, classStyles(s)); err == nil {
+			if err = style.Check(s.Pos, classStyles(s)); err == nil {
 				t.addClass(s)
 			}
 		case *Class:

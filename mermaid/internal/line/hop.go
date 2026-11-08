@@ -1,4 +1,4 @@
-package flowchart
+package line
 
 import (
 	"cmp"
@@ -20,8 +20,8 @@ const (
 	hopBulge     = 0.5522847498307935 // 4/3·tan(π/8): a cubic's handles for a quarter circle
 )
 
-// A crossing is a place where a line hops another: at, t along its segment seg.
-type crossing struct {
+// A Crossing is a place where a line hops another: at, t along its segment seg.
+type Crossing struct {
 	seg int
 	t   float64
 	at  scene.Point
@@ -33,10 +33,10 @@ type hop struct {
 	d, r float64
 }
 
-// crossings are the crossings each of lines hops (findEdgeIntersections), of the
+// Crossings are the crossings each of lines hops (findEdgeIntersections), of the
 // points layout gave them, before the markers move their ends in.
-func crossings(lines [][]scene.Point) [][]crossing {
-	out := make([][]crossing, len(lines))
+func Crossings(lines [][]scene.Point) [][]Crossing {
+	out := make([][]Crossing, len(lines))
 	for i, a := range lines {
 		for j := i + 1; j < len(lines); j++ {
 			onA, onB := crossingsOf(a, lines[j])
@@ -49,7 +49,7 @@ func crossings(lines [][]scene.Point) [][]crossing {
 // crossingsOf are the crossings of a and of b, the line after it: where a horizontal
 // segment crosses a vertical one the horizontal hops, and otherwise the later line.
 // Neither hops where either has left its points to round a corner.
-func crossingsOf(a, b []scene.Point) (onA, onB []crossing) {
+func crossingsOf(a, b []scene.Point) (onA, onB []Crossing) {
 	for si := 0; si+1 < len(a); si++ {
 		for sj := 0; sj+1 < len(b); sj++ {
 			ta, tb, at, ok := intersect(a[si], a[si+1], b[sj], b[sj+1])
@@ -57,9 +57,9 @@ func crossingsOf(a, b []scene.Point) (onA, onB []crossing) {
 				continue
 			}
 			if horizontal(a[si], a[si+1]) && !horizontal(b[sj], b[sj+1]) {
-				onA = append(onA, crossing{si, ta, at})
+				onA = append(onA, Crossing{si, ta, at})
 			} else {
-				onB = append(onB, crossing{sj, tb, at})
+				onB = append(onB, Crossing{sj, tb, at})
 			}
 		}
 	}
@@ -100,9 +100,9 @@ func inCorner(pts []scene.Point, seg int, t float64) bool {
 // fit are the hops rewriteEdgePath draws of cs on segment seg, l long, its corners
 // taking front and back of it: each kept clear of the corners, then of its neighbors,
 // and none that comes out too small.
-func fit(cs []crossing, seg int, l, front, back float64) []hop {
-	on := slices.DeleteFunc(slices.Clone(cs), func(c crossing) bool { return c.seg != seg })
-	slices.SortStableFunc(on, func(a, b crossing) int { return cmp.Compare(a.t, b.t) })
+func fit(cs []Crossing, seg int, l, front, back float64) []hop {
+	on := slices.DeleteFunc(slices.Clone(cs), func(c Crossing) bool { return c.seg != seg })
+	slices.SortStableFunc(on, func(a, b Crossing) int { return cmp.Compare(a.t, b.t) })
 	var hs []hop
 	for _, c := range on {
 		d := c.t * l

@@ -5,6 +5,7 @@ import (
 
 	"github.com/bencode/sumi/mermaid/internal/elk"
 	"github.com/bencode/sumi/mermaid/internal/graphlayout"
+	"github.com/bencode/sumi/mermaid/internal/label"
 	"github.com/bencode/sumi/mermaid/internal/shape"
 	"github.com/bencode/sumi/mermaid/internal/syntax"
 	"github.com/bencode/sumi/scene"
@@ -63,16 +64,16 @@ func ends(d *Diagram) error {
 // A placed is a diagram with its labels set and laid out: what draw draws.
 type placed struct {
 	d      *Diagram
-	labels []Box        // by d.Nodes: a node's label, a subgraph's title
+	labels []label.Box  // by d.Nodes: a node's label, a subgraph's title
 	shapes []shape.Node // by d.Nodes; zero for a subgraph
-	edges  []Box        // by d.Edges
+	edges  []label.Box  // by d.Edges
 	r      graphlayout.Result
 }
 
 // place sets every label and shape of d and lays d out, as defaultMeasureLayout and
 // runElkLayoutCore do.
 func place(d *Diagram, m scene.Measurer) placed {
-	p := placed{d: d, labels: make([]Box, len(d.Nodes)), shapes: make([]shape.Node, len(d.Nodes)), edges: make([]Box, len(d.Edges))}
+	p := placed{d: d, labels: make([]label.Box, len(d.Nodes)), shapes: make([]shape.Node, len(d.Nodes)), edges: make([]label.Box, len(d.Edges))}
 	data := graphlayout.Data{Direction: elkDirection(d.Direction)}
 	for i, n := range d.Nodes {
 		node := graphlayout.Node{ID: n.ID, Parent: n.Parent, Group: n.Group, Direction: elk.Undefined}
@@ -84,7 +85,7 @@ func place(d *Diagram, m scene.Measurer) placed {
 			if n.Label.Kind == "markdown" {
 				wrap = groupWrap
 			}
-			p.labels[i] = setLabel(m, n.Label.Lines, wrap, 0)
+			p.labels[i] = label.Set(m, n.Label.Lines, wrap, 0)
 			if n.Label.Text != "" {
 				node.Title = &elk.Size{Width: p.labels[i].W, Height: p.labels[i].H}
 			}
@@ -95,7 +96,7 @@ func place(d *Diagram, m scene.Measurer) placed {
 			if n.Label.Text != "" && k.WidensLabel() {
 				least = nodeLeast
 			}
-			p.labels[i] = setLabel(m, n.Label.Lines, nodeWrap, least)
+			p.labels[i] = label.Set(m, n.Label.Lines, nodeWrap, least)
 			s := shape.Set(k, p.labels[i].W, p.labels[i].H, nodePadding)
 			p.shapes[i] = s
 			node.Width, node.Height = s.W, s.H
@@ -109,7 +110,7 @@ func place(d *Diagram, m scene.Measurer) placed {
 	for i, e := range d.Edges {
 		edge := graphlayout.Edge{ID: e.ID, Start: e.Start, End: e.End, StartMarker: e.StartMarker, EndMarker: e.EndMarker}
 		if e.Label.Text != "" {
-			p.edges[i] = setLabel(m, e.Label.Lines, edgeWrap, 0)
+			p.edges[i] = label.Set(m, e.Label.Lines, edgeWrap, 0)
 			edge.Label = &elk.Size{Width: p.edges[i].W, Height: p.edges[i].H}
 		}
 		data.Edges = append(data.Edges, edge)

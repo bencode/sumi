@@ -1,4 +1,7 @@
-package flowchart
+// Package label reads the text of a diagram's labels into what a browser shows of it,
+// sets it in a box as addHtmlSpan does, and writes it into a scene. A label is its text
+// and its kind: Mermaid's markdown, or anything else for plain text.
+package label
 
 import (
 	"html"
@@ -24,42 +27,41 @@ var (
 	newLines = regexp.MustCompile(`\\n|\n`)          // nonMarkdownToHTML
 )
 
-// readLabel is what a browser shows of l, in lines, spaces as written. Mermaid gives it
-// HTML; sumi draws text, so all that HTML may hold here is <br>.
-func readLabel(l Label, at syntax.Pos) ([][]Span, error) {
+// Read is what a browser shows of text, of kind, in lines, spaces as written. Mermaid
+// gives it HTML; sumi draws text, so all that HTML may hold here is <br>.
+func Read(text, kind string, at syntax.Pos) ([][]Span, error) {
 	switch {
-	case l.Text == "":
+	case text == "":
 		return nil, nil
-	case icon.MatchString(l.Text):
+	case icon.MatchString(text):
 		return nil, syntax.Unsupported(at, "an icon in a label")
-	case formula.MatchString(l.Text):
+	case formula.MatchString(text):
 		return nil, syntax.Unsupported(at, "a formula in a label")
-	case tagStart.MatchString(brTag.ReplaceAllString(l.Text, " ")):
+	case tagStart.MatchString(brTag.ReplaceAllString(text, " ")):
 		return nil, syntax.Unsupported(at, "HTML in a label")
-	case l.Kind == "markdown":
-		return readMarkdown(l.Text, at)
+	case kind == "markdown":
+		return readMarkdown(text, at)
 	}
 	var lines [][]Span
-	for _, s := range newLines.Split(brTag.ReplaceAllString(l.Text, "\n"), -1) {
+	for _, s := range newLines.Split(brTag.ReplaceAllString(text, "\n"), -1) {
 		lines = append(lines, spans([]Span{{Text: s}}))
 	}
 	return lines, nil
 }
 
-// readEdgeLabel is readLabel for the label of an edge, whose line breaks the ELK layout
-// has made newlines by the time it is drawn: in Markdown they part paragraphs and start
-// blocks as a <br> does not.
-func readEdgeLabel(l Label, at syntax.Pos) ([][]Span, error) {
-	if l.Kind == "markdown" && sanitized(l.Text) {
+// ReadEdge is Read for the label of an edge, whose line breaks the ELK layout has made
+// newlines by the time it is drawn: in Markdown they part paragraphs and start blocks
+// as a <br> does not.
+func ReadEdge(text, kind string, at syntax.Pos) ([][]Span, error) {
+	if kind == "markdown" && sanitized(text) {
 		return nil, syntax.Unsupported(at, entityBeside)
 	}
-	l.Text = anyBreak.ReplaceAllString(l.Text, "\n")
-	return readLabel(l, at)
+	return Read(anyBreak.ReplaceAllString(text, "\n"), kind, at)
 }
 
 // closed is the lines of a paragraph that another follows, without the blank line after
 // its last <br>. That takes no room unless the label wraps, which sumi leaves out; at the
-// end of a label setLabel decides.
+// end of a label Set decides.
 func closed(lines [][]Span) [][]Span {
 	if n := len(lines); n > 1 && blank(lines[n-1]) {
 		return lines[:n-1]
