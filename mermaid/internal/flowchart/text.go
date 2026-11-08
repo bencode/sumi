@@ -10,10 +10,10 @@ import (
 // texts sets b's lines in its box, the box's top left at top: each line centered
 // across the box (text-align: center), lineHeight tall, its baseline where Blink
 // puts it: half the leading, floored (CalculateLeadingSpace), above the font's
-// ascent. A span is a Line of the Text of its
-// font, so a line of bold and plain words is in two Texts. Spaces at a span's ends
-// are left out and the span set past those it starts with, so that a backend that
-// drops them, as SVG's <text> does, sets it in the same place.
+// ascent. A span is a Line of the Text of its font, so a line of bold and plain
+// words is in two Texts. Spaces at a span's ends are left out and the span set past
+// those it starts with, so that a backend that drops them, as SVG's <text> does,
+// sets it in the same place.
 func texts(m scene.Measurer, b Box, top scene.Point) []scene.Text {
 	var out []scene.Text
 	index := map[scene.Font]int{}
