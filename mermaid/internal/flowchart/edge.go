@@ -4,7 +4,6 @@ import (
 	"math"
 	"slices"
 
-	"github.com/bencode/sumi/mermaid/internal/elk"
 	"github.com/bencode/sumi/scene"
 )
 
@@ -23,17 +22,14 @@ var gap = map[string]float64{"arrow_point": 4, "arrow_circle": 12.5, "arrow_cros
 var widths = map[string]float64{"thick": 3.5, "invisible": 0}
 
 // line is an edge's path as Mermaid writes its d: the layout's points, their ends
-// moved in for the markers, the corners rounded.
-func line(pts []elk.Vec, start, end string) []scene.Seg {
-	ps := make([]scene.Point, len(pts))
-	for i, p := range pts {
-		ps[i] = scene.Point{X: p.X, Y: p.Y}
-	}
+// moved in for the markers, the corners rounded, with the hops of cs.
+func line(pts []scene.Point, start, end string, cs []crossing) []scene.Seg {
+	ps := slices.Clone(pts)
 	if n := len(ps); n >= 2 {
 		ps[0] = moveIn(ps[0], ps[1], pullBack[start])
 		ps[n-1] = moveIn(ps[n-1], ps[n-2], pullBack[end])
 	}
-	return rounded(ps, cornerRadius)
+	return rounded(ps, cornerRadius, cs)
 }
 
 // moveIn is applyMarkerOffsetsToPoints for one end: p moved by d toward q.
@@ -45,56 +41,88 @@ func moveIn(p, q scene.Point, d float64) scene.Point {
 	return scene.Point{X: p.X + d*math.Cos(a), Y: p.Y + d*math.Sin(a)}
 }
 
-// rounded is generateRoundedPath: a line through pts with a quadratic curve about
-// each corner, cut no more than half way back along either side.
-func rounded(pts []scene.Point, radius float64) []scene.Seg {
+// cornerCut is how far back along either side generateRoundedPath's curve about cur
+// starts: no more than half way, and 0 where it draws no curve.
+func cornerCut(prev, cur, next scene.Point, radius float64) float64 {
+	const epsilon = 1e-5
+	dx1, dy1 := cur.X-prev.X, cur.Y-prev.Y
+	dx2, dy2 := next.X-cur.X, next.Y-cur.Y
+	len1, len2 := math.Hypot(dx1, dy1), math.Hypot(dx2, dy2)
+	if len1 < epsilon || len2 < epsilon {
+		return 0
+	}
+	angle := math.Acos(max(-1, min(1, (dx1*dx2+dy1*dy2)/(len1*len2))))
+	if angle < epsilon || math.Abs(math.Pi-angle) < epsilon {
+		return 0
+	}
+	return min(radius/math.Sin(angle/2), len1/2, len2/2)
+}
+
+// rounded is generateRoundedPath, as rewriteEdgePath also draws it: a line through
+// pts with a quadratic curve about each corner, and on each segment the hops of cs
+// there is room for.
+func rounded(pts []scene.Point, radius float64, cs []crossing) []scene.Seg {
 	if len(pts) < 2 {
 		return nil
 	}
-	const epsilon = 1e-5
-	p := (&scene.Path{}).MoveTo(pts[0].X, pts[0].Y)
+	cut := make([]float64, len(pts))
 	for i := 1; i < len(pts)-1; i++ {
-		prev, cur, next := pts[i-1], pts[i], pts[i+1]
-		dx1, dy1 := cur.X-prev.X, cur.Y-prev.Y
-		dx2, dy2 := next.X-cur.X, next.Y-cur.Y
-		len1, len2 := math.Hypot(dx1, dy1), math.Hypot(dx2, dy2)
-		if len1 < epsilon || len2 < epsilon {
-			p.LineTo(cur.X, cur.Y)
-			continue
-		}
-		nx1, ny1, nx2, ny2 := dx1/len1, dy1/len1, dx2/len2, dy2/len2
-		angle := math.Acos(max(-1, min(1, nx1*nx2+ny1*ny2)))
-		if angle < epsilon || math.Abs(math.Pi-angle) < epsilon {
-			p.LineTo(cur.X, cur.Y)
-			continue
-		}
-		cut := min(radius/math.Sin(angle/2), len1/2, len2/2)
-		p.LineTo(cur.X-nx1*cut, cur.Y-ny1*cut)
-		p.QuadTo(cur.X, cur.Y, cur.X+nx2*cut, cur.Y+ny2*cut)
+		cut[i] = cornerCut(pts[i-1], pts[i], pts[i+1], radius)
 	}
-	last := pts[len(pts)-1]
-	return p.LineTo(last.X, last.Y).Segs
+	way := func(a, b scene.Point) (scene.Point, float64) {
+		l := math.Hypot(b.X-a.X, b.Y-a.Y)
+		return scene.Point{X: (b.X - a.X) / l, Y: (b.Y - a.Y) / l}, l
+	}
+	p := (&scene.Path{}).MoveTo(pts[0].X, pts[0].Y)
+	for i := 0; i+1 < len(pts); i++ {
+		b := pts[i+1]
+		u, l := way(pts[i], b)
+		for _, h := range fit(cs, i, l, cut[i], cut[i+1]) {
+			arcOver(p, h, u)
+		}
+		if cut[i+1] == 0 {
+			p.LineTo(b.X, b.Y)
+			continue
+		}
+		v, _ := way(b, pts[i+2])
+		p.LineTo(b.X-u.X*cut[i+1], b.Y-u.Y*cut[i+1])
+		p.QuadTo(b.X, b.Y, b.X+v.X*cut[i+1], b.Y+v.Y*cut[i+1])
+	}
+	return p.Segs
 }
 
 // trimmed is segs without the first a and the last b of its length: what the neo
-// look's dash array "0 a l-a-b b" draws. When a and b add up to more than the path,
-// the array has a negative length, which Chrome does not take, and draws all of it.
-func trimmed(segs []scene.Seg, a, b float64) []scene.Seg {
-	total := arcLength(segs)
-	if a == 0 && b == 0 || total-a-b < 0 {
+// look's dash array "0 a l-a-b b" draws. When a and b add up to more than plain, the
+// line's length without its hops, the array has a negative length, which Chrome does
+// not take, and draws all of it.
+func trimmed(segs []scene.Seg, a, b, plain float64) []scene.Seg {
+	if a == 0 && b == 0 || plain-a-b < 0 {
 		return segs
 	}
-	return span(segs, a, total-b)
+	return span(segs, a, arcLength(segs)-b)
+}
+
+// hopEnd is what a rewritten line leaves undrawn at its end, and whether it is
+// rewritten at all: applyLineJumpsToSvg reads the neo look's array "0 a x y" with a
+// regexp, and writes "0 a l-a-y y" over it and over any stroke-dasharray of the
+// author's. A dotted line's y is one of its 2s, so that it comes out solid. An array
+// of a negative length, or of no 2s, the regexp does not match.
+func hopEnd(e Edge, plain, a, b float64) (float64, bool) {
+	if e.Stroke == "dotted" {
+		return 2, plain-a-b >= 4
+	}
+	return b, plain-a-b >= 0
 }
 
 // dotted is a dotted line as the neo look draws it: generateDashArray's
 // "0 a 2 2 … 2 2 b", as many 2 2 as fit between a and b, which SVG takes twice for
-// its odd length. That leaves the first a undrawn, then dots 2 on and 2 off, then
-// b and the rest solid; with no a, the rest after a gap of 2. A dot here is a dash
-// of none under the round cap, set at the middle of Chrome's.
-func dotted(segs []scene.Seg, a, b float64, st scene.Stroke) []scene.Path {
+// its odd length, of plain, the line's length without its hops. That leaves the first
+// a undrawn, then dots 2 on and 2 off, then b and the rest solid; with no a, the rest
+// after a gap of 2. A dot here is a dash of none under the round cap, set at the
+// middle of Chrome's.
+func dotted(segs []scene.Seg, a, b, plain float64, st scene.Stroke) []scene.Path {
 	total := arcLength(segs)
-	n := max(0, math.Floor((total-a-b)/4))
+	n := max(0, math.Floor((plain-a-b)/4))
 	end := a + 4*n
 	var out []scene.Path
 	if n > 0 {
@@ -118,8 +146,9 @@ func dotted(segs []scene.Seg, a, b float64, st scene.Stroke) []scene.Path {
 // the parts that are stroked. Those are all but the gaps under its markers, or the
 // dots and solid stretches of a dotted line, or the author's dashes, which leave no
 // gaps; none when the line is no width, or is invisible and its author set it no
-// stroke.
-func strokes(e Edge, segs []scene.Seg, s styling) []scene.Path {
+// stroke. A line with a crossing is hopped, whether or not one was drawn, and plain
+// is its length without them.
+func strokes(e Edge, segs []scene.Seg, s styling, plain float64, hopped bool) []scene.Path {
 	w, ok := widths[e.Stroke]
 	if !ok {
 		w = 2
@@ -133,19 +162,21 @@ func strokes(e Edge, segs []scene.Seg, s styling) []scene.Path {
 		return out
 	}
 	a, b := gap[e.StartMarker], gap[e.EndMarker]
+	if end, ok := hopEnd(e, plain, a, b); hopped && ok {
+		return append(out, scene.Path{Segs: trimmed(segs, a, end, plain), Stroke: st})
+	}
 	switch {
 	case s.dashed:
 		return append(out, dashed(segs, s.dash, st, 0)...)
 	case e.Stroke == "dotted":
-		return append(out, dotted(segs, a, b, st)...)
+		return append(out, dotted(segs, a, b, plain, st)...)
 	}
-	return append(out, scene.Path{Segs: trimmed(segs, a, b), Stroke: st})
+	return append(out, scene.Path{Segs: trimmed(segs, a, b, plain), Stroke: st})
 }
 
 // heading is the way a path points at its end, from its last bend that has a
 // length, or at its start, into the path, when start is set. That bend is a line:
-// before rounded's first curve, and after its last, it draws only lines, and the
-// one that meets the curve is at least half its side long.
+// before rounded's first curve or hop, and after its last, it draws only lines.
 func heading(segs []scene.Seg, start bool) (scene.Point, bool) {
 	ps := bends(segs)
 	if !start {
@@ -206,15 +237,16 @@ func marker(kind string, e, u scene.Point, start bool, c *scene.Color) []scene.P
 }
 
 // drawEdge is e's item: what shows of its line, and its markers. Its box is the
-// whole line's, as getBBox gives a path's.
-func drawEdge(e Edge, pts []elk.Vec) scene.Item {
+// whole line's, as getBBox gives a path's. cs are the crossings it hops.
+func drawEdge(e Edge, pts []scene.Point, cs []crossing) scene.Item {
 	it := scene.Item{Kind: scene.Edge, ID: e.ID, From: e.Start, To: e.End}
-	segs := line(pts, e.StartMarker, e.EndMarker)
+	segs := line(pts, e.StartMarker, e.EndMarker, cs)
 	if len(segs) == 0 {
 		return it
 	}
 	it.Box = bounds(segs)
-	it.Paths = strokes(e, segs, edgeStyling(e))
+	plain := arcLength(line(pts, e.StartMarker, e.EndMarker, nil))
+	it.Paths = strokes(e, segs, edgeStyling(e), plain, len(cs) > 0)
 	c := markerColor(e)
 	if u, ok := heading(segs, true); ok {
 		it.Paths = append(it.Paths, marker(e.StartMarker, segs[0].Pts[0], u, true, c)...)

@@ -35,9 +35,16 @@ func draw(p placed, title string, m scene.Measurer) *scene.Scene {
 			nodes = append(nodes, drawNode(p, i, pn.Box, m))
 		}
 	}
+	lines := make([][]scene.Point, len(p.r.Edges))
+	for i, pe := range p.r.Edges {
+		for _, v := range pe.Points {
+			lines[i] = append(lines[i], scene.Point{X: v.X, Y: v.Y})
+		}
+	}
+	cs := crossings(lines)
 	for i, pe := range p.r.Edges {
 		e := p.d.Edges[i]
-		edges = append(edges, drawEdge(e, pe.Points))
+		edges = append(edges, drawEdge(e, lines[i], cs[i]))
 		if pe.Label != nil {
 			labels = append(labels, drawEdgeLabel(e, p.edges[i], scene.Point{X: pe.Label.X, Y: pe.Label.Y}, m))
 		}
