@@ -157,7 +157,7 @@ func (f *fetcher) insertState(parent string, s State, alt bool) {
 	}
 	n := Node{
 		ID: s.ID, Parent: parent, Shape: e.shape, Group: e.group, Dir: e.dir, Alt: e.alt,
-		Styles: f.t.styles[s.ID], Compiled: f.compiled(s.ID),
+		Styles: f.t.styles[s.ID], Compiled: f.compiled(s.ID), At: s.At,
 	}
 	n.Label, n.Descriptions = e.label()
 	if n.Shape == Divider {
@@ -196,7 +196,7 @@ func (f *fetcher) insertNote(s State, n Node) {
 	group := s.ID + parentSpacer
 	f.count++
 	f.insert(Node{ID: group, Label: s.Note.Text, Shape: NoteGroup, Group: true, Position: s.Note.Position, Compiled: n.Compiled})
-	f.insert(Node{ID: note, Parent: group, Label: s.Note.Text, Shape: Note, Position: s.Note.Position})
+	f.insert(Node{ID: note, Parent: group, Label: s.Note.Text, Shape: Note, Position: s.Note.Position, At: s.At})
 	f.insert(n)
 	from, to := s.ID, note
 	if s.Note.Position == "left of" {

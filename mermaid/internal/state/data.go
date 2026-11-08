@@ -30,6 +30,7 @@ type Node struct {
 	Alt               bool   // statediagram-cluster-alt, every other level of groups
 	Position          string // a note's "left of" or "right of"
 	Styles, Compiled  []string
+	At                syntax.Pos // where it was last named
 }
 
 // An Edge is a transition, or a note's line to its state.

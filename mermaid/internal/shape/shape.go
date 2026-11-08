@@ -28,6 +28,12 @@ const (
 	InvTrapezoid             // inv_trapezoid
 	LeanRight                // lean_right
 	LeanLeft                 // lean_left
+	StateStart               // stateStart
+	StateEnd                 // stateEnd
+	Fork                     // forkJoin, the flow up or down
+	ForkSide                 // forkJoin, the flow left or right
+	Choice                   // choice
+	Note                     // note
 )
 
 // A Node is a label box set in a shape.
@@ -62,6 +68,12 @@ var setters = [...]func(w, h, padding float64) Node{
 	InvTrapezoid: invTrapezoid,
 	LeanRight:    leanRight,
 	LeanLeft:     leanLeft,
+	StateStart:   stateStart,
+	StateEnd:     stateEnd,
+	Fork:         fork,
+	ForkSide:     forkSide,
+	Choice:       choice,
+	Note:         note,
 }
 
 // WidensLabel reports whether a label in k is widened to the diagram's least
