@@ -54,6 +54,7 @@ type Node struct {
 
 // An Edge is a link between two nodes.
 type Edge struct {
+	At                     syntax.Pos // where its link is written
 	ID, Start, End         string
 	Label                  Label
 	Stroke                 string // normal, thick, dotted, invisible or INVALID
@@ -110,7 +111,7 @@ func (t *tables) data(dir string) (*Diagram, error) {
 		}
 		from, to := markers(e.kind)
 		d.Edges = append(d.Edges, Edge{
-			ID: e.id, Start: e.start, End: e.end, Label: label, Stroke: e.stroke,
+			At: e.at, ID: e.id, Start: e.start, End: e.end, Label: label, Stroke: e.stroke,
 			StartMarker: from, EndMarker: to,
 			Styles:   slices.Concat(t.defaultStyle, e.styles),
 			Compiled: t.compiled(e.classes),

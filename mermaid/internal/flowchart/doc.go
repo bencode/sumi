@@ -1,12 +1,17 @@
-// Package flowchart reads Mermaid flowcharts into what Mermaid's getData gives, sizes
-// aside. So far nothing draws them. A diagram goes through a pipeline, each step taking
-// values and returning new ones:
+// Package flowchart lays out and draws Mermaid flowcharts as Mermaid's neo look does,
+// with ELK. A diagram goes through a pipeline, each step taking values and returning
+// new ones:
 //
 //	Lex      source -> tokens              lex.go, rules.go, letters.go
 //	Parse    tokens -> statements          parse.go, chain.go, click.go, arrow.go
 //	Resolve  statements -> nodes and edges resolve.go, metadata.go, subgraph.go, data.go
 //	Label    text -> lines of styled spans label.go, markdown.go
 //	Box      lines -> wrapped lines, a box box.go, linebreak
+//	Place    boxes -> shapes, a layout     layout.go, shape, graphlayout
+//	Draw     a layout -> a scene           draw.go, edge.go, text.go
+//
+// Styles, classDef, style and linkStyle, are read and not yet drawn: every color is the
+// theme's.
 //
 // The lexer follows the rules Jison compiles from flow.jison, which are not always
 // those written there; rules.go says where. The parser is a recursive descent over
