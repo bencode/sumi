@@ -44,7 +44,9 @@ var colorStatements = []*regexp.Regexp{
 
 const (
 	jsDot      = `[^\n\r\x{2028}\x{2029}]`
-	jsNonSpace = `[^\t\n\x{0b}\f\r \x{a0}\x{1680}\x{2000}-\x{200a}\x{2028}\x{2029}\x{202f}\x{205f}\x{3000}\x{feff}]`
+	jsSpaces   = `\t\n\x{0b}\f\r \x{a0}\x{1680}\x{2000}-\x{200a}\x{2028}\x{2029}\x{202f}\x{205f}\x{3000}\x{feff}`
+	jsSpace    = `[` + jsSpaces + `]`
+	jsNonSpace = `[^` + jsSpaces + `]`
 )
 
 // dropColorEnds takes the last ; off each statement that sets a color, so
@@ -106,8 +108,10 @@ func frontTitle(lines []string, indent string) string {
 	return ""
 }
 
-// stripDirectives drops each %%{...}%%, which may span lines, keeping its
-// line breaks.
+// stripDirectives drops each directive, which may span lines. The text on either
+// side of one joins into a line, and the directive's line breaks go after that
+// line, so that later lines keep their numbers. A %%{ that is no directive stays
+// for the lexer.
 func stripDirectives(src string) string {
 	var b strings.Builder
 	for {
@@ -115,16 +119,60 @@ func stripDirectives(src string) string {
 		if i < 0 {
 			break
 		}
-		end := len(src)
-		if j := strings.Index(src[i:], "}%%"); j >= 0 {
-			end = i + j + len("}%%")
+		n := directiveLen(src[i:])
+		if n < 0 {
+			b.WriteString(src[:i+len("%%{")])
+			src = src[i+len("%%{"):]
+			continue
 		}
 		b.WriteString(src[:i])
-		b.WriteString(strings.Repeat("\n", strings.Count(src[i:end], "\n")))
-		src = src[end:]
+		src = withBreaks(src[i+n:], strings.Count(src[i:i+n], "\n"))
 	}
 	b.WriteString(src)
 	return b.String()
+}
+
+// withBreaks is s with n more line breaks at the end of its first line.
+func withBreaks(s string, n int) string {
+	end := strings.IndexByte(s, '\n')
+	if end < 0 {
+		end = len(s)
+	}
+	return s[:end] + strings.Repeat("\n", n) + s[end:]
+}
+
+// directiveHead and directiveTail are directiveRegex (utils.ts) around its last
+// group, whose lookahead Go has no way to write. The group is a word or else
+// directiveArgs, so that a word after the first ends a directive early.
+var (
+	directiveHead = regexp.MustCompile(`^%%\{` + jsSpace + `*(?:\w+` + jsSpace + `*:|\w+)` + jsSpace + `*(\w+)?`)
+	directiveTail = regexp.MustCompile(`^` + jsSpace + `*(?:\}%%)?`)
+)
+
+// directiveLen is the length of the directive s starts with, or -1.
+func directiveLen(s string) int {
+	m := directiveHead.FindStringSubmatchIndex(s)
+	if m == nil {
+		return -1
+	}
+	n := m[1]
+	if m[2] < 0 {
+		n += directiveArgs(s[n:])
+	}
+	return n + len(directiveTail.FindString(s[n:]))
+}
+
+// directiveArgs is the length of s up to }%% or a line separator, which is where
+// (?:(?!}%%).|\r?\n)* stops, there being no \r left by now.
+func directiveArgs(s string) int {
+	n := len(s)
+	if i := strings.Index(s, "}%%"); i >= 0 {
+		n = i
+	}
+	if i := strings.IndexAny(s[:n], "\u2028\u2029"); i >= 0 {
+		n = i
+	}
+	return n
 }
 
 // stripComments drops each line that is a %% comment, as Mermaid's

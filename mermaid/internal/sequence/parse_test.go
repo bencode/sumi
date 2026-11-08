@@ -260,6 +260,10 @@ A->>B: 5`, &Diagram{
 			Participants: ps("A", "B"),
 			Body:         []Stmt{msg("A", "B", "100%% sure", Message{Head: Arrow, Line: 2})},
 		}},
+		{"a %%{ that is no directive is a comment", "sequenceDiagram\n%%{ -\nA->>B: hi", &Diagram{
+			Participants: ps("A", "B"),
+			Body:         []Stmt{msg("A", "B", "hi", Message{Head: Arrow, Line: 3})},
+		}},
 	}
 	for _, tt := range tests {
 		d, err := read(tt.src)
@@ -279,6 +283,7 @@ func TestParseErrors(t *testing.T) {
 		{"unclosed block", "sequenceDiagram\nloop x\nA->>B: hi", `line 4:1: unexpected end of input, expected "end"`},
 		{"else outside alt", "sequenceDiagram\nloop\nelse\nend", `line 3:1: unexpected "else", expected a statement`},
 		{"stray end", "sequenceDiagram\nend", `line 2:1: unexpected "end", expected a statement`},
+		{"%{ is no comment", "sequenceDiagram\n%{\nA->>B: x", `line 2:3: unexpected end of line, expected an arrow`},
 		{"no text", "sequenceDiagram\nA->>B", `line 2:6: unexpected end of line, expected ":" and a text`},
 		{"inactive", "sequenceDiagram\nA->>B: x\nB->>-A: y", `line 3:1: cannot deactivate "B": it is not active`},
 		{"unknown", "sequenceDiagram\nactivate C", `line 2:1: cannot activate "C": no such participant`},

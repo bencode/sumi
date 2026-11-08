@@ -109,10 +109,11 @@ func hashComment(src string, i int) int {
 	return upToLine(src, i)
 }
 
-// percentComment and percentAfter match a %% comment that syntax.Prepare
-// left: one after something on its line, or a bare %% (lines 28-29).
+// percentComment and percentAfter match a comment that syntax.Prepare left:
+// one after something on its line, a bare %%, or a %%{ that is no directive.
+// Lines 28-29 write \%%(?!\{), which Jison compiles to one % and that lookahead.
 func percentComment(src string, i int) int {
-	if !strings.HasPrefix(src[i:], "%%") || strings.HasPrefix(src[i:], "%%{") {
+	if !strings.HasPrefix(src[i:], "%") || strings.HasPrefix(src[i:], "%{") {
 		return -1
 	}
 	return upToLine(src, i)
