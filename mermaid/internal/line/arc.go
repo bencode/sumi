@@ -1,4 +1,4 @@
-package flowchart
+package line
 
 import (
 	"math"
@@ -9,13 +9,13 @@ import (
 // Lengths along paths, and the parts of paths between two lengths: what Chrome's
 // getTotalLength and stroke-dasharray go by.
 
-// A bend is a piece of a path from its start: a line, a quadratic or a cubic curve,
+// A Bend is a piece of a path from its start: a line, a quadratic or a cubic curve,
 // as its two, three or four points.
-type bend []scene.Point
+type Bend []scene.Point
 
-// bends are the pieces of one subpath, segs; Close is the line back to its start.
-func bends(segs []scene.Seg) []bend {
-	var out []bend
+// Bends are the pieces of one subpath, segs; Close is the line back to its start.
+func Bends(segs []scene.Seg) []Bend {
+	var out []Bend
 	var at, start scene.Point
 	for _, s := range segs {
 		switch s.Op {
@@ -23,15 +23,15 @@ func bends(segs []scene.Seg) []bend {
 			at, start = s.Pts[0], s.Pts[0]
 			continue
 		case scene.LineTo:
-			out = append(out, bend{at, s.Pts[0]})
+			out = append(out, Bend{at, s.Pts[0]})
 		case scene.QuadTo:
-			out = append(out, bend{at, s.Pts[0], s.Pts[1]})
+			out = append(out, Bend{at, s.Pts[0], s.Pts[1]})
 		case scene.CubeTo:
-			out = append(out, bend{at, s.Pts[0], s.Pts[1], s.Pts[2]})
+			out = append(out, Bend{at, s.Pts[0], s.Pts[1], s.Pts[2]})
 		case scene.Close:
-			out = append(out, bend{at, start})
+			out = append(out, Bend{at, start})
 		}
-		at = out[len(out)-1].end()
+		at = out[len(out)-1].End()
 	}
 	return out
 }
@@ -48,12 +48,13 @@ func subpaths(segs []scene.Seg) [][]scene.Seg {
 	return out
 }
 
-func (p bend) end() scene.Point { return p[len(p)-1] }
+// End is where p ends.
+func (p Bend) End() scene.Point { return p[len(p)-1] }
 
 // blossom is p's polar form at ts, one for each of its degrees: with every t the
 // same, the point at t; with t0s then t1s, a control point of p's part from t0 to t1.
-func (p bend) blossom(ts ...float64) scene.Point {
-	q := append(bend{}, p...)
+func (p Bend) blossom(ts ...float64) scene.Point {
+	q := append(Bend{}, p...)
 	for _, t := range ts {
 		for i := range len(q) - 1 {
 			q[i] = lerp(q[i], q[i+1], t)
@@ -63,7 +64,8 @@ func (p bend) blossom(ts ...float64) scene.Point {
 	return q[0]
 }
 
-func (p bend) at(t float64) scene.Point {
+// At is the point t of the way along p, t going from 0 to 1.
+func (p Bend) At(t float64) scene.Point {
 	ts := make([]float64, len(p)-1)
 	for i := range ts {
 		ts[i] = t
@@ -84,12 +86,12 @@ var gauss = [8][2]float64{
 }
 
 // length is the arc length of p from 0 to t.
-func (p bend) length(t float64) float64 {
+func (p Bend) length(t float64) float64 {
 	if len(p) == 2 {
 		return t * math.Hypot(p[1].X-p[0].X, p[1].Y-p[0].Y)
 	}
 	n := float64(len(p) - 1)
-	d := make(bend, len(p)-1)
+	d := make(Bend, len(p)-1)
 	for i := range d {
 		d[i] = scene.Point{X: n * (p[i+1].X - p[i].X), Y: n * (p[i+1].Y - p[i].Y)}
 	}
@@ -97,7 +99,7 @@ func (p bend) length(t float64) float64 {
 	for _, g := range gauss {
 		v := scene.Point{X: d[0].X, Y: d[0].Y}
 		if len(d) > 1 {
-			v = d.at(g[0] * t)
+			v = d.At(g[0] * t)
 		}
 		l += g[1] * math.Hypot(v.X, v.Y)
 	}
@@ -105,7 +107,7 @@ func (p bend) length(t float64) float64 {
 }
 
 // param is where along p the arc length s is reached.
-func (p bend) param(s float64) float64 {
+func (p Bend) param(s float64) float64 {
 	total := p.length(1)
 	if total == 0 {
 		return 0
@@ -126,9 +128,9 @@ func (p bend) param(s float64) float64 {
 }
 
 // sub is the part of p from t0 to t1, its control points p's blossoms.
-func (p bend) sub(t0, t1 float64) bend {
+func (p Bend) sub(t0, t1 float64) Bend {
 	n := len(p) - 1
-	q := make(bend, len(p))
+	q := make(Bend, len(p))
 	for i := range q {
 		ts := make([]float64, n)
 		for j := range ts {
@@ -142,20 +144,20 @@ func (p bend) sub(t0, t1 float64) bend {
 	return q
 }
 
-// arcLength is how long segs is.
-func arcLength(segs []scene.Seg) float64 {
+// ArcLength is how long segs is.
+func ArcLength(segs []scene.Seg) float64 {
 	l := 0.0
-	for _, p := range bends(segs) {
+	for _, p := range Bends(segs) {
 		l += p.length(1)
 	}
 	return l
 }
 
-// span is the part of one subpath, segs, from length from to length to along it.
-func span(segs []scene.Seg, from, to float64) []scene.Seg {
+// Span is the part of one subpath, segs, from length from to length to along it.
+func Span(segs []scene.Seg, from, to float64) []scene.Seg {
 	path := &scene.Path{}
 	at := 0.0
-	for _, p := range bends(segs) {
+	for _, p := range Bends(segs) {
 		l := p.length(1)
 		lo, hi := max(from-at, 0), min(to-at, l)
 		at += l
@@ -178,7 +180,7 @@ func span(segs []scene.Seg, from, to float64) []scene.Seg {
 	return path.Segs
 }
 
-// dashed is the line of segs, stroked by st, dashed by dash as Chrome dashes it with
+// Dashed is the line of segs, stroked by st, dashed by dash as Chrome dashes it with
 // butt ends, drawn with st's round ones: each subpath takes the array from its start
 // again, an odd one twice, and each dash is drawn in from its ends by as far as the
 // round cap reaches out, so that it covers what Chrome's covers. A dash shorter than
@@ -186,7 +188,7 @@ func span(segs []scene.Seg, from, to float64) []scene.Seg {
 // of a dash when that is shorter than the stroke is wide, as it is all along
 // roughjs's short pieces of a curve; a dash of no length draws nothing. turn is how
 // much of each subpath's length Chrome's starts past where segs's does.
-func dashed(segs []scene.Seg, dash []float64, st scene.Stroke, turn float64) []scene.Path {
+func Dashed(segs []scene.Seg, dash []float64, st scene.Stroke, turn float64) []scene.Path {
 	if len(dash)%2 == 1 {
 		dash = append(append([]float64{}, dash...), dash...)
 	}
@@ -206,15 +208,15 @@ func dashed(segs []scene.Seg, dash []float64, st scene.Stroke, turn float64) []s
 	d.Dash = pattern(ons, sum)
 	var out []scene.Path
 	for _, sp := range subpaths(segs) {
-		l := arcLength(sp)
+		l := ArcLength(sp)
 		if start := turn * l; start > 0 && start < l {
-			sp = append(span(sp, start, l), span(sp, 0, start)[1:]...)
+			sp = append(Span(sp, start, l), Span(sp, 0, start)[1:]...)
 		}
-		if s := span(sp, ons[0][0], l-w/2); len(s) > 0 {
+		if s := Span(sp, ons[0][0], l-w/2); len(s) > 0 {
 			out = append(out, scene.Path{Segs: s, Stroke: d})
 		}
 		if m, ok := lastDot(ons, whole, sum, l, w); ok {
-			out = append(out, scene.Path{Segs: span(sp, m, m), Stroke: st})
+			out = append(out, scene.Path{Segs: Span(sp, m, m), Stroke: st})
 		}
 	}
 	return out

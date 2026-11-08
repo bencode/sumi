@@ -3,6 +3,7 @@ package flowchart
 import (
 	"slices"
 
+	"github.com/bencode/sumi/mermaid/internal/label"
 	"github.com/bencode/sumi/mermaid/internal/syntax"
 )
 
@@ -37,8 +38,8 @@ const (
 // A Label is text as the source gives it, how to read it, "text", "string" or "markdown",
 // and what that shows.
 type Label struct {
-	Text, Kind string   // Text has its entity codes as syntax.Prepare left them
-	Lines      [][]Span // the lines its <br>s part, as written; setLabel decides what the last one takes
+	Text, Kind string         // Text has its entity codes as syntax.Prepare left them
+	Lines      [][]label.Span // the lines its <br>s part, as written; label.Set decides what the last one takes
 }
 
 // A Node is a vertex, or a subgraph if it is a Group.
@@ -75,12 +76,12 @@ func (t *tables) data(dir string) (*Diagram, error) {
 	groups := map[string]int{}
 	for i := len(t.subgraphs) - 1; i >= 0; i-- {
 		sg := t.subgraphs[i]
-		label, err := withLines(sg.label, sg.at, readLabel)
+		l, err := withLines(sg.label, sg.at, label.Read)
 		if err != nil {
 			return nil, err
 		}
 		d.Nodes = append(d.Nodes, Node{
-			ID: sg.id, Parent: parents[sg.id], Label: label, Group: true, Dir: sg.dir,
+			ID: sg.id, Parent: parents[sg.id], Label: l, Group: true, Dir: sg.dir,
 			Compiled: t.compiled(sg.classes),
 		})
 	}
@@ -95,23 +96,23 @@ func (t *tables) data(dir string) (*Diagram, error) {
 		if v.shape == ellipse {
 			return nil, syntax.Errorf(v.at, "Mermaid has no shape (- -)")
 		}
-		label, err := withLines(v.label, v.at, readLabel)
+		l, err := withLines(v.label, v.at, label.Read)
 		if err != nil {
 			return nil, err
 		}
 		d.Nodes = append(d.Nodes, Node{
-			ID: v.id, Parent: parents[v.id], Label: label, Shape: v.shape, Styles: v.styles,
+			ID: v.id, Parent: parents[v.id], Label: l, Shape: v.shape, Styles: v.styles,
 			Compiled: t.compiled(append([]string{"default", "node"}, v.classes...)),
 		})
 	}
 	for _, e := range t.edges {
-		label, err := withLines(e.label, e.at, readEdgeLabel)
+		l, err := withLines(e.label, e.at, label.ReadEdge)
 		if err != nil {
 			return nil, err
 		}
 		from, to := markers(e.kind)
 		d.Edges = append(d.Edges, Edge{
-			At: e.at, ID: e.id, Start: e.start, End: e.end, Label: label, Stroke: e.stroke,
+			At: e.at, ID: e.id, Start: e.start, End: e.end, Label: l, Stroke: e.stroke,
 			StartMarker: from, EndMarker: to,
 			Styles:   slices.Concat(t.defaultStyle, e.styles),
 			Compiled: t.compiled(e.classes),
@@ -121,8 +122,8 @@ func (t *tables) data(dir string) (*Diagram, error) {
 }
 
 // withLines is l with the lines read gives of it.
-func withLines(l Label, at syntax.Pos, read func(Label, syntax.Pos) ([][]Span, error)) (Label, error) {
-	lines, err := read(l, at)
+func withLines(l Label, at syntax.Pos, read func(string, string, syntax.Pos) ([][]label.Span, error)) (Label, error) {
+	lines, err := read(l.Text, l.Kind, at)
 	l.Lines = lines
 	return l, err
 }

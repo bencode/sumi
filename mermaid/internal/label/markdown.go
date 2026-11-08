@@ -1,4 +1,4 @@
-package flowchart
+package label
 
 import (
 	"regexp"
@@ -37,6 +37,9 @@ var (
 
 const entityBeside = "an entity code beside Markdown"
 
+// isSpace is \s as marked sees it: JavaScript's, which leaves out U+0085.
+func isSpace(c rune) bool { return c != 0x85 && syntax.IsSpace(c) }
+
 // sanitized reports whether DOMPurify changes what marked sees in s. It leaves text with
 // no < alone. Else it reads entity codes, and writes a no-break space, a space to marked,
 // as &nbsp;, punctuation.
@@ -62,7 +65,7 @@ func notRead(s string) string {
 	return ""
 }
 
-// readMarkdown is what markdownToHTML makes of s, read as readLabel reads it.
+// readMarkdown is what markdownToHTML makes of s, read as Read reads it.
 func readMarkdown(s string, at syntax.Pos) ([][]Span, error) {
 	if what := notRead(s); what != "" {
 		return nil, syntax.Unsupported(at, what)

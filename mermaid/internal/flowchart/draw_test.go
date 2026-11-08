@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/bencode/sumi/mermaid/internal/label"
+	"github.com/bencode/sumi/mermaid/internal/line"
 	"github.com/bencode/sumi/mermaid/internal/syntax"
 	"github.com/bencode/sumi/scene"
 )
@@ -846,7 +848,7 @@ func edgeOf(it scene.Item) wantEdge {
 		switch {
 		case p.Fill != (scene.Paint{}) && !closed: // the line's own fill
 		case p.Fill != (scene.Paint{}) && curved:
-			b := bounds(p.Segs)
+			b := line.Bounds(p.Segs)
 			g.rings = append(g.rings, b.X+b.W/2, b.Y+b.H/2, b.W/2)
 		case p.Fill != (scene.Paint{}) || moves > 1:
 			if moves > 1 {
@@ -861,12 +863,12 @@ func edgeOf(it scene.Item) wantEdge {
 			g.width = p.Stroke.Width
 		case len(p.Stroke.Dash) > 0:
 			g.width = p.Stroke.Width
-			for l := 0.0; l <= arcLength(p.Segs)+1e-9; l += p.Stroke.Dash[0] + p.Stroke.Dash[1] {
+			for l := 0.0; l <= line.ArcLength(p.Segs)+1e-9; l += p.Stroke.Dash[0] + p.Stroke.Dash[1] {
 				dots = append(dots, along(p.Segs, l))
 			}
 		default:
 			g.width = p.Stroke.Width
-			l := arcLength(p.Segs)
+			l := line.ArcLength(p.Segs)
 			for _, at := range []float64{0, min(2, l), max(l-2, 0), l} {
 				q := along(p.Segs, at)
 				g.solids = append(g.solids, q.X, q.Y)
@@ -874,7 +876,7 @@ func edgeOf(it scene.Item) wantEdge {
 			for i := 1; i+1 < len(p.Segs); i++ { // a hop is two curves after a line
 				if p.Segs[i].Op == scene.CubeTo && p.Segs[i+1].Op == scene.CubeTo {
 					from, top, end := p.Segs[i-1].Pts[0], p.Segs[i].Pts[2], p.Segs[i+1].Pts[2]
-					q := bend{from, p.Segs[i].Pts[0], p.Segs[i].Pts[1], top}.at(0.5)
+					q := line.Bend{from, p.Segs[i].Pts[0], p.Segs[i].Pts[1], top}.At(0.5)
 					g.hops = append(g.hops, from.X, from.Y, top.X, top.Y, end.X, end.Y, q.X, q.Y)
 				}
 			}
@@ -922,12 +924,12 @@ func styleOf(it scene.Item) wantStyle {
 		if p.Stroke.Width > 0 && p.Stroke.Paint != (scene.Paint{}) && g.width == 0 {
 			g.stroke, g.width = colorOf(p.Stroke.Paint), p.Stroke.Width
 		}
-		if p.Stroke.Width > 0 && len(p.Stroke.Dash) == 0 && len(p.Segs) > 0 && arcLength(p.Segs) == 0 { // a dot
+		if p.Stroke.Width > 0 && len(p.Stroke.Dash) == 0 && len(p.Segs) > 0 && line.ArcLength(p.Segs) == 0 { // a dot
 			q := p.Segs[0].Pts[0]
 			dashes = append(dashes, [4]float64{q.X, q.Y, q.X, q.Y})
 		}
 		if d := p.Stroke.Dash; len(d) > 0 && p.Stroke.Paint != (scene.Paint{}) {
-			l := arcLength(p.Segs)
+			l := line.ArcLength(p.Segs)
 			for a, k := 0.0, 0; a <= l+1e-9; k++ {
 				if k%2 == 0 {
 					q, r := along(p.Segs, a), along(p.Segs, min(a+d[k%len(d)], l))
@@ -970,11 +972,11 @@ func sameStyle(it scene.Item, w wantStyle) string {
 
 // along is the point at length l along segs.
 func along(segs []scene.Seg, l float64) scene.Point {
-	if rest := span(segs, l, math.Inf(1)); len(rest) > 0 {
+	if rest := line.Span(segs, l, math.Inf(1)); len(rest) > 0 {
 		return rest[0].Pts[0]
 	}
-	bs := bends(segs)
-	return bs[len(bs)-1].end()
+	bs := line.Bends(segs)
+	return bs[len(bs)-1].End()
 }
 
 func near(got, want []float64, tol float64) bool {
@@ -1010,7 +1012,7 @@ func holds(got, want []float64) bool {
 func rows(it scene.Item) map[float64][]float64 {
 	out := map[float64][]float64{}
 	for _, t := range it.Texts {
-		a, _ := extent(scene.Arial, t.Font)
+		a, _ := label.Extent(scene.Arial, t.Font)
 		for _, l := range t.Lines {
 			out[l.Baseline-a] = append(out[l.Baseline-a], l.X)
 		}
@@ -1060,7 +1062,7 @@ func TestDraw(t *testing.T) {
 			}
 		}
 		for id, w := range c.groups {
-			if b := bounds(items["group "+id].Paths[0].Segs); !near([]float64{b.X, b.Y, b.W, b.H}, w[:], 0.01) {
+			if b := line.Bounds(items["group "+id].Paths[0].Segs); !near([]float64{b.X, b.Y, b.W, b.H}, w[:], 0.01) {
 				t.Errorf("%s: subgraph %s at %v, want %v", c.name, id, b, w)
 			}
 		}

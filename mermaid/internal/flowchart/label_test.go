@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/bencode/sumi/mermaid/internal/label"
 	"github.com/bencode/sumi/mermaid/internal/syntax"
 )
 
@@ -15,7 +16,7 @@ func readBody(t *testing.T, src string) (*Diagram, error) {
 }
 
 // written is lines as a table has them: a line each, styles as <b> and <i>.
-func written(lines [][]Span) string {
+func written(lines [][]label.Span) string {
 	var out []string
 	for _, line := range lines {
 		var b strings.Builder

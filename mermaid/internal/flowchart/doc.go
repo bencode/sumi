@@ -5,13 +5,13 @@
 //	Lex      source -> tokens              lex.go, rules.go, letters.go
 //	Parse    tokens -> statements          parse.go, chain.go, click.go, arrow.go
 //	Resolve  statements -> nodes and edges resolve.go, metadata.go, subgraph.go, data.go
-//	Label    text -> lines of styled spans label.go, markdown.go
-//	Box      lines -> wrapped lines, a box box.go, linebreak
+//	Label    text -> lines of styled spans label
+//	Box      lines -> wrapped lines, a box label, linebreak
 //	Place    boxes -> shapes, a layout     layout.go, shape, graphlayout
-//	Draw     a layout -> a scene           draw.go, edge.go, text.go
+//	Draw     a layout -> a scene           draw.go, edge.go, line, label
 //
 // Styles, classDef, style and linkStyle, draw what they set of fill, stroke,
-// stroke-width, stroke-dasharray and color (style.go); what else would change how
+// stroke-width, stroke-dasharray and color (the style package); what else would change how
 // Chrome draws, fonts among it, is refused, and the rest of CSS left out as Chrome
 // leaves it.
 //
@@ -48,7 +48,7 @@
 // A label is read into what a browser shows of it: its entity codes, its line breaks, and
 // of Markdown its paragraphs, emphasis and escapes. Mermaid gives labels to the browser as
 // HTML, and all else that takes, icons, formulas and Markdown's blocks among them, sumi
-// does not draw, so it is an error here; markdown.go lists it.
+// does not draw, so it is an error here; the label package lists it.
 //
 // Three things are read and dropped, as they change nothing Mermaid draws by default:
 // linkStyle's interpolate and @{ curve } set a curve, which render.ts overrides on every

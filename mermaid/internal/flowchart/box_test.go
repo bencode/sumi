@@ -3,9 +3,11 @@ package flowchart
 import (
 	"math"
 	"slices"
+	"strings"
 	"testing"
 	"unicode/utf8"
 
+	"github.com/bencode/sumi/mermaid/internal/label"
 	"github.com/bencode/sumi/scene"
 )
 
@@ -46,11 +48,11 @@ func TestSetLabel(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			label := d.Nodes[0].Label
+			text := d.Nodes[0].Label
 			if len(d.Edges) > 0 {
-				label = d.Edges[0].Label
+				text = d.Edges[0].Label
 			}
-			box := setLabel(scene.Arial, label.Lines, c.wrap, c.least)
+			box := label.Set(scene.Arial, text.Lines, c.wrap, c.least)
 			var lines []string
 			n := 0
 			for _, l := range box.Lines {
@@ -65,4 +67,13 @@ func TestSetLabel(t *testing.T) {
 			}
 		})
 	}
+}
+
+// joined is what line says.
+func joined(line []label.Span) string {
+	var b strings.Builder
+	for _, s := range line {
+		b.WriteString(s.Text)
+	}
+	return b.String()
 }
