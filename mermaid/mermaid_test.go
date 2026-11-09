@@ -16,6 +16,7 @@ func TestLayout(t *testing.T) {
 	}{
 		{"a sequence diagram", "---\ntitle: Greeting\n---\nsequenceDiagram\nAlice->>Bob: Hello", "Greeting", 0, 0},
 		{"a flowchart", "---\ntitle: Flow\n---\nflowchart LR\n  A --> B --> C", "Flow", 3, 2},
+		{"a state diagram", "---\ntitle: States\n---\nstateDiagram-v2\n  [*] --> A\n  A --> [*]", "States", 3, 2},
 		{"flowchart-elk, which Mermaid 12 draws as a flowchart", "flowchart-elk TD\n  A --> B", "", 2, 1},
 	}
 	for _, tt := range tests {

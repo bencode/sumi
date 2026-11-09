@@ -3,6 +3,7 @@ package flowchart
 import (
 	"slices"
 
+	"github.com/bencode/sumi/mermaid/internal/canvas"
 	"github.com/bencode/sumi/mermaid/internal/graphlayout"
 	"github.com/bencode/sumi/mermaid/internal/label"
 	"github.com/bencode/sumi/mermaid/internal/line"
@@ -10,19 +11,8 @@ import (
 	"github.com/bencode/sumi/scene"
 )
 
-// The title's font size and baseline (.flowchartTitleText, insertTitle with
-// titleTopMargin), and the room setupViewPortForSVG leaves about the diagram
-// (diagramPadding).
-const (
-	titleSize   = 18
-	titleBase   = -25
-	viewPadding = 8
-)
-
 // draw turns a laid-out diagram into a scene, stacked as paintLayoutData stacks it:
-// the subgraphs, the edges, the edge labels, the nodes, then the title. The scene
-// is the box of it all, which leaves out markers and stroke widths as getBBox does,
-// viewPadding wider on every side.
+// the subgraphs, the edges, the edge labels, the nodes, then the title.
 func draw(p placed, title string, m scene.Measurer) *scene.Scene {
 	index := make(map[string]int, len(p.d.Nodes))
 	for i, n := range p.d.Nodes {
@@ -51,18 +41,7 @@ func draw(p placed, title string, m scene.Measurer) *scene.Scene {
 			labels = append(labels, drawEdgeLabel(e, p.edges[i], scene.Point{X: pe.Label.X, Y: pe.Label.Y}, m))
 		}
 	}
-	items := append(append(append(groups, edges...), labels...), nodes...)
-	box := scene.Rect{}
-	for _, it := range items {
-		box = union(box, it.Box)
-	}
-	if title != "" {
-		t := drawTitle(title, box.X+box.W/2, m)
-		items = append(items, t)
-		box = union(box, t.Box)
-	}
-	box = scene.Rect{X: box.X - viewPadding, Y: box.Y - viewPadding, W: box.W + 2*viewPadding, H: box.H + 2*viewPadding}
-	return &scene.Scene{Width: box.W, Height: box.H, Items: moved(items, -box.X, -box.Y)}
+	return canvas.Scene(slices.Concat(groups, edges, labels, nodes), title, m)
 }
 
 // drawNode is node i in its shape at b: the outline about b's center, the label in
@@ -89,7 +68,7 @@ func drawNode(p placed, i int, b graphlayout.Box, m scene.Measurer) scene.Item {
 	}
 	return scene.Item{
 		Kind: scene.Node, ID: n.ID, Parent: n.Parent,
-		Box:   union(line.Bounds(outline), text),
+		Box:   canvas.Union(line.Bounds(outline), text),
 		Paths: paths,
 		Texts: label.Texts(m, l, top, st.Text()),
 	}
@@ -131,7 +110,7 @@ func drawGroup(n Node, title label.Box, b graphlayout.Box, m scene.Measurer) sce
 	st := style.ForNode(n.Compiled, n.Styles)
 	return scene.Item{
 		Kind: scene.Group, ID: n.ID, Parent: n.Parent,
-		Box:   union(r, scene.Rect{X: top.X, Y: top.Y, W: title.W, H: title.H}),
+		Box:   canvas.Union(r, scene.Rect{X: top.X, Y: top.Y, W: title.W, H: title.H}),
 		Paths: st.Outline(scene.RoundRect(r, 0), scene.GroupFill, scene.GroupStroke, 1, 0),
 		Texts: label.Texts(m, title, top, st.Text()),
 	}
@@ -146,56 +125,4 @@ func drawEdgeLabel(e Edge, l label.Box, c scene.Point, m scene.Measurer) scene.I
 		Paths: []scene.Path{{Segs: scene.RoundRect(r, 0), Fill: scene.Use(scene.Background)}},
 		Texts: label.Texts(m, l, scene.Point{X: r.X, Y: r.Y}, style.Paint(edgeStyling(e).Color, scene.TextColor)),
 	}
-}
-
-// drawTitle is the diagram's title, centered on x, its baseline at titleBase.
-func drawTitle(title string, x float64, m scene.Measurer) scene.Item {
-	f := scene.Font{Size: titleSize}
-	w := m.Measure(title, f).Width
-	a, d := label.Extent(m, f)
-	return scene.Item{
-		Kind: scene.Label,
-		Box:  scene.Rect{X: x - w/2, Y: titleBase - a, W: w, H: a + d},
-		Texts: []scene.Text{{Font: f, Paint: scene.Use(scene.TextColor),
-			Lines: []scene.Line{{S: title, X: x - w/2, Baseline: titleBase}}}},
-	}
-}
-
-// union is the box that holds a and b, as gfx::RectF::Union unites the boxes of
-// getBBox: a box with no width or no height holds nothing.
-func union(a, b scene.Rect) scene.Rect {
-	if b.W <= 0 || b.H <= 0 {
-		return a
-	}
-	if a.W <= 0 || a.H <= 0 {
-		return b
-	}
-	x0, y0 := min(a.X, b.X), min(a.Y, b.Y)
-	x1, y1 := max(a.X+a.W, b.X+b.W), max(a.Y+a.H, b.Y+b.H)
-	return scene.Rect{X: x0, Y: y0, W: x1 - x0, H: y1 - y0}
-}
-
-// moved is items shifted by dx, dy.
-func moved(items []scene.Item, dx, dy float64) []scene.Item {
-	for i := range items {
-		it := &items[i]
-		it.Box.X, it.Box.Y = it.Box.X+dx, it.Box.Y+dy
-		for pi := range it.Paths {
-			segs := slices.Clone(it.Paths[pi].Segs) // a fill and a stroke may share theirs
-			for j := range segs {
-				for k := range segs[j].Pts {
-					segs[j].Pts[k].X += dx
-					segs[j].Pts[k].Y += dy
-				}
-			}
-			it.Paths[pi].Segs = segs
-		}
-		for _, t := range it.Texts {
-			for j := range t.Lines {
-				t.Lines[j].X += dx
-				t.Lines[j].Baseline += dy
-			}
-		}
-	}
-	return items
 }

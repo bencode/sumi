@@ -14,7 +14,7 @@ import (
 const cornerRadius = 5 // generateRoundedPath's radius
 
 // pullBack is markerOffsets: how far a marker moves its end of the line in.
-var pullBack = map[string]float64{"arrow_point": 4}
+var pullBack = map[string]float64{"arrow_point": 4, "arrow_barb_neo": 5.5}
 
 // Gap is markerOffsets2: how much of the line the neo look leaves undrawn at an end,
 // under its marker, with stroke-dasharray.
@@ -169,6 +169,11 @@ func Marker(kind string, e, u scene.Point, start bool, fill scene.Paint) []scene
 		if start {
 			fill = scene.Use(scene.LineColor) // a <polygon>, which the colored copy leaves as it is
 		}
+		return []scene.Path{{Segs: p.Segs, Fill: fill}}
+	case "arrow_barb_neo":
+		// barbEnd-margin: in user space, with no viewBox, refX 17 and refY 7
+		p := (&scene.Path{}).MoveTo(at(2, 0).X, at(2, 0).Y).LineTo(at(-6, 7).X, at(-6, 7).Y).
+			LineTo(at(-4, 0).X, at(-4, 0).Y).LineTo(at(-6, -7).X, at(-6, -7).Y).Close()
 		return []scene.Path{{Segs: p.Segs, Fill: fill}}
 	case "arrow_circle":
 		// circleEnd-margin and circleStart-margin: a radius of 5 scaled by 1.4
