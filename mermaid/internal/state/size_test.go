@@ -1,6 +1,7 @@
 package state
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/bencode/sumi/mermaid/internal/syntax"
@@ -25,6 +26,23 @@ func TestSizeRefusesWhatHasNoShape(t *testing.T) {
 	} {
 		if _, _, err := sized(t, src); err == nil || err.(*syntax.Error).IsUnsupported() {
 			t.Errorf("%q: got %v, want an error of the source", src, err)
+		}
+	}
+}
+
+func TestSizeSaysWhereTheTextIs(t *testing.T) {
+	for _, c := range []struct {
+		src       string
+		line, col int
+	}{
+		{"stateDiagram-v2\na : <b>x</b>\na --> c", 2, 1},
+		{"stateDiagram-v2\na --> c\na : <b>x</b>", 3, 1},
+		{"stateDiagram-v2\nnote right of a<b : hi", 2, 1},
+	} {
+		_, _, err := sized(t, c.src)
+		var e *syntax.Error
+		if !errors.As(err, &e) || e.Line != c.line || e.Col != c.col {
+			t.Errorf("%q: got %v, want line %d:%d", c.src, err, c.line, c.col)
 		}
 	}
 }

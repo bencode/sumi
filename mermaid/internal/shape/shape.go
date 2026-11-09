@@ -47,8 +47,8 @@ type Node struct {
 	Intersect func(center scene.Point, w, h float64, toward scene.Point) scene.Point
 }
 
-// Set sets a label box w by h in a shape of kind k; padding is the diagram's
-// node padding (flowchart.padding).
+// Set sets a label box w by h in a shape of kind k; padding is what the diagram
+// gives the node.
 func Set(k Kind, w, h, padding float64) Node {
 	return setters[k](w, h, padding)
 }

@@ -16,8 +16,9 @@ const (
 // An entry is what nodeDb keeps of a state between its mentions.
 type entry struct {
 	shape Shape
-	text  string   // its description while there is one
-	list  []string // its descriptions once there are several
+	text  string     // its description while there is one
+	list  []string   // its descriptions once there are several
+	at    syntax.Pos // where the last description was written, or else its first mention
 	group bool
 	dir   string
 	alt   bool
@@ -108,6 +109,7 @@ func (e *entry) describe(s State) {
 	if len(s.Desc) == 0 {
 		return
 	}
+	e.at = s.At
 	switch {
 	case e.list != nil:
 		e.shape, e.list = RectWithTitle, append(e.list, s.Desc...)
@@ -139,7 +141,7 @@ func (f *fetcher) state(parent string, s State, alt bool) {
 func (f *fetcher) insertState(parent string, s State, alt bool) {
 	e := f.seen[s.ID]
 	if e == nil {
-		e = &entry{shape: shapeOf(s), text: s.ID}
+		e = &entry{shape: shapeOf(s), text: s.ID, at: s.At}
 		f.seen[s.ID] = e
 	}
 	e.describe(s)
@@ -157,7 +159,7 @@ func (f *fetcher) insertState(parent string, s State, alt bool) {
 	}
 	n := Node{
 		ID: s.ID, Parent: parent, Shape: e.shape, Group: e.group, Dir: e.dir, Alt: e.alt,
-		Styles: f.t.styles[s.ID], Compiled: f.compiled(s.ID), At: s.At,
+		Styles: f.t.styles[s.ID], Compiled: f.compiled(s.ID), At: e.at,
 	}
 	n.Label, n.Descriptions = e.label()
 	if n.Shape == Divider {
@@ -195,7 +197,7 @@ func (f *fetcher) insertNote(s State, n Node) {
 	note := fmt.Sprintf("%s%s-%d", s.ID, noteSpacer, f.count)
 	group := s.ID + parentSpacer
 	f.count++
-	f.insert(Node{ID: group, Label: s.Note.Text, Shape: NoteGroup, Group: true, Position: s.Note.Position, Compiled: n.Compiled})
+	f.insert(Node{ID: group, Label: s.Note.Text, Shape: NoteGroup, Group: true, Position: s.Note.Position, Compiled: n.Compiled, At: s.At})
 	f.insert(Node{ID: note, Parent: group, Label: s.Note.Text, Shape: Note, Position: s.Note.Position, At: s.At})
 	f.insert(n)
 	from, to := s.ID, note
