@@ -14,7 +14,56 @@ import (
 const cornerRadius = 5 // generateRoundedPath's radius
 
 // pullBack is markerOffsets: how far a marker moves its end of the line in.
-var pullBack = map[string]float64{"arrow_point": 4, "arrow_barb_neo": 5.5}
+var pullBack = map[string]float64{
+	"arrow_point": 4, "arrow_barb_neo": 5.5,
+	"aggregation": 17.25, "extension": 17.25, "composition": 17.25, "dependency": 6, "lollipop": 13.5,
+}
+
+// A closedMarker is a -margin marker drawn as it is in its own space, y 7 on the line. It is
+// filled with no stroke, or stroked with nothing inside; no points make it the
+// lollipop's circle. Its refX and points are for a line's start, then its end.
+type closedMarker struct {
+	refX   [2]float64
+	points [2][][2]float64
+	filled bool
+}
+
+var (
+	diamond       = [][2]float64{{18, 7}, {9, 13}, {1, 7}, {9, 1}}
+	closedMarkers = map[string]closedMarker{
+		"aggregation": {refX: [2]float64{15, 1}, points: [2][][2]float64{diamond, diamond}},
+		"composition": {refX: [2]float64{15, 3.5}, points: [2][][2]float64{diamond, diamond}, filled: true},
+		"extension": {refX: [2]float64{18, 9}, points: [2][][2]float64{
+			{{10, 7}, {18, 13}, {18, 1}}, {{10, 1}, {10, 13}, {18, 7}},
+		}},
+		"dependency": {refX: [2]float64{4, 16}, points: [2][][2]float64{
+			{{5, 7}, {9, 13}, {1, 7}, {9, 1}}, {{18, 7}, {9, 13}, {14, 7}, {9, 1}},
+		}, filled: true},
+		"lollipop": {refX: [2]float64{13, 1}},
+	}
+)
+
+// draw is c at the end its index says, where at places a point of the marker's frame.
+func (c closedMarker) draw(end int, ink scene.Paint, at func(along, across float64) scene.Point) []scene.Path {
+	place := func(x, y float64) scene.Point { return at(x-c.refX[end], y-7) }
+	segs := scene.Ellipse(place(7, 7), 6, 6)
+	if pts := c.points[end]; pts != nil {
+		p := &scene.Path{}
+		for i, q := range pts {
+			a := place(q[0], q[1])
+			if i == 0 {
+				p.MoveTo(a.X, a.Y)
+			} else {
+				p.LineTo(a.X, a.Y)
+			}
+		}
+		segs = p.Close().Segs
+	}
+	if c.filled {
+		return []scene.Path{{Segs: segs, Fill: ink}}
+	}
+	return []scene.Path{{Segs: segs, Stroke: scene.Stroke{Paint: ink, Width: 2}}}
+}
 
 // Gap is markerOffsets2: how much of the line the neo look leaves undrawn at an end,
 // under its marker, with stroke-dasharray.
@@ -155,6 +204,13 @@ func Marker(kind string, e, u scene.Point, start bool, fill scene.Paint) []scene
 	n := scene.Point{X: -u.Y, Y: u.X}
 	at := func(along, across float64) scene.Point {
 		return scene.Point{X: e.X + along*u.X + across*n.X, Y: e.Y + along*u.Y + across*n.Y}
+	}
+	if c, ok := closedMarkers[kind]; ok {
+		end := 1
+		if start {
+			end = 0
+		}
+		return c.draw(end, fill, at)
 	}
 	switch kind {
 	case "arrow_point":

@@ -8,27 +8,31 @@ import (
 )
 
 // Texts sets b's lines in its box, the box's top left at top: each line centered
-// across the box (text-align: center), lineHeight tall, its baseline where Blink
-// puts it: half the leading, floored (CalculateLeadingSpace), above the font's
+// across the box (text-align: center) unless b.Left, lineHeight tall, its baseline
+// where Blink puts it: half the leading, floored (CalculateLeadingSpace), above the font's
 // ascent. A span is a Line of the Text of its font, so a line of bold and plain
 // words is in two Texts. Spaces at a span's ends are left out and the span set past
 // those it starts with, so that a backend that drops them, as SVG's <text> does,
 // sets it in the same place. Every span is in ink.
 func Texts(m scene.Measurer, b Box, top scene.Point, ink scene.Paint) []scene.Text {
 	var out []scene.Text
+	lineHeight := lineHeightRatio * b.Size
 	index := map[scene.Font]int{}
 	for i, l := range b.Lines {
-		x := top.X + (b.W-advance(m, fontSize, 0, l))/2
+		x := top.X
+		if !b.Left {
+			x += (b.W - advance(m, b.Size, 0, l)) / 2
+		}
 		lineTop := top.Y + lineHeight*float64(i)
 		for _, s := range l {
 			lead := len(s.Text) - len(strings.TrimLeft(s.Text, " "))
-			at := advance(m, fontSize, x, []Span{{s.Text[:lead], s.Bold, s.Italic}})
-			x = advance(m, fontSize, x, []Span{s})
+			at := advance(m, b.Size, x, []Span{{s.Text[:lead], s.Bold, s.Italic}})
+			x = advance(m, b.Size, x, []Span{s})
 			word := strings.TrimRight(s.Text[lead:], " ")
 			if word == "" {
 				continue
 			}
-			f := scene.Font{Size: fontSize, Bold: s.Bold, Italic: s.Italic}
+			f := scene.Font{Size: b.Size, Bold: s.Bold, Italic: s.Italic}
 			j, ok := index[f]
 			if !ok {
 				j = len(out)
