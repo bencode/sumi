@@ -127,12 +127,8 @@ func placeCrossEdge(c *crossEdge, reference *Graph, bends []Vec, targetOffset Ve
 		points = append(points, b.add(edgeOffset))
 	}
 	points = append(points, absolute(c.target).add(targetOffset).add(edgeOffset))
-	placed := make([]PlacedLabel, len(labels))
-	for i, l := range labels {
-		pos := l.Pos.add(edgeOffset)
-		placed[i] = PlacedLabel{pos.X, pos.Y, l.Size.X, l.Size.Y}
-	}
-	return PlacedEdge{ID: c.edge.ID, Container: containerID(c.edge.Container), Points: points, Labels: placed}
+	center, tail, head := placedLabels(labels, edgeOffset)
+	return PlacedEdge{ID: c.edge.ID, Container: containerID(c.edge.Container), Points: points, Labels: center, Tail: tail, Head: head}
 }
 
 // riseTo adds up what lies between g's coordinates and top's.

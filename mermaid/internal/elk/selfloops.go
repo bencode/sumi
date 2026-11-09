@@ -70,29 +70,57 @@ func routeSelfLoops(g *Graph) {
 			for _, b := range l.edge.Bends {
 				growMargin(&margin, n.Size, b)
 			}
-			y -= placeLoopLabel(l.edge, n, y, s.edgeLabel, &margin) + s.edgeEdge
+			y -= placeLoopLabels(l.edge, n, y, s.edgeLabel, vertical(g.Direction), &margin) + s.edgeEdge
 		}
 		n.Margin = margin
 	}
 }
 
-// placeLoopLabel puts e's label above the loop at y, centered on n, and gives
-// the room the label takes (placeLabels and computePositions,
+// placeLoopLabels puts all of e's labels above the loop at y, as one block
+// centered on n, and gives the room it takes (placeLabels and computePositions,
 // OrthogonalSelfLoopRouter.java lines 139, 261; computeCoordinates,
-// intermediate/loops/routing/LabelPlacer.java line 372). A loop on one side
-// drops the label's inline option (LabelPlacer.java line 147).
-func placeLoopLabel(e *Edge, n *Node, y, labelGap float64, margin *Spacing) float64 {
+// intermediate/loops/routing/LabelPlacer.java line 372). The block's labels run
+// along the layers, each after the last (applyPlacement,
+// intermediate/loops/SelfHyperLoopLabels.java line 147). Going down or up, they
+// are aligned to the block's bottom, otherwise centered. A loop on one side drops
+// its labels' inline option (LabelPlacer.java line 147).
+func placeLoopLabels(e *Edge, n *Node, y, labelGap float64, alongX bool, margin *Spacing) float64 {
 	if len(e.Labels) == 0 {
 		return 0
 	}
-	label := e.Labels[0]
-	label.Pos = Vec{(n.Size.X - label.Size.X) / 2, y - (labelGap + label.Size.Y)}
-	growMargin(margin, n.Size, label.Pos)
-	growMargin(margin, n.Size, label.Pos.add(label.Size))
-	if label.Size.Y > 0 {
-		return label.Size.Y + labelGap
+	size := loopLabelsSize(e.Labels, alongX)
+	at := Vec{(n.Size.X - size.X) / 2, y - (labelGap + size.Y)}
+	next := at
+	for _, l := range e.Labels {
+		if alongX {
+			l.Pos = Vec{next.X, at.Y + size.Y - l.Size.Y}
+			next.X += l.Size.X
+		} else {
+			l.Pos = Vec{at.X + (size.X-l.Size.X)/2, next.Y}
+			next.Y += l.Size.Y
+		}
+	}
+	growMargin(margin, n.Size, at)
+	growMargin(margin, n.Size, at.add(size))
+	if size.Y > 0 {
+		return size.Y + labelGap
 	}
 	return 0
+}
+
+// loopLabelsSize gives the size of a block of labels (updateSize,
+// SelfHyperLoopLabels.java line 109). spacing.labelLabel, which would part them,
+// is 0 at Mermaid's base value.
+func loopLabelsSize(labels []*Label, alongX bool) Vec {
+	var size Vec
+	for _, l := range labels {
+		if alongX {
+			size = Vec{size.X + l.Size.X, max(size.Y, l.Size.Y)}
+		} else {
+			size = Vec{max(size.X, l.Size.X), size.Y + l.Size.Y}
+		}
+	}
+	return size
 }
 
 // growMargin makes m reach p, relative to a node of a size, p being above the
@@ -105,10 +133,7 @@ func growMargin(m *Spacing, size, p Vec) {
 
 // restoreSelfLoops joins self loops to their ports again, with bends and labels
 // placed in the graph (process, intermediate/SelfLoopPostProcessor.java line
-// 46). Going down or up, ELK aligns a label to its bottom, which adds and takes
-// off its height (applyPlacementVerticalForVerticalLayout,
-// intermediate/loops/SelfHyperLoopLabels.java line 179) and can change the last
-// bit.
+// 46).
 func restoreSelfLoops(g *Graph) {
 	for _, n := range nodes(g) {
 		for _, l := range n.Loops {
@@ -118,9 +143,6 @@ func restoreSelfLoops(g *Graph) {
 				l.edge.Bends[i] = b.add(n.Pos)
 			}
 			for _, label := range l.edge.Labels {
-				if vertical(g.Direction) {
-					label.Pos.Y = label.Pos.Y + label.Size.Y - label.Size.Y
-				}
 				label.Pos = label.Pos.add(n.Pos)
 			}
 		}

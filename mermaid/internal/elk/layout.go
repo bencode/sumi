@@ -18,9 +18,10 @@ var (
 		invertPorts, sortPortLists,
 	}
 	stepsAfterOrdering = []func(*Graph){
-		restoreLoopPorts, positionPorts, nodeMargins, routeSelfLoops, switchLabelDummies,
-		sizeLabelDummies, placeNodes, measureLayers, routeEdges, joinLongEdges,
-		restoreSelfLoops, removeLabelDummies, restoreReversed, collectNodes,
+		restoreLoopPorts, positionPorts, nodeMargins, routeSelfLoops, placeEndLabels,
+		switchLabelDummies, sizeLabelDummies, placeNodes, measureLayers, routeEdges,
+		joinLongEdges, restoreSelfLoops, removeLabelDummies, applyEndLabels,
+		restoreReversed, collectNodes,
 	}
 )
 

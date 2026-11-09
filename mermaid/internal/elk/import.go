@@ -169,8 +169,10 @@ func importEdge(g *Graph, source, target *Node, e InputEdge, order int) {
 	edge.Source, edge.Target = newPort(source, side), newPort(target, opposed[side])
 	edge.Source.Out = append(edge.Source.Out, edge)
 	edge.Target.In = append(edge.Target.In, edge)
-	if e.Label != nil {
-		edge.Labels = []*Label{{Size: Vec{e.Label.Width, e.Label.Height}}}
+	for kind, size := range [...]*Size{centerLabel: e.Label, tailLabel: e.Tail, headLabel: e.Head} {
+		if size != nil {
+			edge.Labels = append(edge.Labels, &Label{Size: Vec{size.Width, size.Height}, Kind: labelKind(kind)})
+		}
 	}
 }
 

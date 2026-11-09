@@ -11,18 +11,18 @@ func vertical(d Direction) bool { return d == Down || d == Up }
 
 // insertLabelDummies cuts each edge with a label in two around a dummy node the
 // size of the label, so that the label takes room in the layers (process,
-// intermediate/LabelDummyInserter.java line 65). Input's labels are center ones,
-// the only kind this package takes, and self loops are out of the way by now.
-// ELK moves a label to the dummy and back to the edge; here it stays on the edge,
-// as that half is the one to survive when the dummy goes.
+// intermediate/LabelDummyInserter.java line 65). Only center labels get one, and
+// self loops are out of the way by now. ELK moves a label to the dummy and back
+// to the edge; here it stays on the edge, as that half is the one to survive when
+// the dummy goes.
 func insertLabelDummies(g *Graph) {
 	var dummies []*Node
 	for _, n := range g.Layerless {
 		for _, e := range outgoing(n) {
-			if len(e.Labels) > 0 {
+			if label := labelOf(e, centerLabel); label != nil {
 				dummy := &Node{Type: typeLabel}
 				splitEdge(e, dummy)
-				dummy.Size = labelRoom(e.Labels[0].Size, g.Direction, g.Settings.edgeLabel)
+				dummy.Size = labelRoom(label.Size, g.Direction, g.Settings.edgeLabel)
 				dummies = append(dummies, dummy)
 			}
 		}
@@ -30,12 +30,21 @@ func insertLabelDummies(g *Graph) {
 	g.Layerless = append(g.Layerless, dummies...)
 }
 
+// labelOf gives e's label of a kind; it has one at most.
+func labelOf(e *Edge, kind labelKind) *Label {
+	i := slices.IndexFunc(e.Labels, func(l *Label) bool { return l.Kind == kind })
+	if i < 0 {
+		return nil
+	}
+	return e.Labels[i]
+}
+
 // labelRoom gives the size of the dummy for a label of a size: the height a
 // dummy starts with, then what LabelDummyInserter.java adds in lines 94-114.
 // Going down or up, labels sit beside the edge instead of on top of it, so the
 // starting height is only a minimum. The sum runs in ELK's order, which can
 // change its last bit. spacing.labelLabel is 0 at Mermaid's base value, and
-// Input holds one label per edge, so nothing separates labels.
+// Input holds one center label per edge, so nothing separates labels.
 func labelRoom(size Vec, d Direction, labelGap float64) Vec {
 	if vertical(d) {
 		return Vec{size.X, max(edgeThickness, size.Y) + (labelGap + edgeThickness)}
@@ -123,7 +132,7 @@ func removeLabelDummies(g *Graph) {
 	for _, l := range g.Layers {
 		for _, n := range l.Nodes {
 			if isDummy(n) {
-				label := portOn(n, sideWest).In[0].Labels[0]
+				label := labelOf(portOn(n, sideWest).In[0], centerLabel)
 				label.Pos = n.Pos
 				if vertical(g.Direction) {
 					label.Pos.Y += (n.Size.Y - label.Size.Y) / 2

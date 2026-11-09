@@ -67,12 +67,26 @@ func exportEdge(e *Edge, offset Vec, container string) PlacedEdge {
 		points = append(points, b.add(offset))
 	}
 	points = append(points, absolute(e.Target).add(offset))
-	labels := make([]PlacedLabel, len(e.Labels))
-	for i, l := range e.Labels {
+	center, tail, head := placedLabels(e.Labels, offset)
+	return PlacedEdge{ID: e.ID, Container: container, Points: points, Labels: center, Tail: tail, Head: head}
+}
+
+// placedLabels writes labels out, moved by offset, sorted by where they belong.
+func placedLabels(labels []*Label, offset Vec) (center []PlacedLabel, tail, head *PlacedLabel) {
+	center = make([]PlacedLabel, 0, len(labels))
+	for _, l := range labels {
 		pos := l.Pos.add(offset)
-		labels[i] = PlacedLabel{pos.X, pos.Y, l.Size.X, l.Size.Y}
+		placed := PlacedLabel{pos.X, pos.Y, l.Size.X, l.Size.Y}
+		switch l.Kind {
+		case tailLabel:
+			tail = &placed
+		case headLabel:
+			head = &placed
+		default:
+			center = append(center, placed)
+		}
 	}
-	return PlacedEdge{ID: e.ID, Container: container, Points: points, Labels: labels}
+	return center, tail, head
 }
 
 // absolute gives where p sits in g (getAbsoluteAnchor, graph/LPort.java line

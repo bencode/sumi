@@ -94,6 +94,7 @@ type Node struct {
 	Margin       Spacing
 	Ports        []*Port
 	Loops        []selfLoop // InternalProperties.SELF_LOOP_HOLDER
+	endBoxes     []*endBox  // InternalProperties.END_LABELS
 	ModelOrder   int        // its index among its siblings
 	Graph        *Graph     // the graph it sits in, on real and external port nodes
 	Nested       *Graph
@@ -128,8 +129,24 @@ type Edge struct {
 	Opposite       *Port  // InternalProperties.ORIGINAL_OPPOSITE_PORT
 }
 
+// labelKind is where on its edge a label belongs (EdgeLabelPlacement).
+type labelKind int
+
+const (
+	centerLabel labelKind = iota
+	tailLabel
+	headLabel
+)
+
+// oppositeEnd is what a label's kind becomes when its edge turns round
+// (graph/LEdge.java line 79).
+var oppositeEnd = [...]labelKind{centerLabel: centerLabel, tailLabel: headLabel, headLabel: tailLabel}
+
 // Label is an edge's label or a subgraph's title (graph/LLabel.java).
-type Label struct{ Pos, Size Vec }
+type Label struct {
+	Pos, Size Vec
+	Kind      labelKind
+}
 
 // actualSize is g's size with its padding (graph/LGraph.java line 98).
 func actualSize(g *Graph) Vec {

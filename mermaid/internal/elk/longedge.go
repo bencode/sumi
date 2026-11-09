@@ -51,6 +51,10 @@ func splitEdge(e *Edge, dummy *Node) {
 	rest := &Edge{ID: e.ID, ModelOrder: e.ModelOrder, Reversed: e.Reversed}
 	setSource(rest, out)
 	setTarget(rest, end)
+	if head := labelOf(e, headLabel); head != nil {
+		e.Labels = slices.DeleteFunc(e.Labels, func(l *Label) bool { return l == head })
+		rest.Labels = []*Label{head}
+	}
 }
 
 // joinLongEdges undoes splitLongEdges (process,
@@ -70,8 +74,7 @@ func joinLongEdges(g *Graph) {
 // joinAt lets the edge into n run on to where the edge out of n ends. With bend,
 // n leaves a bend behind even on a straight edge, as a long edge dummy does
 // where Mermaid sets unnecessaryBendpoints. A port holds one edge, so ELK's
-// care for the order of a port's edges falls away, and the second half has no
-// labels (LongEdgeJoiner.java line 104).
+// care for the order of a port's edges falls away (LongEdgeJoiner.java line 104).
 func joinAt(n *Node, bend bool) {
 	kept, dropped := portOn(n, sideWest).In[0], portOn(n, sideEast).Out[0]
 	end := dropped.Target
@@ -82,6 +85,7 @@ func joinAt(n *Node, bend bool) {
 		kept.Bends = append(kept.Bends, absolute(n.Ports[0]))
 	}
 	kept.Bends = append(kept.Bends, dropped.Bends...)
+	kept.Labels = append(kept.Labels, dropped.Labels...)
 }
 
 func portOn(n *Node, side PortSide) *Port {
