@@ -36,6 +36,9 @@ func (t *tables) addSubgraph(s *Subgraph) (string, error) {
 	if s.ID == s.Title && strings.IndexFunc(s.Title.Text, isSpace) >= 0 {
 		id = fmt.Sprintf("subGraph%d", t.subCount)
 	}
+	if id == "" { // a Parent of "" is the root, so this would be a child of itself
+		return "", syntax.Unsupported(s.Pos, "a subgraph with a blank id")
+	}
 	t.subCount++
 	nodes := t.newMembers(id, members)
 	if sg := t.subgraph(id); sg != nil {
