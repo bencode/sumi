@@ -97,13 +97,6 @@ type rule struct {
 	id, fail bool
 }
 
-// spaces is JavaScript's \s, blanks the same without the line feed, and jsDot its dot.
-const (
-	blanks = `\r\t\x{0b}\f \x{a0}\x{1680}\x{2000}-\x{200a}\x{2028}\x{2029}\x{202f}\x{205f}\x{3000}\x{feff}`
-	spaces = `\n` + blanks
-	jsDot  = `[^\n\r\x{2028}\x{2029}]`
-)
-
 func in(ms ...mode) uint32 {
 	var out uint32
 	for _, m := range ms {
@@ -125,16 +118,16 @@ func goRegexp(p string) string {
 			b.WriteString(`[\x{0}-\x{10ffff}]`)
 			i += 5
 		case c == '\\' && p[i+1] == 's' && class:
-			b.WriteString(spaces)
+			b.WriteString(syntax.JSSpaces)
 			i++
 		case c == '\\' && p[i+1] == 's':
-			b.WriteString("[" + spaces + "]")
+			b.WriteString("[" + syntax.JSSpaces + "]")
 			i++
 		case c == '\\':
 			b.WriteString(p[i : i+2])
 			i++
 		case c == '.' && !class:
-			b.WriteString(jsDot)
+			b.WriteString(syntax.JSDot)
 		case !class && (c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z'):
 			b.WriteString("[" + strings.ToLower(string(c)) + strings.ToUpper(string(c)) + "]")
 		default:
@@ -205,7 +198,7 @@ var rules = []rule{
 	{in: in(initial), match: re(directionOf("LR")), kind: kDirection, text: value("LR")},
 	{in: in(initial), match: re(`[\n]+`), kind: syntax.Newline},
 	{in: in(initial), match: re(`[\s]+`), kind: skip},
-	{in: in(structMode, stateMode), match: re(`[` + blanks + `]+`), kind: skip},
+	{in: in(structMode, stateMode), match: re(`[` + syntax.JSBlanks + `]+`), kind: skip},
 	{in: lineModes, match: re(`#[^\n]*`), kind: skip},
 	{in: lineModes, match: comment, kind: skip},
 	{in: in(initial), match: re(`scale\s+`), kind: kScale, push: scaleMode},

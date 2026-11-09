@@ -66,6 +66,14 @@ func SkipSpace(src string, i int) int {
 	return i
 }
 
+// JSSpaces is what JavaScript's \s takes, for a character class in a Go pattern, JSBlanks
+// the same without the line feed, and JSDot is its dot.
+const (
+	JSBlanks = `\r\t\x{0b}\f \x{a0}\x{1680}\x{2000}-\x{200a}\x{2028}\x{2029}\x{202f}\x{205f}\x{3000}\x{feff}`
+	JSSpaces = `\n` + JSBlanks
+	JSDot    = `[^\n\r\x{2028}\x{2029}]`
+)
+
 // Mermaid sets each entity code, #9829; or #quot;, aside before it parses a
 // diagram, so its # and ; are not read as a comment or the end of a
 // statement, and decodes it in the text it ends up in. These two characters,
