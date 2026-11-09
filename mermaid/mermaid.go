@@ -1,6 +1,6 @@
 // Package mermaid lays out diagrams written in Mermaid's syntax as scenes,
-// drawing what Mermaid v12.3.0 draws. So far it knows sequence diagrams, flowcharts
-// and state diagrams. A flowchart's or a state diagram's styles draw their fills,
+// drawing what Mermaid v12.3.0 draws. So far it knows sequence diagrams, flowcharts,
+// state diagrams and class diagrams. The styles of the last three draw their fills,
 // strokes, widths, dashes and text colors; fonts and the rest of CSS that changes how
 // Chrome draws are not supported.
 //
@@ -20,6 +20,7 @@ package mermaid
 import (
 	"strings"
 
+	"github.com/bencode/sumi/mermaid/internal/class"
 	"github.com/bencode/sumi/mermaid/internal/flowchart"
 	"github.com/bencode/sumi/mermaid/internal/sequence"
 	"github.com/bencode/sumi/mermaid/internal/state"
@@ -47,6 +48,7 @@ var kinds = map[string]func(body, title string, m scene.Measurer) (*scene.Scene,
 	"graph":           flowchart.Layout,
 	"flowchart":       flowchart.Layout,
 	"stateDiagram":    state.Layout, // stateDiagram-v2 too, as stateDetector-V2 matches
+	"classDiagram":    class.Layout, // classDiagram-v2 too, as classDetector-V2 matches
 }
 
 // Layout lays out the diagram src, picking its kind by its first word.

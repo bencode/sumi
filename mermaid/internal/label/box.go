@@ -14,7 +14,6 @@ import (
 const (
 	fontSize        = 14
 	lineHeightRatio = 1.5
-	lineHeight      = lineHeightRatio * fontSize
 	tabSize         = 8
 )
 
@@ -26,6 +25,8 @@ const epsilon = 1e-9
 type Box struct {
 	Lines [][]Span // spaces as the browser keeps them
 	W, H  float64
+	Size  float64 // the font's
+	Left  bool    // its lines start at the box's left, not centered across it
 }
 
 // Set sets lines in a box wrap wide, no narrower than least, as addHtmlSpan does.
@@ -56,7 +57,7 @@ func SetSized(m scene.Measurer, lines [][]Span, wrap, least, size float64) Box {
 		if k := len(kept); !lastBreak && k > 1 && len(kept[k-1]) == 0 {
 			kept = kept[:k-1]
 		}
-		return Box{kept, math.Max(w, least), lineHeightRatio * size * float64(len(kept))}
+		return Box{Lines: kept, W: math.Max(w, least), H: lineHeightRatio * size * float64(len(kept)), Size: size}
 	}
 	for _, l := range lines {
 		for _, piece := range breakLine(m, size, l, 0) {
@@ -67,7 +68,7 @@ func SetSized(m scene.Measurer, lines [][]Span, wrap, least, size float64) Box {
 	for _, l := range lines {
 		out = append(out, breakLine(m, size, l, wrap)...)
 	}
-	return Box{out, wrap, lineHeightRatio * size * float64(len(out))}
+	return Box{Lines: out, W: wrap, H: lineHeightRatio * size * float64(len(out)), Size: size}
 }
 
 // snap is a width as Chrome gives a box, rounded up to 1/64 px: what addHtmlSpan

@@ -22,9 +22,14 @@ const (
 // which leaves out markers and stroke widths as getBBox does, viewPadding wider on
 // every side.
 func Scene(items []scene.Item, title string, m scene.Measurer) *scene.Scene {
+	return SceneTitled(items, title, titleSize, m)
+}
+
+// SceneTitled is Scene with a title in a font of size.
+func SceneTitled(items []scene.Item, title string, size float64, m scene.Measurer) *scene.Scene {
 	box := bounds(items)
 	if title != "" {
-		t := drawTitle(title, box.X+box.W/2, m)
+		t := drawTitle(title, size, box.X+box.W/2, m)
 		items = append(items, t)
 		box = Union(box, t.Box)
 	}
@@ -52,8 +57,8 @@ func bounds(items []scene.Item) scene.Rect {
 }
 
 // drawTitle is the diagram's title, centered on x, its baseline at titleBase.
-func drawTitle(title string, x float64, m scene.Measurer) scene.Item {
-	f := scene.Font{Size: titleSize}
+func drawTitle(title string, size, x float64, m scene.Measurer) scene.Item {
+	f := scene.Font{Size: size}
 	w := m.Measure(title, f).Width
 	a, d := label.Extent(m, f)
 	return scene.Item{
