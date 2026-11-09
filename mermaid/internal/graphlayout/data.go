@@ -34,6 +34,7 @@ type Node struct {
 type Edge struct {
 	ID, Start, End         string
 	Label                  *elk.Size
+	StartText, EndText     *elk.Size // the texts at its ends, as measured
 	StartMarker, EndMarker string
 }
 
@@ -56,4 +57,6 @@ type PlacedEdge struct {
 	ID     string
 	Points []elk.Vec
 	Label  *elk.Vec
+	// Start and End are the centers of the texts at its ends.
+	Start, End *elk.Vec
 }

@@ -125,7 +125,11 @@ func elkEdges(edges []Edge, t tree) ([]elk.InputEdge, map[string]bool) {
 	all := make([]elk.InputEdge, len(edges))
 	for i, index := range nestedOrder(directed, t) {
 		e := directed[index]
-		all[i] = elk.InputEdge{ID: edges[index].ID, Source: e.source, Target: e.target, Label: edges[index].Label}
+		all[i] = elk.InputEdge{
+			ID: edges[index].ID, Source: e.source, Target: e.target, Label: edges[index].Label,
+			Tail: endRoom(edges[index].StartText, edges[index].StartMarker),
+			Head: endRoom(edges[index].EndText, edges[index].EndMarker),
+		}
 	}
 	return all, reversed
 }

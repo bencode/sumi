@@ -10,11 +10,12 @@ import (
 )
 
 // The font Chrome gives a label of Mermaid's default theme, the line height
-// addHtmlSpan sets, and CSS's tab-size of 8 spaces.
+// addHtmlSpan sets for a font's size, and CSS's tab-size of 8 spaces.
 const (
-	fontSize   = 14
-	lineHeight = 1.5 * fontSize
-	tabSize    = 8
+	fontSize        = 14
+	lineHeightRatio = 1.5
+	lineHeight      = lineHeightRatio * fontSize
+	tabSize         = 8
 )
 
 // epsilon is how far apart two widths may be and still be one: a sum of widths in
@@ -33,6 +34,11 @@ type Box struct {
 // or its widest piece, whichever is wider. wrap is math.Inf(1) for a label that never
 // wraps.
 func Set(m scene.Measurer, lines [][]Span, wrap, least float64) Box {
+	return SetSized(m, lines, wrap, least, fontSize)
+}
+
+// SetSized is Set for a font of another size.
+func SetSized(m scene.Measurer, lines [][]Span, wrap, least, size float64) Box {
 	// An empty line after a last <br> takes no room, and a line of spaces there takes
 	// none until the label wraps. A line a <br> ends takes one either way.
 	n := len(lines)
@@ -44,24 +50,24 @@ func Set(m scene.Measurer, lines [][]Span, wrap, least float64) Box {
 	w := 0.0
 	for i, l := range lines {
 		kept[i] = collapse(l)
-		w = math.Max(w, snap(advance(m, 0, kept[i])))
+		w = math.Max(w, snap(advance(m, size, 0, kept[i])))
 	}
 	if w < wrap {
 		if k := len(kept); !lastBreak && k > 1 && len(kept[k-1]) == 0 {
 			kept = kept[:k-1]
 		}
-		return Box{kept, math.Max(w, least), lineHeight * float64(len(kept))}
+		return Box{kept, math.Max(w, least), lineHeightRatio * size * float64(len(kept))}
 	}
 	for _, l := range lines {
-		for _, piece := range breakLine(m, l, 0) {
-			wrap = math.Max(wrap, snap(advance(m, 0, piece)))
+		for _, piece := range breakLine(m, size, l, 0) {
+			wrap = math.Max(wrap, snap(advance(m, size, 0, piece)))
 		}
 	}
 	var out [][]Span
 	for _, l := range lines {
-		out = append(out, breakLine(m, l, wrap)...)
+		out = append(out, breakLine(m, size, l, wrap)...)
 	}
-	return Box{out, wrap, lineHeight * float64(len(out))}
+	return Box{out, wrap, lineHeightRatio * size * float64(len(out))}
 }
 
 // snap is a width as Chrome gives a box, rounded up to 1/64 px: what addHtmlSpan
@@ -101,13 +107,13 @@ func collapse(line []Span) []Span {
 // breakLine wraps a line width wide with white-space: break-spaces, as Chrome's line
 // breaker does: each line takes the most that fits up to a break, the first piece if
 // nothing fits, and the break rules start again from where each line starts.
-func breakLine(m scene.Measurer, line []Span, width float64) [][]Span {
+func breakLine(m scene.Measurer, size float64, line []Span, width float64) [][]Span {
 	text := joined(line)
 	var out [][]Span
 	for start := 0; ; {
 		end, x := start, 0.0
 		for _, o := range append(linebreak.Breaks(text[start:]), len(text)-start) {
-			next := advance(m, x, cut(line, end, start+o))
+			next := advance(m, size, x, cut(line, end, start+o))
 			if end > start && next > width+epsilon {
 				break
 			}
@@ -124,9 +130,9 @@ func breakLine(m scene.Measurer, line []Span, width float64) [][]Span {
 // advance is where spans set from x end. A tab goes to the next tab stop, a stop
 // every tabSize spaces from the start of the line, or to the one after if that is
 // less than half a space away, as Blink's Font::TabWidth has it.
-func advance(m scene.Measurer, x float64, spans []Span) float64 {
+func advance(m scene.Measurer, size, x float64, spans []Span) float64 {
 	for _, s := range spans {
-		f := scene.Font{Size: fontSize, Bold: s.Bold, Italic: s.Italic}
+		f := scene.Font{Size: size, Bold: s.Bold, Italic: s.Italic}
 		space := m.Measure(" ", f).Width
 		for i, run := range strings.Split(s.Text, "\t") {
 			if i > 0 {
