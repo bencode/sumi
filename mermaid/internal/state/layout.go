@@ -22,7 +22,7 @@ const (
 type Placed struct {
 	D      *Diagram
 	Sized  []Sized     // by D.Nodes
-	Titles []label.Box // by D.Nodes: a Composite's title
+	Titles []label.Box // by D.Nodes: a Composite's title as drawn, not as layout measures it
 	Edges  []label.Box // by D.Edges
 	R      graphlayout.Result
 }
@@ -90,9 +90,13 @@ func layoutNode(n Node, s Sized, m scene.Measurer) (graphlayout.Node, label.Box,
 	if err != nil {
 		return node, label.Box{}, err
 	}
-	title := label.Set(m, lines, titleWrap, 0)
-	node.Title = &elk.Size{Width: title.W, Height: title.H}
-	return node, title, nil
+	measured := label.Set(m, lines, titleWrap, 0)
+	node.Title = &elk.Size{Width: measured.W, Height: measured.H}
+	drawn, err := label.Read(n.Label, "string", n.At) // roundedWithTitle's createLabel: not Markdown, and no wrap
+	if err != nil {
+		return node, label.Box{}, err
+	}
+	return node, label.Set(m, drawn, math.Inf(1), 0), nil
 }
 
 // noteGroup gives a note group its label, the note's text. Nothing shows it there, and

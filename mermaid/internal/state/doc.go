@@ -8,6 +8,7 @@
 //	Fetch      statements -> a diagram  fetch.go, data.go
 //	Size       a diagram -> sizes       size.go
 //	Place      sizes -> a layout        layout.go, graphlayout
+//	Draw       a layout -> a scene      draw.go
 //
 // Translate runs twice, as Mermaid's parsing and drawing each run it; Read says why.
 // The lexer follows the rules Jison compiles from stateDiagram.jison, which are not
