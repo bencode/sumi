@@ -22,6 +22,9 @@ func rounded(w, h, padding float64) Node {
 	return rectNode(w+padding*2, h+padding*2, themeRadius)
 }
 
+// Box is a square-cornered node of a size the diagram worked out, as classBox's is.
+func Box(w, h float64) Node { return rectNode(w, h, 0) }
+
 func rectNode(w, h, radius float64) Node {
 	return Node{
 		W:         w,
