@@ -93,7 +93,7 @@ func importSubgraph(g *Graph, node *Node, n InputNode, hierarchy Hierarchy, byID
 // (minRowHeights, nodespacing/cellsystem/GridContainerCell.java line 344). ELK's
 // default of 20 for a side left unset never tells: padding alone comes to more.
 func minimumSize(n InputNode) Vec {
-	if n.Title == nil {
+	if n.Title == nil || n.Untitled {
 		return Vec{n.MinWidth, 0}
 	}
 	return Vec{max(n.MinWidth, n.Title.Width+2*titleGap), n.Title.Height + n.Title.Height + 2*titleGap}

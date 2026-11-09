@@ -37,6 +37,7 @@ type Node struct {
 type Edge struct {
 	ID, Start, End, Label string
 	Note                  bool
+	At                    syntax.Pos // where its left end is written, or its note
 }
 
 // A Diagram is what getData gives, sizes aside.

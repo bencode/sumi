@@ -74,11 +74,11 @@ type placed struct {
 // runElkLayoutCore do.
 func place(d *Diagram, m scene.Measurer) placed {
 	p := placed{d: d, labels: make([]label.Box, len(d.Nodes)), shapes: make([]shape.Node, len(d.Nodes)), edges: make([]label.Box, len(d.Edges))}
-	data := graphlayout.Data{Direction: elkDirection(d.Direction)}
+	data := graphlayout.Data{Direction: graphlayout.ElkDirection(d.Direction)}
 	for i, n := range d.Nodes {
 		node := graphlayout.Node{ID: n.ID, Parent: n.Parent, Group: n.Group, Direction: elk.Undefined}
 		if n.Dir != "" {
-			node.Direction = elkDirection(n.Dir)
+			node.Direction = graphlayout.ElkDirection(n.Dir)
 		}
 		if n.Group {
 			wrap := math.Inf(1)
@@ -100,10 +100,7 @@ func place(d *Diagram, m scene.Measurer) placed {
 			s := shape.Set(k, p.labels[i].W, p.labels[i].H, nodePadding)
 			p.shapes[i] = s
 			node.Width, node.Height = s.W, s.H
-			node.Intersect = func(b graphlayout.Box, to elk.Vec) elk.Vec {
-				q := s.Intersect(scene.Point{X: b.X, Y: b.Y}, b.Width, b.Height, scene.Point{X: to.X, Y: to.Y})
-				return elk.Vec{X: q.X, Y: q.Y}
-			}
+			node.Intersect = graphlayout.ShapeIntersect(s)
 		}
 		data.Nodes = append(data.Nodes, node)
 	}
@@ -117,17 +114,4 @@ func place(d *Diagram, m scene.Measurer) placed {
 	}
 	p.r = graphlayout.Layout(data)
 	return p
-}
-
-// elkDirection is dir2ElkDirection: anything but LR, RL and BT reads as down.
-func elkDirection(dir string) elk.Direction {
-	switch dir {
-	case "LR":
-		return elk.Right
-	case "RL":
-		return elk.Left
-	case "BT":
-		return elk.Up
-	}
-	return elk.Down
 }

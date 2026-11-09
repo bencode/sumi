@@ -53,7 +53,7 @@ func placeNodes(placed []elk.PlacedNode, nodes []Node) map[string]frame {
 				origin: pos, drawnWidth: p.Width, intersect: n.Intersect}
 			if n.Group {
 				var titleWidth float64
-				if n.Title != nil {
+				if n.Title != nil && !n.Untitled {
 					titleWidth = n.Title.Width
 				}
 				f.drawnWidth = max(p.Width, titleWidth)

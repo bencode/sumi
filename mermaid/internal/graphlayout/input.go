@@ -1,6 +1,31 @@
 package graphlayout
 
-import "github.com/bencode/sumi/mermaid/internal/elk"
+import (
+	"github.com/bencode/sumi/mermaid/internal/elk"
+	"github.com/bencode/sumi/mermaid/internal/shape"
+	"github.com/bencode/sumi/scene"
+)
+
+// ElkDirection is dir2ElkDirection: anything but LR, RL and BT reads as down.
+func ElkDirection(dir string) elk.Direction {
+	switch dir {
+	case "LR":
+		return elk.Right
+	case "RL":
+		return elk.Left
+	case "BT":
+		return elk.Up
+	}
+	return elk.Down
+}
+
+// ShapeIntersect is where a line meets the outline of s.
+func ShapeIntersect(s shape.Node) Intersect {
+	return func(b Box, to elk.Vec) elk.Vec {
+		q := s.Intersect(scene.Point{X: b.X, Y: b.Y}, b.Width, b.Height, scene.Point{X: to.X, Y: to.Y})
+		return elk.Vec{X: q.X, Y: q.Y}
+	}
+}
 
 // elkInput gives what Mermaid hands ELK for d, and the IDs of the edges it
 // turned round (buildElkGraphFromLayoutData, render.ts). Mermaid's options on the
@@ -30,6 +55,7 @@ func elkNodes(siblings []Node, children map[string][]Node, h map[string]elk.Hier
 			all[i].Children = elkNodes(kids, children, h)
 			all[i].Direction = n.Direction
 			all[i].Title, all[i].MinWidth = title(n)
+			all[i].Untitled = n.Untitled
 		}
 	}
 	return all
@@ -42,7 +68,11 @@ func title(n Node) (*elk.Size, float64) {
 	if n.Title == nil {
 		return nil, n.Padding
 	}
-	return &elk.Size{Width: n.Title.Width, Height: n.Title.Height - 2}, n.Title.Width + n.Padding
+	size := &elk.Size{Width: n.Title.Width, Height: n.Title.Height - 2}
+	if n.Untitled {
+		return size, 0
+	}
+	return size, n.Title.Width + n.Padding
 }
 
 // hierarchies gives how each node's subgraph relates to its parent. One with a
