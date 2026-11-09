@@ -61,8 +61,8 @@ func Place(d *Diagram, m scene.Measurer) (Placement, error) {
 
 // check refuses two subgraphs with one id, which Mermaid hands ELK as they are, where
 // layout needs a tree, and a subgraph with a blank name, whose empty id here means the
-// root. A relationship written before the subgraph of its name ends at
-// an entity getData then leaves out, and ELK's import throws.
+// root. A relationship written before the subgraph of its name ends at an entity
+// getData then leaves out, and ELK's import throws.
 func check(d *Diagram) error {
 	nodes := make(map[string]bool, len(d.Nodes))
 	for _, n := range d.Nodes {
@@ -95,14 +95,15 @@ func layoutNode(n Node, s Sized, m scene.Measurer) (graphlayout.Node, label.Box,
 		return node, label.Box{}, nil
 	}
 	node.Padding = groupPadding
+	if n.Label == "" {
+		return node, label.Box{}, nil
+	}
 	lines, err := label.Read(n.Label, "markdown", n.At)
 	if err != nil {
 		return node, label.Box{}, err
 	}
 	title := label.Set(m, lines, titleWrap, 0)
-	if n.Label != "" {
-		node.Title = sizeOf(title)
-	}
+	node.Title = sizeOf(title)
 	return node, title, nil
 }
 

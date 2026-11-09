@@ -67,6 +67,7 @@ func TestPlaceErrors(t *testing.T) {
 		unsupported bool
 	}{
 		{"two subgraphs with one name", "subgraph S\n A\nend\nsubgraph S\n B\nend", true},
+		{"a subgraph with a blank name", "subgraph \" \"\n A\nend", true},
 		{"a line to an entity a subgraph replaced", "S ||--o{ B : x\nsubgraph S\n A\nend", false},
 		{"a line ELK refuses", "subgraph S\n direction TB\n subgraph T\n  A\n end\nend\nA ||--o{ T : x", false},
 	} {
