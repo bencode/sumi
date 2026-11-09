@@ -19,12 +19,29 @@ type located struct {
 // whole, where ELK imports each layout when it starts: a graph's layout reads
 // nothing of another's, so the two are the same.
 func importGraph(in Input) *Graph {
+	g, byID := graphOfNodes(in)
+	importEdges(g, in.Edges, byID)
+	return g
+}
+
+func graphOfNodes(in Input) (*Graph, map[string]located) {
 	g := newGraph(rootSettings(), layoutDirection(in.Direction))
 	g.Hierarchical = true
 	byID := map[string]located{}
 	importNodes(g, in.Nodes, Include, byID)
-	importEdges(g, in.Edges, byID)
-	return g
+	return g, byID
+}
+
+// Crossing gives the ID of the first edge of in that joins two separate layouts, which
+// ELK refuses, or "" if none does. Every edge's ends must be nodes of in.
+func Crossing(in Input) string {
+	_, byID := graphOfNodes(in)
+	for _, e := range in.Edges {
+		if layoutRoot(byID[e.Source].graph) != layoutRoot(byID[e.Target].graph) {
+			return e.ID
+		}
+	}
+	return ""
 }
 
 // newGraph is the part of createLGraph that every graph shares (ElkGraphImporter
