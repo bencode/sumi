@@ -20,7 +20,7 @@ var (
 	stepsAfterOrdering = []func(*Graph){
 		restoreLoopPorts, positionPorts, nodeMargins, routeSelfLoops, placeEndLabels,
 		switchLabelDummies, sizeLabelDummies, placeNodes, measureLayers, routeEdges,
-		joinLongEdges, restoreSelfLoops, removeLabelDummies, applyEndLabels,
+		applyEndLabels, joinLongEdges, restoreSelfLoops, removeLabelDummies,
 		restoreReversed, collectNodes,
 	}
 )

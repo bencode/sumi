@@ -123,12 +123,13 @@ func loopLabelsSize(labels []*Label, alongX bool) Vec {
 	return size
 }
 
-// growMargin makes m reach p, relative to a node of a size, p being above the
-// node's bottom (updateNewNodeMargins, OrthogonalSelfLoopRouter.java line 187).
+// growMargin makes m reach p, relative to a node of a size
+// (updateNewNodeMargins, OrthogonalSelfLoopRouter.java line 187).
 func growMargin(m *Spacing, size, p Vec) {
 	m.Left = max(m.Left, -p.X)
 	m.Right = max(m.Right, p.X-size.X)
 	m.Top = max(m.Top, -p.Y)
+	m.Bottom = max(m.Bottom, p.Y-size.Y)
 }
 
 // restoreSelfLoops joins self loops to their ports again, with bends and labels

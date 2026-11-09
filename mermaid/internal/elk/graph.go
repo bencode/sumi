@@ -94,7 +94,6 @@ type Node struct {
 	Margin       Spacing
 	Ports        []*Port
 	Loops        []selfLoop // InternalProperties.SELF_LOOP_HOLDER
-	endBoxes     []*endBox  // InternalProperties.END_LABELS
 	ModelOrder   int        // its index among its siblings
 	Graph        *Graph     // the graph it sits in, on real and external port nodes
 	Nested       *Graph
