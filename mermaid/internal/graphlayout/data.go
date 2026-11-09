@@ -25,6 +25,7 @@ type Node struct {
 	Intersect     Intersect     // nil reads as a rectangle
 	Direction     elk.Direction // a subgraph's own; Undefined when it has none
 	Title         *elk.Size     // a subgraph's measured title; nil without text
+	Untitled      bool          // a Title no one paints (clusterPaintsTitle), which asks for no size
 	Padding       float64       // a subgraph's padding
 }
 

@@ -89,7 +89,7 @@ func (f *fetcher) doc(parent string, doc []Stmt, alt bool) {
 		case Relation:
 			f.state(parent, v.State1, alt)
 			f.state(parent, v.State2, alt)
-			f.edges = append(f.edges, Edge{ID: fmt.Sprintf("edge%d", f.count), Start: v.State1.ID, End: v.State2.ID, Label: v.Desc})
+			f.edges = append(f.edges, Edge{ID: fmt.Sprintf("edge%d", f.count), Start: v.State1.ID, End: v.State2.ID, Label: v.Desc, At: v.State1.At})
 			f.count++
 		}
 	}
@@ -204,7 +204,7 @@ func (f *fetcher) insertNote(s State, n Node) {
 	if s.Note.Position == "left of" {
 		from, to = note, s.ID
 	}
-	f.edges = append(f.edges, Edge{ID: from + "-" + to, Start: from, End: to, Note: true})
+	f.edges = append(f.edges, Edge{ID: from + "-" + to, Start: from, End: to, Note: true, At: s.At})
 }
 
 // insert is insertOrUpdateNode: a node already there takes the new one's fields where

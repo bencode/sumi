@@ -31,7 +31,8 @@ const (
 // InputNode is a node to place, or a subgraph when it has Children. Direction
 // counts only where a layout starts, as the nodes laid out with a parent go its
 // way. Title is nil when the subgraph has no text. MinWidth is nodeSize.minimum's
-// x; Mermaid leaves its y at 0.
+// x; Mermaid leaves its y at 0. Untitled is a subgraph without nodeSize.*: its Title
+// takes room above what it holds and may stick out, but asks for no size.
 type InputNode struct {
 	ID            string
 	Width, Height float64
@@ -39,6 +40,7 @@ type InputNode struct {
 	Hierarchy     Hierarchy
 	Direction     Direction
 	Title         *Size
+	Untitled      bool
 	MinWidth      float64
 }
 
