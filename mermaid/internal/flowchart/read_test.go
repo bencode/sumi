@@ -579,6 +579,7 @@ func TestRefused(t *testing.T) {
 		{"a label given after its node", "flowchart TD\nA\nB --> A[\"fa:fa-car\"]", 3, 7, true},
 		{"HTML on an edge", "flowchart TD\nA -->|\"<b>x</b>\"| B", 2, 2, true},
 		{"HTML in a title", "flowchart TD\n\nsubgraph s[\"<i>x</i>\"]\nend", 3, 1, true},
+		{"a blank subgraph id", "flowchart TD\nsubgraph \" \" [t]\nend", 2, 1, true},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			body, _ := syntax.Prepare(c.src)
