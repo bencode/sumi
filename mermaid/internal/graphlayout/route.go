@@ -31,6 +31,8 @@ type route struct {
 	id, start, end string
 	points         []elk.Vec
 	label          *edgeLabel
+	texts          [2]*edgeLabel // at its start and its end
+	ports          [2]elk.Vec    // where ELK ended it, in its own direction
 }
 
 // routeEdges gives edges their paths (applyElkEdgeLayout, render.ts).
@@ -61,12 +63,20 @@ func routeEdge(e Edge, laid elkEdge, reversed bool, frames map[string]frame, t t
 	clipped := clipEdge(slices.Concat([]elk.Vec{start.center()}, inner, []elk.Vec{end.center()}), start, end)
 	clipped = trimEnd(clipped, end.bounds(), markerOffsets[e.EndMarker])
 	clipped = trimStart(clipped, start.bounds(), markerOffsets[e.StartMarker])
-	r := route{id: e.ID, start: e.Start, end: e.End, points: clipped}
+	r := route{id: e.ID, start: e.Start, end: e.End, points: clipped, ports: [2]elk.Vec{inner[0], inner[len(inner)-1]}}
 	if e.Label != nil {
-		l := laid.labels[0]
-		r.label = &edgeLabel{elk.Vec{X: l.X + offset.X + l.Width/2, Y: l.Y + offset.Y + l.Height/2}, *e.Label}
+		r.label = &edgeLabel{boxCenter(laid.labels[0], offset), *e.Label}
+	}
+	for i, text := range [2]*elk.Size{e.StartText, e.EndText} {
+		if text != nil {
+			r.texts[i] = &edgeLabel{boxCenter(*laid.ends[i], offset), *text}
+		}
 	}
 	return r
+}
+
+func boxCenter(l elk.PlacedLabel, offset elk.Vec) elk.Vec {
+	return elk.Vec{X: l.X + offset.X + l.Width/2, Y: l.Y + offset.Y + l.Height/2}
 }
 
 // tooShort tells whether a marker has no room on the segment from end to next, a

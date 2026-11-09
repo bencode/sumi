@@ -15,7 +15,7 @@ func Layout(d Data) Result {
 	frames := placeNodes(out.Nodes, d.Nodes)
 	frames = evenFrames(out.Nodes, frames, edges, t)
 	frames = alignSmallNodes(frames, edges, t)
-	routes := separateLabels(straightenEdges(routeEdges(d.Edges, edges, reversed, frames, t)))
+	routes := separateLabels(placeTexts(straightenEdges(routeEdges(d.Edges, edges, reversed, frames, t)), frames))
 	return Result{placedNodes(d.Nodes, frames, t), placedEdges(routes)}
 }
 
@@ -25,12 +25,13 @@ type elkEdge struct {
 	id, source, target string
 	points             []elk.Vec
 	labels             []elk.PlacedLabel
+	ends               [2]*elk.PlacedLabel // its tail and head labels
 }
 
 func zipEdges(in []elk.InputEdge, out []elk.PlacedEdge) []elkEdge {
 	edges := make([]elkEdge, len(in))
 	for i, e := range in {
-		edges[i] = elkEdge{e.ID, e.Source, e.Target, out[i].Points, out[i].Labels}
+		edges[i] = elkEdge{e.ID, e.Source, e.Target, out[i].Points, out[i].Labels, [2]*elk.PlacedLabel{out[i].Tail, out[i].Head}}
 	}
 	return edges
 }
@@ -75,6 +76,12 @@ func placedEdges(routes []route) []PlacedEdge {
 		placed[i] = PlacedEdge{ID: r.id, Points: r.points}
 		if r.label != nil {
 			placed[i].Label = &r.label.center
+		}
+		if r.texts[0] != nil {
+			placed[i].Start = &r.texts[0].center
+		}
+		if r.texts[1] != nil {
+			placed[i].End = &r.texts[1].center
 		}
 	}
 	return placed

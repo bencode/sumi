@@ -18,12 +18,12 @@ func Texts(m scene.Measurer, b Box, top scene.Point, ink scene.Paint) []scene.Te
 	var out []scene.Text
 	index := map[scene.Font]int{}
 	for i, l := range b.Lines {
-		x := top.X + (b.W-advance(m, 0, l))/2
+		x := top.X + (b.W-advance(m, fontSize, 0, l))/2
 		lineTop := top.Y + lineHeight*float64(i)
 		for _, s := range l {
 			lead := len(s.Text) - len(strings.TrimLeft(s.Text, " "))
-			at := advance(m, x, []Span{{s.Text[:lead], s.Bold, s.Italic}})
-			x = advance(m, x, []Span{s})
+			at := advance(m, fontSize, x, []Span{{s.Text[:lead], s.Bold, s.Italic}})
+			x = advance(m, fontSize, x, []Span{s})
 			word := strings.TrimRight(s.Text[lead:], " ")
 			if word == "" {
 				continue
