@@ -93,9 +93,8 @@ func drawNode(n Node, s Sized, b graphlayout.Box, m scene.Measurer) scene.Item {
 	case RectWithTitle:
 		a, z := shifted(s.Titled.Line[0], c), shifted(s.Titled.Line[1], c)
 		rule := (&scene.Path{}).MoveTo(a.X, a.Y).LineTo(z.X, z.Y)
-		width := style.ForNode(n.Compiled, nil).Pen(scene.NodeStroke, thinWidth).Width // a class's reaches it, a style statement's does not
 		it.Paths = append(st.Outline(frame, scene.NodeFill, scene.NodeStroke, strokeWidth, 0),
-			scene.Path{Segs: rule.Segs, Stroke: scene.Stroke{Paint: scene.Use(scene.NodeStroke), Width: width}})
+			drawRule(rule.Segs, style.ForNode(n.Compiled, nil))...)
 		text(s.Title, s.Titled.Title, startingAt)
 		text(s.Description, s.Titled.Description, startingAt)
 	case Note:
@@ -113,6 +112,16 @@ func drawNode(n Node, s Sized, b graphlayout.Box, m scene.Measurer) scene.Item {
 		it.Paths = st.Outline(outline, scene.NodeFill, scene.NodeStroke, strokeWidth, 0)
 	}
 	return it
+}
+
+// drawRule is the line under a state's title. It inherits a class's width and dashes;
+// the stylesheet sets its color, and a style statement's rules stop at the frame.
+func drawRule(segs []scene.Seg, class style.Styling) []scene.Path {
+	pen := style.Styling{Width: class.Width}.Pen(scene.NodeStroke, thinWidth)
+	if class.Dashed {
+		return line.Dashed(segs, class.Dash, pen, 0)
+	}
+	return []scene.Path{{Segs: segs, Stroke: pen}}
 }
 
 // centered leaves ts as label.Texts sets them.
@@ -171,7 +180,8 @@ func drawGroup(n Node, title label.Box, b graphlayout.Box, m scene.Measurer) sce
 // drawComposite is roundedWithTitle: an outer frame, of which the title's strip shows,
 // and an inner one over the rest, on every other level of groups of another fill. It
 // widens about its center to hold the title and the padding. A class's rules reach the
-// inner frame and the title, and a style statement's neither.
+// inner frame and the title, its dashes the outer frame too, and a style statement's
+// none of them.
 func drawComposite(n Node, title label.Box, b graphlayout.Box, m scene.Measurer) scene.Item {
 	w := b.Width
 	if w <= title.W+groupPadding {
@@ -187,8 +197,8 @@ func drawComposite(n Node, title label.Box, b graphlayout.Box, m scene.Measurer)
 	class := style.ForNode(n.Compiled, nil)
 	var paths []scene.Path
 	if shows(r) {
-		paths = append(paths, scene.Path{Segs: scene.RoundRect(r, compositeRadius), Fill: scene.Use(scene.GroupFill),
-			Stroke: scene.Stroke{Paint: scene.Use(scene.GroupStroke), Width: strokeWidth}})
+		dashes := style.Styling{Dash: class.Dash, Dashed: class.Dashed} // inherited; the stylesheet sets the rest
+		paths = append(paths, dashes.Outline(scene.RoundRect(r, compositeRadius), scene.GroupFill, scene.GroupStroke, strokeWidth, 0)...)
 	}
 	if shows(body) {
 		paths = append(paths, class.Outline(scene.RoundRect(body, 0), fill, scene.GroupStroke, strokeWidth, 0)...)
