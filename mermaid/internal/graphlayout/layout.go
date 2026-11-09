@@ -19,6 +19,12 @@ func Layout(d Data) Result {
 	return Result{placedNodes(d.Nodes, frames, t), placedEdges(routes)}
 }
 
+// Crossing is elk.Crossing of what d hands ELK.
+func Crossing(d Data) string {
+	in, _ := elkInput(d)
+	return elk.Crossing(in)
+}
+
 // elkEdge is an edge as ELK had it and what it made of it. Its points are relative
 // to the edge's container.
 type elkEdge struct {
