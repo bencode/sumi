@@ -6,6 +6,7 @@
 //	Translate  statements -> statements translate.go
 //	Extract    statements -> tables     extract.go
 //	Fetch      statements -> a diagram  fetch.go, data.go
+//	Size       a diagram -> sizes       size.go
 //
 // Translate runs twice, as Mermaid's parsing and drawing each run it; Read says why.
 // The lexer follows the rules Jison compiles from stateDiagram.jison, which are not

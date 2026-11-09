@@ -28,6 +28,12 @@ const (
 	InvTrapezoid             // inv_trapezoid
 	LeanRight                // lean_right
 	LeanLeft                 // lean_left
+	StateStart               // stateStart
+	StateEnd                 // stateEnd
+	Fork                     // forkJoin, the flow up or down
+	ForkSide                 // forkJoin, the flow left or right
+	Choice                   // choice
+	Note                     // note
 )
 
 // A Node is a label box set in a shape.
@@ -41,8 +47,8 @@ type Node struct {
 	Intersect func(center scene.Point, w, h float64, toward scene.Point) scene.Point
 }
 
-// Set sets a label box w by h in a shape of kind k; padding is the diagram's
-// node padding (flowchart.padding).
+// Set sets a label box w by h in a shape of kind k; padding is what the diagram
+// gives the node.
 func Set(k Kind, w, h, padding float64) Node {
 	return setters[k](w, h, padding)
 }
@@ -62,6 +68,12 @@ var setters = [...]func(w, h, padding float64) Node{
 	InvTrapezoid: invTrapezoid,
 	LeanRight:    leanRight,
 	LeanLeft:     leanLeft,
+	StateStart:   stateStart,
+	StateEnd:     stateEnd,
+	Fork:         fork,
+	ForkSide:     forkSide,
+	Choice:       choice,
+	Note:         note,
 }
 
 // WidensLabel reports whether a label in k is widened to the diagram's least
