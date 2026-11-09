@@ -1,6 +1,5 @@
 // Package canvas finishes the drawing of a diagram that goes through Mermaid's
-// unified renderer: its items in the box of them all, under a title. It knows nothing
-// of what the items are.
+// unified renderer: its items in the box of them all, under a title.
 package canvas
 
 import (
