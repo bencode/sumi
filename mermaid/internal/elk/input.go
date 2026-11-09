@@ -44,11 +44,13 @@ type InputNode struct {
 	MinWidth      float64
 }
 
-// InputEdge is an edge to route. Label is nil when the edge has no text: ELK
-// drops a label with empty text (ElkGraphImporter.java line 1203).
+// InputEdge is an edge to route. Label is its center label, Tail and Head the
+// labels by its source and its target, which only edges between leaf nodes take.
+// Each is nil when there is no text: ELK drops a label with empty text
+// (ElkGraphImporter.java line 1203).
 type InputEdge struct {
 	ID, Source, Target string
-	Label              *Size
+	Label, Tail, Head  *Size
 }
 
 // Input is what Mermaid gives ELK, its edges all here whatever nodes they join.
@@ -74,11 +76,13 @@ type PlacedLabel struct{ X, Y, Width, Height float64 }
 
 // PlacedEdge is an edge with its path, from start through bends to end.
 // Container is the subgraph its coordinates are relative to, empty for the root.
+// Labels holds its center label.
 type PlacedEdge struct {
-	ID        string
-	Container string
-	Points    []Vec
-	Labels    []PlacedLabel
+	ID         string
+	Container  string
+	Points     []Vec
+	Labels     []PlacedLabel
+	Tail, Head *PlacedLabel
 }
 
 // Result is a finished layout, in the order of the Input.

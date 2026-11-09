@@ -70,8 +70,8 @@
 // so only the placing of ports and titles remains. Node placement is the balanced
 // layout with the one edge straightening Mermaid gets: fixed alignments and edge
 // priorities are left out. Edge routing runs west to east only and leaves out
-// junction points. Only inline center labels are taken: the head and tail labels
-// Mermaid sends for a class diagram's multiplicities are not yet. Self loops all
+// junction points. Center labels are inline ones, and head and tail labels come
+// on edges between leaf nodes only, which is all Mermaid sends. Self loops all
 // stay on the north side, so what ELK does for their other sides and shapes is
 // left out too. A self loop on a subgraph with external ports has its ports on
 // opposite sides, as in ELK, but runs over the top without ELK's room at the sides,

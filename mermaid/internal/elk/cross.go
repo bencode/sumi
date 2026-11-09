@@ -89,13 +89,20 @@ func depth(g *Graph) int {
 	return level
 }
 
-// moveLabels gives c's labels to its shallowest segment
-// (moveLabelsAndRemoveOriginalEdges, CompoundGraphPreprocessor.java line 249).
+// moveLabels gives c's center label to its shallowest segment, its end labels to
+// the segments at those ends (moveLabelsAndRemoveOriginalEdges,
+// CompoundGraphPreprocessor.java line 249).
 func moveLabels(c *crossEdge) {
-	if len(c.edge.Labels) > 0 {
-		segment := c.segments[shallowestSegment(c.segments)].edge
-		segment.Labels, c.edge.Labels = c.edge.Labels, nil
+	segmentOf := [...]int{
+		centerLabel: shallowestSegment(c.segments),
+		tailLabel:   0,
+		headLabel:   len(c.segments) - 1,
 	}
+	for _, l := range c.edge.Labels {
+		segment := c.segments[segmentOf[l.Kind]].edge
+		segment.Labels = append(segment.Labels, l)
+	}
+	c.edge.Labels = nil
 }
 
 // shallowestSegment gives the index of the last segment running out of the

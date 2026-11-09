@@ -47,9 +47,9 @@ func hasIncoming(n *Node) bool {
 	return false
 }
 
-// reverse swaps e's ends. Their ports keep their sides. Collector ports and
-// head or tail labels do not come up: Mermaid sets mergeEdges to false and
-// centers its labels (graph/LEdge.java line 58).
+// reverse swaps e's ends, and with them its head and tail labels. Their ports
+// keep their sides. Collector ports do not come up, as Mermaid sets mergeEdges to
+// false (graph/LEdge.java line 58).
 func reverse(e *Edge) {
 	source, target := e.Source, e.Target
 	setSource(e, nil)
@@ -58,6 +58,9 @@ func reverse(e *Edge) {
 	setTarget(e, source)
 	e.Reversed = !e.Reversed
 	slices.Reverse(e.Bends)
+	for _, l := range e.Labels {
+		l.Kind = oppositeEnd[l.Kind]
+	}
 }
 
 // restoreReversed turns the edges breakCycles reversed back
