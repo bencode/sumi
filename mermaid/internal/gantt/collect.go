@@ -86,7 +86,7 @@ func (b *db) set(s SetStmt) error {
 	case kAxisFormat:
 		d.AxisFormat = s.Value
 	case kTickInterval:
-		d.TickInterval = s.Value
+		d.TickInterval, d.TickIntervalAt = s.Value, s.At
 	case kTodayMarker:
 		d.TodayMarker = s.Value
 	case kWeekday:
