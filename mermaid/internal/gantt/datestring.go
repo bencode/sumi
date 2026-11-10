@@ -73,7 +73,7 @@ func (ts *tokens) skip(c rune) bool {
 	return false
 }
 
-// readISO is ParseES5DateTime: [+-YYYYYY|YYYY][-MM[-DD]][THH:mm[:ss[.s+]][Z|+-hh:mm|+-hhmm]],
+// readISO is ParseES5DateTime: (+-YYYYYY|YYYY)[-MM[-DD]][THH:mm[:ss[.s+]][Z|+-hh:mm|+-hhmm]],
 // all of the string. Where it stops at the date, it gives the legacy rules the tokens to
 // go on with, those it took being lost; where it stops in the time, the date is invalid.
 func readISO(ts tokens, d *dayParts, t *timeParts, z *offsetParts) (tokens, bool) {
@@ -172,7 +172,8 @@ func readISOTime(ts *tokens, t *timeParts, z *offsetParts) bool {
 }
 
 // readLegacy is the loop of DateParser::Parse after ParseES5DateTime: words before the
-// first number are ignored, and so is any character that is no number, word or sign.
+// first number are ignored, and so is any character that is no number, word or sign,
+// but for a ) after one.
 func readLegacy(ts tokens, d *dayParts, t *timeParts, z *offsetParts) bool {
 	read := len(d.parts) > 0 // a number has been read
 	for tok := ts.next(); tok.kind != tEnd; tok = ts.next() {
