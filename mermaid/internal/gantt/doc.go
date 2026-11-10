@@ -1,5 +1,5 @@
-// Package gantt reads Mermaid gantt diagrams. A diagram goes through a pipeline, each
-// step taking values and returning new ones:
+// Package gantt reads and draws Mermaid gantt diagrams. A diagram goes through a
+// pipeline, each step taking values and returning new ones:
 //
 //	Lex      source -> tokens       lex.go, rules.go
 //	Parse    tokens -> statements   parse.go
@@ -7,6 +7,7 @@
 //	                                datestring.go, datetokens.go and format.go
 //	axisOf   Diagram, width -> Axis axis.go, with d3's times of timeinterval.go
 //	                                and timeformat.go
+//	Layout   Diagram, Axis -> Scene draw.go, grid.go, tasks.go
 //
 // The lexer follows the rules Jison compiles from gantt.jison, which are not always those
 // written there, and the parser its grammar, which Parse gives.
@@ -26,4 +27,11 @@
 // d3's local times and its labels in en-US. Its times are float64 milliseconds, NaN
 // where JavaScript's Date is invalid, so that d3's arithmetic and the way its loops stop
 // carry over as they are. Where d3 would look for a tick forever, axisOf is an error.
+//
+// Layout draws the diagram as ganttRenderer does, at Mermaid's default sizes: the
+// excluded days, the grid, a row for each task, the bars and then their texts, the
+// sections' titles, the line at the time now and the title, in that order, on a canvas
+// the width given and as high as its rows. Where a task's text goes, in its bar or beside
+// it, hangs on its width; the renderer measures it with its entity codes still set aside.
+// Attributes that are NaN, of tasks with no times, are taken as SVG takes them.
 package gantt

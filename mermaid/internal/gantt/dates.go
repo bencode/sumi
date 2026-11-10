@@ -277,18 +277,18 @@ var weekendStart = map[string]int{"friday": 5, "saturday": 6}
 // excluded is isInvalidDate: whether t is a day the diagram excludes and does not
 // include, named by its date in the diagram's format or as YYYY-MM-DD, by the name of
 // its day, or as one of the weekends.
-func (b *db) excluded(t time.Time) (bool, error) {
-	formatted, err := format(t, trim(b.d.DateFormat))
+func (d *Diagram) excluded(t time.Time) (bool, error) {
+	formatted, err := format(t, trim(d.DateFormat))
 	if err != nil {
 		return false, err
 	}
 	day, _ := format(t, "YYYY-MM-DD")
-	in, ex := b.d.Includes, b.d.Excludes
+	in, ex := d.Includes, d.Excludes
 	if slices.Contains(in, formatted) || slices.Contains(in, day) {
 		return false, nil
 	}
 	iso := (int(t.Weekday())+6)%7 + 1
-	if start := weekendStart[b.d.Weekend]; slices.Contains(ex, "weekends") && (iso == start || iso == start+1) {
+	if start := weekendStart[d.Weekend]; slices.Contains(ex, "weekends") && (iso == start || iso == start+1) {
 		return true, nil
 	}
 	return slices.Contains(ex, strings.ToLower(weekdays[t.Weekday()])) || slices.Contains(ex, formatted) || slices.Contains(ex, day), nil
@@ -316,7 +316,7 @@ func (b *db) checkDates(t *rawTask) error {
 			render = &e
 		}
 		var err error
-		if invalid, err = b.excluded(start); err != nil {
+		if invalid, err = b.d.excluded(start); err != nil {
 			return syntax.Errorf(t.At, "%s", err)
 		}
 		if invalid {
