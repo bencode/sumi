@@ -3,7 +3,8 @@
 //
 //	Lex      source -> tokens       lex.go, rules.go
 //	Parse    tokens -> statements   parse.go
-//	collect  statements -> Diagram  collect.go, with the dates of dates.go and format.go
+//	collect  statements -> Diagram  collect.go, with the dates of dates.go,
+//	                                datestring.go, datetokens.go and format.go
 //
 // The lexer follows the rules Jison compiles from gantt.jison, which are not always those
 // written there, and the parser its grammar, which Parse gives.
@@ -14,7 +15,7 @@
 // Go's time: a date in the diagram's format is read and written with dayjs's tokens,
 // months and years are added as dayjs adds them, keeping the day where the month has
 // it, a local time a change of offset skips or repeats takes the offset from before the
-// change, and a start in no format falls back to the date time strings V8 reads. A
-// time Mermaid would make and JavaScript cannot hold is not supported, nor are the
-// legacy dates of V8 yet.
+// change, and a start in no format falls back to new Date, read as V8 reads it, its
+// legacy rules too. A time Mermaid would make and JavaScript cannot hold is not
+// supported.
 package gantt
