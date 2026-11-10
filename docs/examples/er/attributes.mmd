@@ -1,0 +1,19 @@
+erDiagram
+    AUTHOR["Author account"] {
+        uuid id PK "Public identifier"
+        string email UK "Unique login"
+        string? display_name "Optional public name"
+    }
+    ARTICLE {
+        uuid id PK
+        uuid author_id FK
+        string slug UK
+        string title "Visible headline"
+    }
+    REVISION {
+        uuid article_id PK,FK
+        int number PK "Revision within the article"
+        string body
+    }
+    AUTHOR ||--o{ ARTICLE : writes
+    ARTICLE ||--|{ REVISION : records

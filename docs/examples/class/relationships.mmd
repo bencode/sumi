@@ -1,0 +1,8 @@
+classDiagram
+    direction LR
+    Content <|-- Article : inherits
+    Publishable <|.. Article : implements
+    Article "1" *-- "1..*" Revision : contains
+    Collection "1" o-- "0..*" Article : groups
+    Author "1" --> "0..*" Article : writes
+    Publisher ..> Article : publishes

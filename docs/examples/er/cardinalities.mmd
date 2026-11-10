@@ -1,0 +1,6 @@
+erDiagram
+    direction LR
+    CUSTOMER ||--o{ ORDER : places
+    ORDER ||--|{ ORDER_LINE : contains
+    ORDER ||..o| SHIPMENT : receives
+    ORDER_LINE }o..|| PRODUCT : references

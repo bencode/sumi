@@ -1,0 +1,14 @@
+stateDiagram-v2
+    [*] --> Processing
+    state Processing {
+        direction LR
+        [*] --> Packing
+        Packing --> Packed : seal package
+        Packed --> [*]
+        --
+        [*] --> PreparingLabel
+        PreparingLabel --> LabelReady : print label
+        LabelReady --> [*]
+    }
+    Processing --> Dispatched : both regions complete
+    Dispatched --> [*]

@@ -1,0 +1,8 @@
+flowchart TD
+    Draft([Draft]) --> Review{Ready to publish?}
+    Review -->|Needs changes| Edit[Revise article]
+    Edit --> Review
+    Review -->|Approved| Schedule{Publish now?}
+    Schedule -->|Yes| Live([Published])
+    Schedule -->|Later| Planned[Schedule publication]
+    Planned --> Live

@@ -1,0 +1,15 @@
+stateDiagram-v2
+    direction LR
+    [*] --> Draft
+    state "Payment received" as Paid
+    Draft --> Paid : pay
+    Draft --> Cancelled : cancel
+    Paid --> Shipped : dispatch
+    Shipped --> Delivered : confirm delivery
+    Delivered --> [*]
+    Cancelled --> [*]
+    Draft : Waiting for payment
+    note right of Draft
+        The customer can still
+        update the delivery address
+    end note

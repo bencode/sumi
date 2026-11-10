@@ -1,0 +1,24 @@
+classDiagram
+    namespace Publishing {
+        class Article {
+            +string title
+            +publish()
+        }
+        namespace Storage {
+            class ArticleStore {
+                +save(article)
+            }
+        }
+    }
+    namespace Delivery {
+        class Feed {
+            +latest()
+        }
+    }
+    Article --> ArticleStore : persists
+    Feed ..> ArticleStore : reads
+    note for Article "Owns the publication rules"
+    note "Dependencies point toward storage"
+    classDef domain fill:#e3edf7,stroke:#467ba2,color:#183d5a
+    cssClass "Article" domain
+    style Feed stroke:#41745b,stroke-width:2px

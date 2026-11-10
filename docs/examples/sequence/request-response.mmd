@@ -1,0 +1,18 @@
+---
+title: A request, end to end
+---
+sequenceDiagram
+    autonumber
+    actor Reader
+    participant API as Reading API
+    participant Cache
+    Reader->>+API: Open a saved article
+    API->>+Cache: Find the article
+    Cache-->>-API: Cached document
+    API->>+API: Build the response
+    API-->>-API: Response ready
+    Note right of API: Keep the original<br>publication date
+    API-->>-Reader: Article and reading position
+    API--)Metrics: Record latency
+    Note left of Reader: Reading view
+    Note over Reader,Cache: The article is ready to read
