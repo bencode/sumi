@@ -6,6 +6,7 @@
 //	collect  statements -> Diagram  collect.go
 //	Size     Diagram -> entities    size.go
 //	Place    Diagram -> Placement   place.go
+//	draw     Placement -> Scene     draw.go
 //
 // The lexer follows the rules Jison compiles from erDiagram.jison, which are not always
 // those written there. The parser is a recursive descent over this grammar, from

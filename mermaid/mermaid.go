@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/bencode/sumi/mermaid/internal/class"
+	"github.com/bencode/sumi/mermaid/internal/er"
 	"github.com/bencode/sumi/mermaid/internal/flowchart"
 	"github.com/bencode/sumi/mermaid/internal/sequence"
 	"github.com/bencode/sumi/mermaid/internal/state"
@@ -49,6 +50,7 @@ var kinds = map[string]func(body, title string, m scene.Measurer) (*scene.Scene,
 	"flowchart":       flowchart.Layout,
 	"stateDiagram":    state.Layout, // stateDiagram-v2 too, as stateDetector-V2 matches
 	"classDiagram":    class.Layout, // classDiagram-v2 too, as classDetector-V2 matches
+	"erDiagram":       er.Layout,
 }
 
 // Layout lays out the diagram src, picking its kind by its first word.

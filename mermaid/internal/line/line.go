@@ -205,12 +205,15 @@ func Marker(kind string, e, u scene.Point, start bool, fill scene.Paint) []scene
 	at := func(along, across float64) scene.Point {
 		return scene.Point{X: e.X + along*u.X + across*n.X, Y: e.Y + along*u.Y + across*n.Y}
 	}
+	end := 1
+	if start {
+		end = 0
+	}
 	if c, ok := closedMarkers[kind]; ok {
-		end := 1
-		if start {
-			end = 0
-		}
 		return c.draw(end, fill, at)
+	}
+	if f, ok := cardinalities[kind]; ok {
+		return f[end].draw(fill, at)
 	}
 	switch kind {
 	case "arrow_point":

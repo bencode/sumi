@@ -20,9 +20,9 @@ const (
 // Placement is a diagram sized and laid out: what drawing reads.
 type Placement struct {
 	D      *Diagram
-	Sized  []Sized     // by D.Nodes
-	Titles []label.Box // by D.Nodes: a subgraph's
-	Edges  []label.Box // by D.Edges
+	Sized  []Sized          // by D.Nodes
+	Titles [][][]label.Span // by D.Nodes: a subgraph's lines, set again in its width when drawn
+	Edges  []label.Box      // by D.Edges
 	R      graphlayout.Result
 }
 
@@ -35,7 +35,7 @@ func Place(d *Diagram, m scene.Measurer) (Placement, error) {
 	if err != nil {
 		return Placement{}, err
 	}
-	p := Placement{D: d, Sized: sized, Titles: make([]label.Box, len(d.Nodes)), Edges: make([]label.Box, len(d.Edges))}
+	p := Placement{D: d, Sized: sized, Titles: make([][][]label.Span, len(d.Nodes)), Edges: make([]label.Box, len(d.Edges))}
 	data := graphlayout.Data{
 		Direction: graphlayout.ElkDirection(d.Direction),
 		Nodes:     make([]graphlayout.Node, len(d.Nodes)),
@@ -84,27 +84,26 @@ func check(d *Diagram) error {
 	return nil
 }
 
-// layoutNode is what layout gets of n, and a subgraph's title.
-func layoutNode(n Node, s Sized, m scene.Measurer) (graphlayout.Node, label.Box, error) {
+// layoutNode is what layout gets of n, and the lines of a subgraph's title.
+func layoutNode(n Node, s Sized, m scene.Measurer) (graphlayout.Node, [][]label.Span, error) {
 	node := graphlayout.Node{ID: n.ID, Parent: n.Parent, Group: n.Group, Direction: elk.Undefined}
 	if n.Dir != "" {
 		node.Direction = graphlayout.ElkDirection(n.Dir)
 	}
 	if !n.Group {
 		node.Width, node.Height = s.Shape.W, s.Shape.H
-		return node, label.Box{}, nil
+		return node, nil, nil
 	}
 	node.Padding = groupPadding
 	if n.Label == "" {
-		return node, label.Box{}, nil
+		return node, nil, nil
 	}
 	lines, err := label.Read(n.Label, "markdown", n.At)
 	if err != nil {
-		return node, label.Box{}, err
+		return node, nil, err
 	}
-	title := label.Set(m, lines, titleWrap, 0)
-	node.Title = sizeOf(title)
-	return node, title, nil
+	node.Title = sizeOf(label.Set(m, lines, titleWrap, 0))
+	return node, lines, nil
 }
 
 // layoutEdge is what layout gets of e, and the text on it.
