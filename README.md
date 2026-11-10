@@ -3,7 +3,7 @@
 sumi (墨, ink) lays out Mermaid diagrams in pure Go. It returns paths and positioned text that your application draws natively or exports as SVG.
 
 - **[Feature checklist](docs/compatibility.md)** — supported features, partial support, and known limitations.
-- **Interactive examples** — 17 editable diagrams; [run locally](#local-playground) to see Go render your changes.
+- **[Online playground](https://sumi.fmap.dev)** — 17 editable diagrams rendered by Go; also [run locally](#local-playground).
 - **Integration** — use a custom text measurer and your native drawing backend, or export SVG.
 - **Rendering** — no browser, JavaScript runtime, or external layout service required by the Go library.
 - **Status** — 0.x; the API may change. LaTeX math is planned, not implemented.
@@ -79,7 +79,7 @@ Open **http://localhost:5173**. Each example is editable; previews update 400ms 
 - Source/request errors return 400, oversized requests 413, unsupported features or empty scenes 422, and internal failures 500. Error JSON has `message` and, when available, `line`, `column`, and `unsupported`.
 - `GET /healthz` returns `{"status":"ok"}`. The service uses no database and stores no submitted source.
 - Edit [`docs/examples/catalog.json`](docs/examples/catalog.json) to organize examples. Category IDs name subdirectories; example IDs name `.mmd` files. Add the source and a catalog entry to add an example.
-- Frontend and service code live in `web/`, `cmd/sumi-demo/`, and `internal/demo/`. Deployment is a separate iteration; the playground currently runs locally.
+- Frontend and service code live in `web/`, `cmd/sumi-demo/`, and `internal/demo/`. See the [Docker Compose deployment guide](deploy/README.md) for container builds and the shared Caddy setup.
 
 ## Checks
 

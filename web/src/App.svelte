@@ -1,8 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import checklistURL from '../../docs/compatibility.md?url'
   import { groups, exampleCount } from './lib/examples'
   import Example from './components/Example.svelte'
+
+  const checklistURL = 'https://github.com/bencode/sumi/blob/main/docs/compatibility.md'
 
   let theme = $state<'system' | 'light' | 'dark'>('system')
   let systemDark = $state(false)
@@ -25,7 +26,7 @@
 <header class="site-header">
   <a class="wordmark" href="#top" aria-label="sumi, top of page">墨 <span>sumi</span></a>
   <div class="header-actions">
-    <a href={checklistURL} download="sumi-compatibility.md">Feature checklist <span aria-hidden="true">↓</span></a>
+    <a href={checklistURL} target="_blank" rel="noreferrer">Feature checklist <span aria-hidden="true">↗</span></a>
     <a href="https://github.com/bencode/sumi">GitHub <span aria-hidden="true">↗</span></a>
     <label class="theme-control">Theme
       <select bind:value={theme} aria-label="Color theme">
@@ -60,10 +61,10 @@
   </div>
   <div class="closing">
     <p>Find the edges of what's supported.</p>
-    <a href={checklistURL} download="sumi-compatibility.md">Download the feature checklist <span aria-hidden="true">↓</span></a>
+    <a href={checklistURL} target="_blank" rel="noreferrer">Read the feature checklist <span aria-hidden="true">↗</span></a>
   </div>
 </main>
 <footer>
   <p>sumi <span aria-hidden="true">墨</span> — diagrams laid out in pure Go.</p>
-  <p>Local development · Default layout settings and sumi's own palettes. <a href="https://github.com/bencode/sumi#license">License</a></p>
+  <p>Default layout settings and sumi's own palettes. <a href="https://github.com/bencode/sumi#license">License</a></p>
 </footer>
