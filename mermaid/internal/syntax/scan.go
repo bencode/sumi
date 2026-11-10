@@ -114,7 +114,24 @@ func encodeEntities(src string) string {
 // Decode turns the entity codes set aside in s into the characters they
 // stand for: #9829; is ♥ and #quot; is ", as HTML names them. A name HTML
 // does not know stays as written, as &name;.
-func Decode(s string) string {
+func Decode(s string) string { return eachCode(s, entity) }
+
+// Placeholders writes the entity codes set aside in s as Mermaid's
+// encodeEntities does, which leaves them so until the drawing is done:
+// #9829; is ﬂ°°9829¶ß and #quot; is ﬂ°quot¶ß. A renderer that measures its
+// text while drawing measures these.
+func Placeholders(s string) string {
+	return eachCode(s, func(code string) string {
+		if strings.Trim(code, "0123456789") == "" {
+			return "ﬂ°°" + code + "¶ß"
+		}
+		return "ﬂ°" + code + "¶ß"
+	})
+}
+
+// eachCode is s with each entity code set aside in it written as f writes its
+// code, the word between # and ;.
+func eachCode(s string, f func(code string) string) string {
 	var b strings.Builder
 	for {
 		i := strings.IndexRune(s, entityOpen)
@@ -127,7 +144,7 @@ func Decode(s string) string {
 		}
 		code := s[i+len(string(entityOpen)) : i+j]
 		b.WriteString(s[:i])
-		b.WriteString(entity(code))
+		b.WriteString(f(code))
 		s = s[i+j+len(string(entityClose)):]
 	}
 	b.WriteString(s)
