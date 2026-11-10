@@ -20,6 +20,7 @@ type Diagram struct {
 	// DateFormat, AxisFormat, TickInterval and TodayMarker are as written, past the
 	// keyword and the one space after it.
 	DateFormat, AxisFormat, TickInterval, TodayMarker string
+	TickIntervalAt                                    syntax.Pos // where the last tickInterval is
 	// Includes and Excludes are the words of every includes and excludes, lower case,
 	// each once, in the order first written.
 	Includes, Excludes []string

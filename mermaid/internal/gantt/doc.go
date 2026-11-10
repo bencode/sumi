@@ -5,6 +5,8 @@
 //	Parse    tokens -> statements   parse.go
 //	collect  statements -> Diagram  collect.go, with the dates of dates.go,
 //	                                datestring.go, datetokens.go and format.go
+//	axisOf   Diagram, width -> Axis axis.go, with d3's times of timeinterval.go
+//	                                and timeformat.go
 //
 // The lexer follows the rules Jison compiles from gantt.jison, which are not always those
 // written there, and the parser its grammar, which Parse gives.
@@ -18,4 +20,10 @@
 // change, and a start in no format falls back to new Date, read as V8 reads it, its
 // legacy rules too. A time Mermaid would make and JavaScript cannot hold is not
 // supported.
+//
+// axisOf lays out the time axis as ganttRenderer does with d3: the scale from the
+// earliest start to the latest end, and the ticks of the tickInterval or d3's own, with
+// d3's local times and its labels in en-US. Its times are float64 milliseconds, NaN
+// where JavaScript's Date is invalid, so that d3's arithmetic and the way its loops stop
+// carry over as they are. Where d3 would look for a tick forever, axisOf is an error.
 package gantt
