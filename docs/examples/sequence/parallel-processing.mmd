@@ -1,0 +1,19 @@
+sequenceDiagram
+    participant API
+    participant Inventory
+    participant Billing
+    participant Orders
+    par Reserve stock
+        API-)Inventory: Reserve the items
+        Inventory-->>API: Reservation confirmed
+    and Authorize payment
+        API-)Billing: Authorize the total
+        Billing-->>API: Authorization confirmed
+    end
+    critical Commit the order
+        API->>Orders: Record both confirmations
+        Orders-->>API: Order number
+    option Reservation expires
+        API->>Inventory: Release reserved stock
+        API->>Billing: Void the authorization
+    end

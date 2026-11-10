@@ -1,0 +1,14 @@
+flowchart TB
+    Reader([Reader]) --> Gateway
+    subgraph Platform[Delivery platform]
+        direction TB
+        Gateway[API gateway] --> Auth[Check access]
+        subgraph Processing[Background processing]
+            direction LR
+            Queue[(Job queue)] --> Worker[Export worker]
+        end
+        Auth --> Queue
+        Auth --> Audit[Audit log]
+    end
+    Worker --> Storage[(Object store)]
+    Audit & Storage --> Archive[Retention archive]

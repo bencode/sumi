@@ -1,0 +1,9 @@
+flowchart LR
+    Input["`**Incoming** document`"] --> Review["`Review a long document title with *careful* attention to its metadata`"]
+    Review -->|"Accepted &amp; verified"| Saved@{ shape: cyl, label: "Document<br>store" }
+    Review -.-> Reject["Return to author<br>with comments"]
+    classDef approved fill:#e3f1ea,stroke:#41745b,color:#163d2a
+    class Saved approved
+    style Input stroke:#467ba2,stroke-width:2px
+    style Reject stroke:#a26052,stroke-dasharray:5 3
+    linkStyle 1 stroke:#41745b,stroke-width:2px

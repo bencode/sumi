@@ -1,0 +1,124 @@
+{
+  "groups": [
+    {
+      "id": "sequence",
+      "title": "Sequence diagrams",
+      "description": "Follow a conversation, its branches, and the work happening in parallel.",
+      "examples": [
+        {
+          "id": "request-response",
+          "title": "A request, end to end",
+          "description": "Actors and aliases, request and return arrows, a self-call, nested activations, notes, numbering, and explicit line breaks."
+        },
+        {
+          "id": "branches-retries",
+          "title": "Branches and retries",
+          "description": "A bounded retry loop with alternative responses, an optional step, and an early exit."
+        },
+        {
+          "id": "parallel-processing",
+          "title": "Parallel work, one commit",
+          "description": "Parallel branches, asynchronous messages, and a critical region with a recovery option."
+        },
+        {
+          "id": "participant-lifecycle",
+          "title": "A worker's lifetime",
+          "description": "Grouped participants, typed database and queue participants, a highlighted region, and a worker created and destroyed during the conversation."
+        }
+      ]
+    },
+    {
+      "id": "flowchart",
+      "title": "Flowcharts",
+      "description": "Turn decisions and dependencies into paths, shapes, and nested systems.",
+      "examples": [
+        {
+          "id": "decision-flow",
+          "title": "From draft to publication",
+          "description": "Top-to-bottom decisions, a retry cycle, labeled branches, and several destinations."
+        },
+        {
+          "id": "shapes-connections",
+          "title": "A vocabulary of shapes",
+          "description": "Fourteen traditional node shapes with solid, dotted, thick, open, bidirectional, circle, and cross connections."
+        },
+        {
+          "id": "nested-system",
+          "title": "Inside a delivery system",
+          "description": "Nested subgraphs, local directions, chained and fan-out connections, and edges crossing group boundaries."
+        },
+        {
+          "id": "labels-styles",
+          "title": "Labels with a little emphasis",
+          "description": "Markdown bold and italic, wrapped labels, explicit line breaks, entities, classDef, class assignment, node and link styles, and supported shape metadata."
+        }
+      ]
+    },
+    {
+      "id": "state",
+      "title": "State diagrams",
+      "description": "Describe a lifecycle, then open it up to show nested and concurrent behavior.",
+      "examples": [
+        {
+          "id": "lifecycle",
+          "title": "An order's lifecycle",
+          "description": "Initial and final states, aliases, descriptions, labeled transitions, a cancellation path, and a multiline note."
+        },
+        {
+          "id": "composite-workflow",
+          "title": "Two parts of one workflow",
+          "description": "A composite state containing concurrent regions, local initial and final states, and an inner direction."
+        },
+        {
+          "id": "choices-parallelism",
+          "title": "Choose, fork, and join",
+          "description": "A choice branches into approval or concurrent tasks, which meet at a join; classes and inline styles distinguish outcomes."
+        }
+      ]
+    },
+    {
+      "id": "class",
+      "title": "Class diagrams",
+      "description": "Show the shape of a type, the relationships around it, and the modules it belongs to.",
+      "examples": [
+        {
+          "id": "members",
+          "title": "What a class contains",
+          "description": "Generic types, typed attributes and methods, public/private/protected/package visibility, an interface annotation, and static and abstract members."
+        },
+        {
+          "id": "relationships",
+          "title": "How types relate",
+          "description": "Inheritance, realization, association, dependency, aggregation, composition, relation labels, and multiplicities."
+        },
+        {
+          "id": "namespaces",
+          "title": "A small application",
+          "description": "Nested namespaces, cross-module relationships, attached and standalone notes, and class styling."
+        }
+      ]
+    },
+    {
+      "id": "er",
+      "title": "Entity relationship diagrams",
+      "description": "Read the cardinalities first, then add the fields and boundaries of a real data model.",
+      "examples": [
+        {
+          "id": "cardinalities",
+          "title": "One, none, or many",
+          "description": "Exactly one, zero or one, zero or more, and one or more; identifying and non-identifying relationships with role labels."
+        },
+        {
+          "id": "attributes",
+          "title": "Fields that tell a story",
+          "description": "Entity aliases, attribute types, primary/foreign/unique keys, combined keys, nullable attributes, and comments."
+        },
+        {
+          "id": "business-model",
+          "title": "A store in two domains",
+          "description": "Grouped entities, a left-to-right direction, cross-group relationships, attributes, and styles applied to entities and groups."
+        }
+      ]
+    }
+  ]
+}

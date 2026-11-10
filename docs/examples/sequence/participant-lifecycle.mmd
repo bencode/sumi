@@ -1,0 +1,20 @@
+sequenceDiagram
+    box Processing
+        participant Scheduler
+        participant Queue@{"type":"queue"}
+    end
+    box Storage
+        participant DB@{"type":"database","alias":"Job store"}
+    end
+    Scheduler->>Queue: Add export job
+    rect rgba(70, 123, 162, 0.12)
+        create participant Worker
+        Queue->>Worker: Start export
+        activate Worker
+        Worker->>DB: Read records
+        DB-->>Worker: Export data
+        Worker-->>Scheduler: Export complete
+        deactivate Worker
+    end
+    destroy Worker
+    Scheduler-xWorker: Release worker

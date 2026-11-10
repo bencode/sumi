@@ -1,0 +1,17 @@
+classDiagram
+    class Repository~T~ {
+        <<interface>>
+        +find(id) T
+        +save(item) bool
+    }
+    class Article {
+        +string title
+        -string body
+        #int revision
+        ~string cacheKey
+        +int count$
+        +publish() bool
+        +validate() bool*
+        +fromDraft(text) Article$
+    }
+    Repository <|.. Article

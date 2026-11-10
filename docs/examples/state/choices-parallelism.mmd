@@ -1,0 +1,18 @@
+stateDiagram-v2
+    [*] --> Submitted
+    state Check <<choice>>
+    state Split <<fork>>
+    state Merge <<join>>
+    Submitted --> Check
+    Check --> Rejected : invalid request
+    Check --> Split : valid request
+    Split --> ReserveStock
+    Split --> AuthorizePayment
+    ReserveStock --> Merge
+    AuthorizePayment --> Merge
+    Merge --> Confirmed
+    Confirmed --> [*]
+    Rejected --> [*]
+    classDef success fill:#e3f1ea,stroke:#41745b,color:#163d2a
+    class Confirmed success
+    style Rejected fill:#f9e9e3,stroke:#a26052,color:#72382b

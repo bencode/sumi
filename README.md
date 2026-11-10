@@ -1,38 +1,107 @@
 # sumi
 
-sumi (墨, ink) lays out the diagrams and formulas people write in Markdown, Mermaid and LaTeX math, in pure Go. It stops at a scene: the laid-out picture as data, paths and lines of text at their final places. Your program draws the scene, natively on any backend or as SVG.
+sumi (墨, ink) lays out Mermaid diagrams in pure Go. It returns paths and positioned text that your application draws natively or exports as SVG.
 
-> sumi is at 0.x. It has its base, the `scene` package and SVG output, and Mermaid's sequence diagrams. More of Mermaid comes next, LaTeX after it. Its API may change in any 0.x release.
+- **[Feature checklist](docs/compatibility.md)** — supported features, partial support, and known limitations.
+- **Interactive examples** — 17 editable diagrams; [run locally](#local-playground) to see Go render your changes.
+- **Integration** — use a custom text measurer and your native drawing backend, or export SVG.
+- **Rendering** — no browser, JavaScript runtime, or external layout service required by the Go library.
+- **Status** — 0.x; the API may change. LaTeX math is planned, not implemented.
 
-## Example
+## Supported diagrams
 
-```go
-text, _ := scene.SetText(scene.Arial, "Hello, 墨", scene.Font{Size: 14}, 0, scene.Center, scene.Point{X: 60, Y: 30})
-box := scene.Path{
-	Segs:   scene.RoundRect(scene.Rect{X: 10, Y: 10, W: 100, H: 40}, 6),
-	Fill:   scene.Use(scene.NodeFill),
-	Stroke: scene.Stroke{Paint: scene.Use(scene.NodeStroke), Width: 1},
-}
-s := &scene.Scene{Width: 120, Height: 60, Items: []scene.Item{
-	{Kind: scene.Node, ID: "hello", Paths: []scene.Path{box}, Texts: []scene.Text{text}},
-}}
-out := svg.Render(s, scene.Light)
+- [x] Sequence diagrams
+- [x] Flowcharts (`flowchart`, `graph`, `flowchart-elk`)
+- [x] State diagrams (`stateDiagram`, `stateDiagram-v2`)
+- [x] Class diagrams (`classDiagram`, `classDiagram-v2`)
+- [x] Entity relationship diagrams (`erDiagram`)
+- [ ] Gantt and other Mermaid diagram types
+
+## Install
+
+Requires Go 1.27 or later.
+
+```sh
+go get github.com/bencode/sumi
 ```
 
-A Mermaid diagram is laid out from its source:
+## Draw a diagram
 
 ```go
-s, err := mermaid.Layout("sequenceDiagram\nAlice->>Bob: Hello Bob", mermaid.Options{})
-if err != nil {
-	return err // a *mermaid.Error, with the line and column
+package main
+
+import (
+	"log"
+	"os"
+
+	"github.com/bencode/sumi/mermaid"
+	"github.com/bencode/sumi/scene"
+	"github.com/bencode/sumi/svg"
+)
+
+func main() {
+	s, err := mermaid.Layout(`sequenceDiagram
+    Alice->>Bob: Hello Bob
+    Bob-->>Alice: Hello Alice`, mermaid.Options{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := os.WriteFile("hello.svg", svg.Render(s, scene.Light), 0o644); err != nil {
+		log.Fatal(err)
+	}
 }
-out := svg.Render(s, scene.Dark)
 ```
 
-`go run ./internal/preview` writes sample scenes, and Mermaid's own sequence test diagrams, as SVG in the light and dark palettes, to `out/`.
+- `mermaid.Layout` reports source errors as `*mermaid.Error`, with 1-based `Line` and `Col`; `IsUnsupported()` identifies explicitly unsupported features.
+- `scene.Scene` contains items in drawing order: paint each item's paths, then its text lines at their baselines. Coordinates use DIPs, with the origin at the top left.
+- `mermaid.Options.Measurer` accepts a `scene.Measurer`; nil uses built-in Arial measurements. Match the font metrics of your native renderer.
+- `svg.Render` uses `scene.Light`, `scene.Dark`, or your own palette. Theme changes do not require layout again; explicit author colors remain fixed.
+
+## Local playground
+
+Requires Go 1.27+, Node 24, and pnpm 11.23.0. From the repository root, run the Go service in one terminal:
+
+```sh
+go run ./cmd/sumi-demo -listen 127.0.0.1:8080
+```
+
+Start the frontend in another:
+
+```sh
+pnpm --dir web install --frozen-lockfile
+pnpm --dir web dev
+```
+
+Open **http://localhost:5173**. Each example is editable; previews update 400ms after you stop typing. Errors keep the last successful preview. You can reset an example, copy its current source, or download it. Edits stay in page memory and reset on reload. The theme selector changes both the editor and preview.
+
+- The Vite frontend proxies `/api` and `/healthz` to Go at `127.0.0.1:8080`.
+- `POST /api/render` accepts `{"source":"..."}` and returns `lightSVG`, `darkSVG`, `width`, and `height`. Requests are limited to 64 KiB.
+- Source/request errors return 400, oversized requests 413, unsupported features or empty scenes 422, and internal failures 500. Error JSON has `message` and, when available, `line`, `column`, and `unsupported`.
+- `GET /healthz` returns `{"status":"ok"}`. The service uses no database and stores no submitted source.
+- Edit [`docs/examples/catalog.json`](docs/examples/catalog.json) to organize examples. Category IDs name subdirectories; example IDs name `.mmd` files. Add the source and a catalog entry to add an example.
+- Frontend and service code live in `web/`, `cmd/sumi-demo/`, and `internal/demo/`. Deployment is a separate iteration; the playground currently runs locally.
+
+## Checks
+
+```sh
+go test ./...
+go vet ./...
+pnpm --dir web check
+pnpm --dir web build
+pnpm --dir web preview
+```
+
+The build writes ignored files to `web/dist/`. Preview the build at `http://localhost:4173` with the Go service still running. `go run ./internal/preview` remains available for low-level scene and upstream sequence fixture previews in `out/`.
+
+## Limits
+
+- Targets the supported subset of Mermaid v12.3.0 with default layout settings.
+- Front matter titles work; front matter configuration and `%%{init}%%` directives are accepted but ignored.
+- HTML beyond supported line breaks, formulas, icons, and most CSS are not drawn. Links and callbacks do not become interactive.
+- See the [feature checklist](docs/compatibility.md) for type-specific behavior and restrictions.
 
 ## License
 
 MIT. See [LICENSE](LICENSE).
 
-The exception is `mermaid/internal/elk`, written after the Eclipse Layout Kernel and licensed as it is, under `EPL-2.0 OR GPL-3.0-or-later`. See its [LICENSE](mermaid/internal/elk/LICENSE) and [NOTICE](mermaid/internal/elk/NOTICE).
+The exception is `mermaid/internal/elk`, written after the Eclipse Layout Kernel and licensed under `EPL-2.0 OR GPL-3.0-or-later`. See its [LICENSE](mermaid/internal/elk/LICENSE) and [NOTICE](mermaid/internal/elk/NOTICE).

@@ -1,0 +1,21 @@
+sequenceDiagram
+    participant Client
+    participant API
+    participant Store
+    loop Up to three attempts
+        Client->>API: Save draft
+        API->>Store: Write revision
+        alt Write succeeds
+            Store-->>API: Revision saved
+            opt Notify collaborators
+                API--)Client: Draft updated
+            end
+            API-->>Client: Saved
+        else Temporary failure
+            Store-->>API: Busy
+            API-->>Client: Try again
+        end
+        break Client cancels
+            Client->>API: Stop saving
+        end
+    end

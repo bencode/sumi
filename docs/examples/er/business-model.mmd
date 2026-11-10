@@ -1,0 +1,29 @@
+erDiagram
+    direction LR
+    subgraph Sales["Sales"]
+        CUSTOMER {
+            uuid id PK
+            string email UK
+        }
+        ORDER {
+            uuid id PK
+            uuid customer_id FK
+        }
+        ORDER_LINE {
+            uuid order_id PK,FK
+            uuid product_id PK,FK
+            int quantity
+        }
+    end
+    subgraph Catalog["Catalog"]
+        PRODUCT {
+            uuid id PK
+            string name
+        }
+    end
+    CUSTOMER ||--o{ ORDER : places
+    ORDER ||--|{ ORDER_LINE : contains
+    PRODUCT ||..o{ ORDER_LINE : appears_in
+    classDef sales fill:#e3edf7,stroke:#467ba2,color:#183d5a
+    class CUSTOMER,ORDER,ORDER_LINE sales
+    style Catalog stroke:#41745b

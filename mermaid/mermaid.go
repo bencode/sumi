@@ -1,6 +1,7 @@
 // Package mermaid lays out diagrams written in Mermaid's syntax as scenes,
 // drawing what Mermaid v12.3.0 draws. So far it knows sequence diagrams, flowcharts,
-// state diagrams and class diagrams. The styles of the last three draw their fills,
+// state diagrams, class diagrams and entity relationship diagrams. The styles of
+// flowcharts, state, class and ER diagrams draw their fills,
 // strokes, widths, dashes and text colors; fonts and the rest of CSS that changes how
 // Chrome draws are not supported.
 //
