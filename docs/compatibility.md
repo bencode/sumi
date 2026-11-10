@@ -1,6 +1,6 @@
 # Feature checklist
 
-Checked against sumi's implementation at [`806adec`](https://github.com/bencode/sumi/commit/806adecd7f85e60e05d9d5a2a0fdf764d8b31023). The reference is **Mermaid v12.3.0 with default layout settings**, including its ELK-based graph layout and neo shapes. Run the [local playground](http://localhost:5173/) to edit and render the examples using the Go service from the same checkout.
+Checked against sumi's implementation at [`806adec`](https://github.com/bencode/sumi/commit/806adecd7f85e60e05d9d5a2a0fdf764d8b31023). The reference is **Mermaid v12.3.0 with default layout settings**, including its ELK-based graph layout and neo shapes. Open the [online playground](https://sumi.fmap.dev/) to edit and render the examples using the Go service.
 
 - `[x]` means the public `mermaid.Layout` → `scene.Scene` → `svg.Render` path draws the feature.
 - `[ ]` identifies a limitation; its description says whether it is **rejected**, **accepted but ignored**, **partial**, or **internal only**.
@@ -21,17 +21,17 @@ Source: [public dispatch](../mermaid/mermaid.go), [internal Gantt implementation
 
 ## Sequence diagrams
 
-- [x] Explicit and implicit participants, actors, and aliases. [Request example](http://localhost:5173/#sequence-request-response)
-- [x] Request, return, open/asynchronous, and cross-ended messages; self-messages. [Request](http://localhost:5173/#sequence-request-response), [parallel](http://localhost:5173/#sequence-parallel-processing), [lifecycle](http://localhost:5173/#sequence-participant-lifecycle)
-- [x] Explicit `activate` / `deactivate`, `+` / `-` message activations, and nested activation bars. [Request](http://localhost:5173/#sequence-request-response), [lifecycle](http://localhost:5173/#sequence-participant-lifecycle)
-- [x] Notes left/right of a participant or over one/two participants; `<br>` line breaks. [Request example](http://localhost:5173/#sequence-request-response)
-- [x] Automatic message numbering. [Request example](http://localhost:5173/#sequence-request-response)
-- [x] `loop`, `alt` / `else`, `opt`, and `break` blocks, including nesting. [Branches example](http://localhost:5173/#sequence-branches-retries)
-- [x] `par` / `and`, and `critical` / `option` blocks. [Parallel example](http://localhost:5173/#sequence-parallel-processing)
-- [x] Participant `box` groups and `rect` background regions. [Lifecycle example](http://localhost:5173/#sequence-participant-lifecycle)
-- [x] Participant creation and destruction. [Lifecycle example](http://localhost:5173/#sequence-participant-lifecycle)
-- [x] Typed participants via single-line JSON `@{...}`; the gallery shows `queue` and `database`. [Lifecycle example](http://localhost:5173/#sequence-participant-lifecycle)
-- [x] Diagram titles from front matter. [Request example](http://localhost:5173/#sequence-request-response)
+- [x] Explicit and implicit participants, actors, and aliases. [Request example](https://sumi.fmap.dev/#sequence-request-response)
+- [x] Request, return, open/asynchronous, and cross-ended messages; self-messages. [Request](https://sumi.fmap.dev/#sequence-request-response), [parallel](https://sumi.fmap.dev/#sequence-parallel-processing), [lifecycle](https://sumi.fmap.dev/#sequence-participant-lifecycle)
+- [x] Explicit `activate` / `deactivate`, `+` / `-` message activations, and nested activation bars. [Request](https://sumi.fmap.dev/#sequence-request-response), [lifecycle](https://sumi.fmap.dev/#sequence-participant-lifecycle)
+- [x] Notes left/right of a participant or over one/two participants; `<br>` line breaks. [Request example](https://sumi.fmap.dev/#sequence-request-response)
+- [x] Automatic message numbering. [Request example](https://sumi.fmap.dev/#sequence-request-response)
+- [x] `loop`, `alt` / `else`, `opt`, and `break` blocks, including nesting. [Branches example](https://sumi.fmap.dev/#sequence-branches-retries)
+- [x] `par` / `and`, and `critical` / `option` blocks. [Parallel example](https://sumi.fmap.dev/#sequence-parallel-processing)
+- [x] Participant `box` groups and `rect` background regions. [Lifecycle example](https://sumi.fmap.dev/#sequence-participant-lifecycle)
+- [x] Participant creation and destruction. [Lifecycle example](https://sumi.fmap.dev/#sequence-participant-lifecycle)
+- [x] Typed participants via single-line JSON `@{...}`; the gallery shows `queue` and `database`. [Lifecycle example](https://sumi.fmap.dev/#sequence-participant-lifecycle)
+- [x] Diagram titles from front matter. [Request example](https://sumi.fmap.dev/#sequence-request-response)
 - [ ] YAML or multiline participant settings — **rejected**; settings must be single-line JSON. All eight supported types (`participant`, `actor`, `boundary`, `control`, `entity`, `database`, `collections`, `queue`) are listed in [signal.go](../mermaid/internal/sequence/signal.go).
 - [ ] Participant links and menus — **rejected**.
 - [ ] Distinct overlapping `par_over` geometry — **partial**: accepted and drawn as `par`, following the referenced Mermaid implementation's default behavior.
@@ -40,14 +40,14 @@ Additional supported variants with fixture coverage: bidirectional and half arro
 
 ## Flowcharts
 
-- [x] Direction declarations: `TB` / `TD`, `BT`, `LR`, and `RL`. [Decision](http://localhost:5173/#flowchart-decision-flow), [shapes](http://localhost:5173/#flowchart-shapes-connections)
-- [x] Nodes, chained/fan-out links, branch labels, and cycles. [Decision](http://localhost:5173/#flowchart-decision-flow), [nested system](http://localhost:5173/#flowchart-nested-system)
-- [x] Traditional shapes: rectangle, rounded rectangle, stadium, subroutine, cylinder, circle, double circle, diamond, hexagon, asymmetric, two parallelograms, and two trapezoids. [Shapes example](http://localhost:5173/#flowchart-shapes-connections)
-- [x] Solid, dotted, thick, open, bidirectional, circle-ended, and cross-ended connections. [Shapes example](http://localhost:5173/#flowchart-shapes-connections)
-- [x] Nested subgraphs, group titles, direction declarations, and edges crossing boundaries. [Nested system example](http://localhost:5173/#flowchart-nested-system)
-- [x] Quoted text, entities, `<br>` breaks, Markdown bold/italic, and wrapped labels. [Labels example](http://localhost:5173/#flowchart-labels-styles)
-- [x] `classDef`, `class`, `style`, and indexed `linkStyle` for the supported style properties. [Labels example](http://localhost:5173/#flowchart-labels-styles)
-- [x] `@{ shape, label }` metadata for supported shapes; `labelType` selects plain/Markdown label handling. [Labels example](http://localhost:5173/#flowchart-labels-styles)
+- [x] Direction declarations: `TB` / `TD`, `BT`, `LR`, and `RL`. [Decision](https://sumi.fmap.dev/#flowchart-decision-flow), [shapes](https://sumi.fmap.dev/#flowchart-shapes-connections)
+- [x] Nodes, chained/fan-out links, branch labels, and cycles. [Decision](https://sumi.fmap.dev/#flowchart-decision-flow), [nested system](https://sumi.fmap.dev/#flowchart-nested-system)
+- [x] Traditional shapes: rectangle, rounded rectangle, stadium, subroutine, cylinder, circle, double circle, diamond, hexagon, asymmetric, two parallelograms, and two trapezoids. [Shapes example](https://sumi.fmap.dev/#flowchart-shapes-connections)
+- [x] Solid, dotted, thick, open, bidirectional, circle-ended, and cross-ended connections. [Shapes example](https://sumi.fmap.dev/#flowchart-shapes-connections)
+- [x] Nested subgraphs, group titles, direction declarations, and edges crossing boundaries. [Nested system example](https://sumi.fmap.dev/#flowchart-nested-system)
+- [x] Quoted text, entities, `<br>` breaks, Markdown bold/italic, and wrapped labels. [Labels example](https://sumi.fmap.dev/#flowchart-labels-styles)
+- [x] `classDef`, `class`, `style`, and indexed `linkStyle` for the supported style properties. [Labels example](https://sumi.fmap.dev/#flowchart-labels-styles)
+- [x] `@{ shape, label }` metadata for supported shapes; `labelType` selects plain/Markdown label handling. [Labels example](https://sumi.fmap.dev/#flowchart-labels-styles)
 - [ ] Every modern Mermaid shape — **partial**: the traditional shape set and aliases in [metadata.go](../mermaid/internal/flowchart/metadata.go) work; other shape names are **rejected**.
 - [ ] Icon/image nodes and metadata keys `icon`, `img`, `form`, `pos`, `constraint`, `w`, `h` — **rejected**.
 - [ ] Edge animation (`animate`, `animation`, `step`) and subgraph `view` / `algorithm` metadata — **rejected**.
@@ -59,12 +59,12 @@ Additional supported variants with fixture coverage: named edges, invisible link
 
 ## State diagrams
 
-- [x] Initial/final states, aliases, state descriptions, and labeled transitions. [Lifecycle example](http://localhost:5173/#state-lifecycle)
-- [x] Composite states with local start/end nodes and direction declarations. [Composite example](http://localhost:5173/#state-composite-workflow)
-- [x] Concurrent regions separated by `--`. [Composite example](http://localhost:5173/#state-composite-workflow)
-- [x] `<<choice>>`, `<<fork>>`, and `<<join>>`. [Choices example](http://localhost:5173/#state-choices-parallelism)
-- [x] Attached left/right notes, including multiline notes. [Lifecycle example](http://localhost:5173/#state-lifecycle)
-- [x] Class definitions, class assignments, and inline supported styles. [Choices example](http://localhost:5173/#state-choices-parallelism)
+- [x] Initial/final states, aliases, state descriptions, and labeled transitions. [Lifecycle example](https://sumi.fmap.dev/#state-lifecycle)
+- [x] Composite states with local start/end nodes and direction declarations. [Composite example](https://sumi.fmap.dev/#state-composite-workflow)
+- [x] Concurrent regions separated by `--`. [Composite example](https://sumi.fmap.dev/#state-composite-workflow)
+- [x] `<<choice>>`, `<<fork>>`, and `<<join>>`. [Choices example](https://sumi.fmap.dev/#state-choices-parallelism)
+- [x] Attached left/right notes, including multiline notes. [Lifecycle example](https://sumi.fmap.dev/#state-lifecycle)
+- [x] Class definitions, class assignments, and inline supported styles. [Choices example](https://sumi.fmap.dev/#state-choices-parallelism)
 - [ ] Click links and tooltips — **accepted but ignored**.
 - [ ] `scale ... width`, `hide empty description`, floating `note ... as ...`, and a bare `state ID` without a body — **accepted but ignored** as drawing commands.
 - [ ] A literal `<` in a state name, or an empty title/description alongside its non-empty counterpart — **rejected** for the affected forms.
@@ -73,14 +73,14 @@ Source: [grammar](../mermaid/internal/state/doc.go), [ignored statements](../mer
 
 ## Class diagrams
 
-- [x] Classes, attributes, methods, parameters, and return types. [Members example](http://localhost:5173/#class-members)
-- [x] `+`, `-`, `#`, and `~` visibility; static `$` and abstract `*` members; annotations such as `<<interface>>`. [Members example](http://localhost:5173/#class-members)
-- [x] Generic notation using `~T~`. [Members example](http://localhost:5173/#class-members)
-- [x] Inheritance, realization, association, dependency, aggregation, and composition. [Relationships example](http://localhost:5173/#class-relationships)
-- [x] Relation labels, endpoint multiplicities, solid/dashed lines, and direction declarations. [Relationships example](http://localhost:5173/#class-relationships)
-- [x] Nested namespaces and relations between their classes. [Namespaces example](http://localhost:5173/#class-namespaces)
-- [x] Attached and standalone notes. [Namespaces example](http://localhost:5173/#class-namespaces)
-- [x] `classDef`, class assignment, and inline supported styles. [Namespaces example](http://localhost:5173/#class-namespaces)
+- [x] Classes, attributes, methods, parameters, and return types. [Members example](https://sumi.fmap.dev/#class-members)
+- [x] `+`, `-`, `#`, and `~` visibility; static `$` and abstract `*` members; annotations such as `<<interface>>`. [Members example](https://sumi.fmap.dev/#class-members)
+- [x] Generic notation using `~T~`. [Members example](https://sumi.fmap.dev/#class-members)
+- [x] Inheritance, realization, association, dependency, aggregation, and composition. [Relationships example](https://sumi.fmap.dev/#class-relationships)
+- [x] Relation labels, endpoint multiplicities, solid/dashed lines, and direction declarations. [Relationships example](https://sumi.fmap.dev/#class-relationships)
+- [x] Nested namespaces and relations between their classes. [Namespaces example](https://sumi.fmap.dev/#class-namespaces)
+- [x] Attached and standalone notes. [Namespaces example](https://sumi.fmap.dev/#class-namespaces)
+- [x] `classDef`, class assignment, and inline supported styles. [Namespaces example](https://sumi.fmap.dev/#class-namespaces)
 - [ ] Links, callbacks, and click statements as interactions — **accepted but not interactive**; a `clickable` style class may be retained.
 - [ ] A literal `<` in class/member text — **rejected**; use Mermaid's `~T~` generic notation instead of angle brackets.
 - [ ] Blank lines in a class label, or a generic type not beginning with a letter beside a custom label — **rejected** for the affected forms.
@@ -90,12 +90,12 @@ Lollipop interfaces and class aliases also have [parser coverage](../mermaid/int
 
 ## Entity relationship diagrams
 
-- [x] Exactly-one, zero-or-one, zero-or-more, and one-or-more cardinalities. [Cardinalities example](http://localhost:5173/#er-cardinalities)
-- [x] Identifying/non-identifying relationships and role labels. [Cardinalities example](http://localhost:5173/#er-cardinalities)
-- [x] Entities, display aliases, attribute names, and types. [Attributes example](http://localhost:5173/#er-attributes)
-- [x] `PK`, `FK`, `UK`, combined keys, nullable `?` types, and quoted attribute comments. [Attributes example](http://localhost:5173/#er-attributes)
-- [x] Direction declarations, subgraph grouping, and cross-group relationships. [Business model example](http://localhost:5173/#er-business-model)
-- [x] Class definitions/assignments and supported entity/group styles. [Business model example](http://localhost:5173/#er-business-model)
+- [x] Exactly-one, zero-or-one, zero-or-more, and one-or-more cardinalities. [Cardinalities example](https://sumi.fmap.dev/#er-cardinalities)
+- [x] Identifying/non-identifying relationships and role labels. [Cardinalities example](https://sumi.fmap.dev/#er-cardinalities)
+- [x] Entities, display aliases, attribute names, and types. [Attributes example](https://sumi.fmap.dev/#er-attributes)
+- [x] `PK`, `FK`, `UK`, combined keys, nullable `?` types, and quoted attribute comments. [Attributes example](https://sumi.fmap.dev/#er-attributes)
+- [x] Direction declarations, subgraph grouping, and cross-group relationships. [Business model example](https://sumi.fmap.dev/#er-business-model)
+- [x] Class definitions/assignments and supported entity/group styles. [Business model example](https://sumi.fmap.dev/#er-business-model)
 - [ ] Duplicate/blank subgraph names, or a literal `<` in a subgraph title — **rejected**.
 
 Source: [grammar](../mermaid/internal/er/doc.go), [collection](../mermaid/internal/er/collect.go), [placement restrictions](../mermaid/internal/er/place.go), [drawing tests](../mermaid/internal/er/draw_test.go).
@@ -103,10 +103,10 @@ Source: [grammar](../mermaid/internal/er/doc.go), [collection](../mermaid/intern
 ## Shared rendering and limitations
 
 - [x] Top-level front matter `title`; source comments and normalized line endings. [Request source](examples/sequence/request-response.mmd), [preprocessing tests](../mermaid/internal/syntax/front_test.go)
-- [x] Light/dark semantic palettes and custom `scene.Palette` values. Author-specified colors remain fixed across themes. [Gallery](http://localhost:5173/), [paint contract](../scene/paint.go)
+- [x] Light/dark semantic palettes and custom `scene.Palette` values. Author-specified colors remain fixed across themes. [Gallery](https://sumi.fmap.dev/), [paint contract](../scene/paint.go)
 - [x] Pluggable `scene.Measurer` for native backends; nil uses built-in Arial measurements. [Text contract](../scene/text.go)
 - [x] Positioned paths/text, semantic item IDs, and drawing order in `scene.Scene`; SVG export. [Scene contract](../scene/scene.go), [SVG tests](../svg/svg_test.go)
-- [x] Supported styles: `fill`, `stroke`, `color`, `stroke-width`, and `stroke-dasharray`, with the color/value forms the parser reads. [Styled labels example](http://localhost:5173/#flowchart-labels-styles)
+- [x] Supported styles: `fill`, `stroke`, `color`, `stroke-width`, and `stroke-dasharray`, with the color/value forms the parser reads. [Styled labels example](https://sumi.fmap.dev/#flowchart-labels-styles)
 - [x] Line/column errors and `IsUnsupported()` for explicitly recognized unsupported features. Not every unrecognized Mermaid construct is classified as unsupported. [API tests](../mermaid/mermaid_test.go)
 - [ ] Front matter `config`, including layout/theme configuration, and `%%{init}%%` directives — **accepted but ignored**. [Preprocessor](../mermaid/internal/syntax/front.go)
 - [ ] Mermaid theme names, custom CSS, and browser font selection through configuration — **not applied**. Select a sumi palette/measurer in Go instead.

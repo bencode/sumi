@@ -18,7 +18,6 @@ export default defineConfig({
       allow: [
         fileURLToPath(new URL('.', import.meta.url)),
         fileURLToPath(new URL('../docs/examples', import.meta.url)),
-        fileURLToPath(new URL('../docs/compatibility.md', import.meta.url)),
       ],
     },
   },

@@ -1,0 +1,10 @@
+.git
+.agents
+.codex
+out
+priv
+web/node_modules
+web/dist
+.env
+.env.*
+**/.DS_Store
