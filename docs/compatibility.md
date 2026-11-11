@@ -109,7 +109,7 @@ Source: [grammar](../mermaid/internal/er/doc.go), [collection](../mermaid/intern
 - [x] `excludes` and `includes` with dates, weekdays, and `weekends`; `weekday` and `weekend` choices; `inclusiveEndDates`. [Working days example](https://sumi.fmap.dev/#gantt-working-days)
 - [x] `axisFormat` and `tickInterval`, with d3's ticks and en-US labels. [Release](https://sumi.fmap.dev/#gantt-release-plan), [working days](https://sumi.fmap.dev/#gantt-working-days), [axis tests](../mermaid/internal/gantt/axis_test.go)
 - [x] `title`, front matter titles, and multi-line section titles with `<br>`. [Working days example](https://sumi.fmap.dev/#gantt-working-days)
-- [x] The line at the time now, `todayMarker off`, and `todayMarker` styles with supported properties. The time now is `time.Now()` in `time.Local`.
+- [x] The line at the time now, `todayMarker off`, and `todayMarker` styles with supported properties. The time now is `time.Now()` in `time.Local`. [Drawing tests](../mermaid/internal/gantt/draw_test.go)
 - [x] The chart width from `mermaid.Options.Width`; 0 is 1200.
 - [ ] Compact mode (`displayMode: compact`), `topAxis`, and other `gantt` configuration — **accepted but ignored** in front matter and directives. The `topAxis` statement fails, as in Mermaid 12.3.0.
 - [ ] An `opacity` in `todayMarker` — **rejected**, as opacity is in other styles.

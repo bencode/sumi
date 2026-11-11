@@ -154,7 +154,7 @@
         </div>
       {/if}
       {#if previews && status !== 'ready'}<p class="preview-note">Showing the last successful render.</p>{/if}
-      <div class="diagram-scroll" role="region" aria-label={`${example.title} diagram, scroll for full image`} bind:this={frame}>
+      <div class="diagram-scroll" role={previews ? 'region' : undefined} aria-label={previews ? `${example.title} diagram, scroll for full image` : undefined} bind:this={frame}>
         {#if previews}
           <a class="diagram-image" href={dark ? previews.dark : previews.light} target="_blank" rel="noreferrer" aria-label={`Open ${example.title} as a full-size SVG`}>
             <img src={dark ? previews.dark : previews.light} alt={`${example.title}. ${example.description}`} width={previews.width} height={previews.height}>
