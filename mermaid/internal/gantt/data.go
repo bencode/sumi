@@ -21,6 +21,7 @@ type Diagram struct {
 	// keyword and the one space after it.
 	DateFormat, AxisFormat, TickInterval, TodayMarker string
 	TickIntervalAt                                    syntax.Pos // where the last tickInterval is
+	TodayMarkerAt                                     syntax.Pos // where the last todayMarker is
 	// Includes and Excludes are the words of every includes and excludes, lower case,
 	// each once, in the order first written.
 	Includes, Excludes []string

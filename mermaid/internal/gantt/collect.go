@@ -88,7 +88,7 @@ func (b *db) set(s SetStmt) error {
 	case kTickInterval:
 		d.TickInterval, d.TickIntervalAt = s.Value, s.At
 	case kTodayMarker:
-		d.TodayMarker = s.Value
+		d.TodayMarker, d.TodayMarkerAt = s.Value, s.At
 	case kWeekday:
 		d.Weekday = s.Value
 	case kWeekend:

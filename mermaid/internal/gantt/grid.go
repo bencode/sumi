@@ -12,7 +12,8 @@ import (
 // line from the axis up to the grid's top and its label under the axis. Its own line
 // along the axis has a stroke of width 0, so it draws nothing. The ticks are where the
 // time falls, not half a pixel right as d3 draws them on a screen of one device pixel to
-// a CSS pixel.
+// a CSS pixel. d3 writes currentColor on each line, which the stylesheet's gridColor on the
+// tick does not reach, and the ticks are 0.8 opaque: both the lines and the labels are Tick.
 func grid(c chart) []scene.Item {
 	bottom := c.h - topPadding
 	f := scene.Font{Size: 10}
@@ -20,10 +21,10 @@ func grid(c chart) []scene.Item {
 	for _, t := range c.a.Ticks {
 		x := sidePadding + t.X
 		items = append(items, stroked(scene.Point{X: x, Y: bottom}, scene.Point{X: x, Y: gridLineStartPadding},
-			scene.Stroke{Paint: scene.Use(scene.GroupStroke), Width: 1}))
+			scene.Stroke{Paint: scene.Use(scene.Tick), Width: 1}))
 		// The label is 3 under the axis, and dy 1em takes its baseline an em lower.
 		if s := collapsed([]string{t.Label})[0]; s != "" {
-			items = append(items, textOf([]scene.Line{line(c.m, s, f, x, scene.Center, bottom+3+f.Size)}, f, c.m))
+			items = append(items, textOf([]scene.Line{line(c.m, s, f, x, scene.Center, bottom+3+f.Size)}, f, c.m, scene.Use(scene.Tick)))
 		}
 	}
 	return items
@@ -87,7 +88,7 @@ func excludeDays(c chart, zone *time.Location) ([]scene.Item, error) {
 		x0 := c.a.x(dayAt(r[0], zone, 0, 0, 0, 0))
 		x1 := c.a.x(dayAt(r[1], zone, 23, 59, 59, 999))
 		box := scene.Rect{X: x0 + sidePadding, Y: gridLineStartPadding, W: x1 - x0, H: c.h - topPadding - gridLineStartPadding}
-		items = append(items, rect(scene.Mark, box, 0, scene.Use(scene.NoteFill), scene.Stroke{})...)
+		items = append(items, rect(scene.Mark, box, 0, scene.Use(scene.ExcludeFill), scene.Stroke{})...)
 	}
 	return items, nil
 }

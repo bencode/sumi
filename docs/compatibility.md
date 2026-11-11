@@ -13,11 +13,11 @@ Checked against sumi's implementation at [`806adec`](https://github.com/bencode/
 - [x] [State diagrams](#state-diagrams): `stateDiagram` and `stateDiagram-v2`.
 - [x] [Class diagrams](#class-diagrams): `classDiagram` and `classDiagram-v2`.
 - [x] [Entity relationship diagrams](#entity-relationship-diagrams): `erDiagram`.
-- [ ] Gantt diagrams — **internal only**: reading, parsing, and task/date collection exist; the public API has no Gantt layout entry point.
+- [x] [Gantt diagrams](#gantt-diagrams): `gantt`.
 - [ ] Other diagram types, including pie, Git graphs, mind maps, timelines, and user journeys — **rejected** by public diagram dispatch.
 - [ ] LaTeX math — **not implemented**; neither a public math API nor formula rendering in diagram labels is available.
 
-Source: [public dispatch](../mermaid/mermaid.go), [internal Gantt implementation](../mermaid/internal/gantt/doc.go).
+Source: [public dispatch](../mermaid/mermaid.go).
 
 ## Sequence diagrams
 
@@ -100,6 +100,23 @@ Lollipop interfaces and class aliases also have [parser coverage](../mermaid/int
 
 Source: [grammar](../mermaid/internal/er/doc.go), [collection](../mermaid/internal/er/collect.go), [placement restrictions](../mermaid/internal/er/place.go), [drawing tests](../mermaid/internal/er/draw_test.go).
 
+## Gantt diagrams
+
+- [x] Sections, tasks with ids, start dates, `after` and `until` dependencies, and durations; tasks with no start follow the previous one. [Reading tests](../mermaid/internal/gantt/read_test.go)
+- [x] `dateFormat` with dayjs's tokens, and start dates in no format read as JavaScript's `new Date` reads them. [Reading tests](../mermaid/internal/gantt/read_test.go)
+- [x] `done`, `active`, and `crit` tasks, milestones, and `vert` markers, each colored by its status. [Drawing tests](../mermaid/internal/gantt/draw_test.go)
+- [x] `excludes` and `includes` with dates, weekdays, and `weekends`; `weekday` and `weekend` choices; `inclusiveEndDates`.
+- [x] `axisFormat` and `tickInterval`, with d3's ticks and en-US labels. [Axis tests](../mermaid/internal/gantt/axis_test.go)
+- [x] `title`, front matter titles, and multi-line section titles with `<br>`.
+- [x] The line at the time now, `todayMarker off`, and `todayMarker` styles with supported properties. The time now is `time.Now()` in `time.Local`.
+- [x] The chart width from `mermaid.Options.Width`; 0 is 1200.
+- [ ] Compact mode (`displayMode: compact`), `topAxis`, and other `gantt` configuration — **accepted but ignored** in front matter and directives. The `topAxis` statement fails, as in Mermaid 12.3.0.
+- [ ] An `opacity` in `todayMarker` — **rejected**, as opacity is in other styles.
+- [ ] Click links and callbacks — **accepted but not interactive**; a clickable task's text is bold and in the link color.
+- [ ] Times beyond what a JavaScript `Date` holds — **rejected**.
+
+Source: [reading and drawing](../mermaid/internal/gantt/doc.go).
+
 ## Shared rendering and limitations
 
 - [x] Top-level front matter `title`; source comments and normalized line endings. [Request source](examples/sequence/request-response.mmd), [preprocessing tests](../mermaid/internal/syntax/front_test.go)
@@ -120,6 +137,6 @@ Source: [grammar](../mermaid/internal/er/doc.go), [collection](../mermaid/intern
 
 ## Example coverage
 
-The 17 examples cover every checked common-feature group in the five diagram sections above. They combine related features rather than repeat one diagram for each syntax spelling. Additional variants and unusual inputs are linked to existing tests or source instead of expanding the gallery.
+The 17 examples cover every checked common-feature group in the first five diagram sections above; Gantt diagrams have no example yet and link their tests instead. They combine related features rather than repeat one diagram for each syntax spelling. Additional variants and unusual inputs are linked to existing tests or source instead of expanding the gallery.
 
 This is coverage of this checklist's common scenarios, **not** a measured share of user workloads, a Mermaid syntax compatibility percentage, or a guarantee that every combination works. When adding a supported feature, update its checklist entry and either extend a relevant example or link the behavior test that demonstrates it.

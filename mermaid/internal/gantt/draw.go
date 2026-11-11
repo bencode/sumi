@@ -11,6 +11,8 @@ import (
 
 	"github.com/bencode/sumi/mermaid/internal/canvas"
 	"github.com/bencode/sumi/mermaid/internal/label"
+	lines "github.com/bencode/sumi/mermaid/internal/line"
+	"github.com/bencode/sumi/mermaid/internal/style"
 	"github.com/bencode/sumi/mermaid/internal/syntax"
 	"github.com/bencode/sumi/scene"
 )
@@ -46,23 +48,28 @@ func Layout(body, title string, m scene.Measurer, env Env, width float64) (*scen
 	if err != nil {
 		return nil, err
 	}
+	marker, err := todayStyle(d)
+	if err != nil {
+		return nil, err
+	}
 	if d.Title != "" {
 		title = syntax.Decode(d.Title)
 	}
 	items := slices.Concat(excluded, grid(c), sectionRows(c), bars(c), taskTexts(c), sectionTitles(c),
-		today(c, env.Now), drawTitle(c, title))
+		today(c, env.Now, marker), drawTitle(c, title))
 	return &scene.Scene{Width: width, Height: c.h, Items: items}, nil
 }
 
-// A chart is what each part of a drawing reads: the diagram and its axis, its size, and
-// its tasks in the order they are drawn.
+// A chart is what each part of a drawing reads: the diagram and its axis, its size, its
+// tasks in the order they are drawn, and its categories.
 type chart struct {
-	d     *Diagram
-	a     Axis
-	m     scene.Measurer
-	w, h  float64
-	tasks []Task
-	rows  int // the tasks that are not verts, a row each
+	d          *Diagram
+	a          Axis
+	m          scene.Measurer
+	w, h       float64
+	tasks      []Task
+	rows       int      // the tasks that are not verts, a row each
+	categories []string // the sections of those tasks, as categoriesOf gives them
 }
 
 func chartOf(d *Diagram, a Axis, m scene.Measurer, w float64) chart {
@@ -72,7 +79,21 @@ func chartOf(d *Diagram, a Axis, m scene.Measurer, w float64) chart {
 			rows++
 		}
 	}
-	return chart{d: d, a: a, m: m, w: w, h: 2*topPadding + float64(rows*rowGap), tasks: drawOrder(d.Tasks), rows: rows}
+	return chart{d: d, a: a, m: m, w: w, h: 2*topPadding + float64(rows*rowGap), tasks: drawOrder(d.Tasks), rows: rows,
+		categories: categoriesOf(d.Tasks)}
+}
+
+// categoriesOf are the sections of the tasks but the verts, in the order written, each
+// once, as checkUnique leaves them. It asks hasOwnProperty, and setting __proto__ makes no
+// property of an object's own, so that name is in once for each of its tasks.
+func categoriesOf(tasks []Task) []string {
+	var out []string
+	for _, t := range tasks {
+		if !t.Vert && (t.Section == "__proto__" || !slices.Contains(out, t.Section)) {
+			out = append(out, t.Section)
+		}
+	}
+	return out
 }
 
 // drawOrder is the tasks as drawn: by start, as taskCompare sorts them, then the verts
@@ -118,13 +139,16 @@ func ms(t *time.Time) float64 {
 
 // sectionRows are the backgrounds of the rows, one for each task but the verts, in the
 // order drawn: a task's row is its Order, which no other task shares outside the
-// compact mode.
+// compact mode. A row's style is the place of its section among the categories, the
+// first that matches, of four, which take three colors.
 func sectionRows(c chart) []scene.Item {
+	fills := [4]scene.Token{scene.SectionFill, scene.SectionAltFill, scene.SectionFill2, scene.SectionAltFill}
 	var items []scene.Item
 	for _, t := range c.tasks {
 		if !t.Vert {
 			r := scene.Rect{X: 0, Y: float64(t.Order*rowGap+topPadding) - 2, W: c.w - sidePadding/2.0, H: rowGap}
-			items = append(items, rect(scene.Mark, r, 0, scene.Use(scene.GroupFill), scene.Stroke{})...)
+			fill := fills[slices.Index(c.categories, t.Section)%len(fills)]
+			items = append(items, rect(scene.Mark, r, 0, scene.Use(fill), scene.Stroke{})...)
 		}
 	}
 	return items
@@ -174,7 +198,7 @@ func sectionTitles(c chart) []scene.Item {
 			}
 		}
 		if lines != nil {
-			items = append(items, textOf(lines, f, c.m))
+			items = append(items, textOf(lines, f, c.m, scene.Use(scene.TextColor)))
 		}
 		before += heights[name]
 	}
@@ -192,15 +216,36 @@ func arrayIndex(s string) (uint64, bool) {
 }
 
 // today is the line at the time now, from the title's margin to as far from the bottom,
-// unless the diagram turns it off. It is drawn wherever the time falls, the canvas or
-// not.
-func today(c chart, now time.Time) []scene.Item {
+// unless the diagram turns it off, in what its style sets over the theme's. It is drawn
+// wherever the time falls, the canvas or not.
+func today(c chart, now time.Time, marker style.Styling) []scene.Item {
 	if c.d.TodayMarker == "off" {
 		return nil
 	}
 	x := lacuna(c.a.x(float64(now.UnixMilli())) + sidePadding)
-	return []scene.Item{stroked(scene.Point{X: x, Y: titleTopMargin}, scene.Point{X: x, Y: c.h - titleTopMargin},
-		scene.Stroke{Paint: scene.Use(scene.NoteStroke), Width: 2})}
+	pen := marker.Pen(scene.TodayLine, 2)
+	it := stroked(scene.Point{X: x, Y: titleTopMargin}, scene.Point{X: x, Y: c.h - titleTopMargin}, pen)
+	if marker.Dashed {
+		it.Paths = lines.Dashed(it.Paths[0].Segs, marker.Dash, pen, 0)
+	}
+	if it.Paths == nil { // dashes of no length but gaps
+		return nil
+	}
+	return []scene.Item{it}
+}
+
+// todayStyle is what todayMarker sets on the line at the time now: Mermaid writes it into
+// the line's style attribute, its commas semicolons, over the today class. What sumi does
+// not draw is an error at the last todayMarker.
+func todayStyle(d *Diagram) (style.Styling, error) {
+	if d.TodayMarker == "off" {
+		return style.Styling{}, nil
+	}
+	styles := []string{strings.ReplaceAll(d.TodayMarker, ",", ";")}
+	if err := style.Check(d.TodayMarkerAt, styles); err != nil {
+		return style.Styling{}, err
+	}
+	return style.Of(style.Declarations(styles)), nil
 }
 
 // drawTitle is the title, centered over the diagram on the title's margin.
@@ -210,7 +255,7 @@ func drawTitle(c chart, title string) []scene.Item {
 		return nil
 	}
 	f := scene.Font{Size: titleSize}
-	return []scene.Item{textOf([]scene.Line{line(c.m, s, f, c.w/2, scene.Center, titleTopMargin)}, f, c.m)}
+	return []scene.Item{textOf([]scene.Line{line(c.m, s, f, c.w/2, scene.Center, titleTopMargin)}, f, c.m, scene.Use(scene.TextColor))}
 }
 
 // collapsed is the lines of one text as SVG sets them: a tab or a line break is a space,
@@ -254,14 +299,14 @@ func line(m scene.Measurer, s string, f scene.Font, x float64, align scene.Align
 	return scene.Line{S: s, X: x, Baseline: baseline}
 }
 
-// textOf is a label of lines in f, its box that of the lines.
-func textOf(lines []scene.Line, f scene.Font, m scene.Measurer) scene.Item {
+// textOf is a label of lines in f and paint, its box that of the lines.
+func textOf(lines []scene.Line, f scene.Font, m scene.Measurer, paint scene.Paint) scene.Item {
 	ascent, descent := label.Extent(m, f)
 	var box scene.Rect
 	for _, l := range lines {
 		box = canvas.Union(box, scene.Rect{X: l.X, Y: l.Baseline - ascent, W: m.Measure(l.S, f).Width, H: ascent + descent})
 	}
-	return scene.Item{Kind: scene.Label, Box: box, Texts: []scene.Text{{Font: f, Lines: lines, Paint: scene.Use(scene.TextColor)}}}
+	return scene.Item{Kind: scene.Label, Box: box, Texts: []scene.Text{{Font: f, Lines: lines, Paint: paint}}}
 }
 
 // rect is r with its corners rounded by radius, as a rect element draws it: at 0 for an
