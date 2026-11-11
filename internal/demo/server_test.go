@@ -117,7 +117,7 @@ func TestRenderErrors(t *testing.T) {
 		{"multiple JSON values", `{} {}`, 400, 0, 0, false},
 		{"empty source", `{"source":""}`, 400, 0, 0, false},
 		{"source error after front matter", `{"source":"---\ntitle: x\n---\nsequenceDiagram\nloop\nend\nend"}`, 400, 7, 1, false},
-		{"unsupported diagram", `{"source":"pie\n  a: 1"}`, 422, 1, 1, true},
+		{"unsupported diagram", `{"source":"journey\n  title T"}`, 422, 1, 1, true},
 		{"empty scene", `{"source":"sequenceDiagram"}`, 422, 0, 0, false},
 		{"large body", `{"source":"` + strings.Repeat("a", 64<<10) + `"}`, 413, 0, 0, false},
 	} {

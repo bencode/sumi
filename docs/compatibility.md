@@ -14,7 +14,8 @@ Checked against sumi's implementation at [`806adec`](https://github.com/bencode/
 - [x] [Class diagrams](#class-diagrams): `classDiagram` and `classDiagram-v2`.
 - [x] [Entity relationship diagrams](#entity-relationship-diagrams): `erDiagram`.
 - [x] [Gantt diagrams](#gantt-diagrams): `gantt`.
-- [ ] Other diagram types, including pie, Git graphs, mind maps, timelines, and user journeys — **rejected** by public diagram dispatch.
+- [x] [Pie charts](#pie-charts): `pie`.
+- [ ] Other diagram types, including Git graphs, mind maps, timelines, and user journeys — **rejected** by public diagram dispatch.
 - [ ] LaTeX math — **not implemented**; neither a public math API nor formula rendering in diagram labels is available.
 
 Source: [public dispatch](../mermaid/mermaid.go).
@@ -117,6 +118,21 @@ Source: [grammar](../mermaid/internal/er/doc.go), [collection](../mermaid/intern
 
 Source: [reading and drawing](../mermaid/internal/gantt/doc.go).
 
+## Pie charts
+
+- [x] Quoted labels with escapes, and number values; a label written again is passed over, and a negative value fails. [Reading tests](../mermaid/internal/pie/read_test.go)
+- [x] Slices clockwise from the top, each share's percentage on it, and a legend to the right with every section. [Drawing tests](../mermaid/internal/pie/draw_test.go)
+- [x] A section under 1% of the total is left out of the pie but stays in the legend, keeping its color.
+- [x] `showData`, which writes each value after its label in the legend.
+- [x] `title`, front matter titles, and titles wider than the chart, which widen the drawing.
+- [x] `accTitle` and `accDescr` — read, not drawn, as for other diagrams.
+- [ ] `textPosition`, `donutHole`, `legendPosition`, `highlightSlice`, and other `pie` configuration — **accepted but ignored** in front matter and directives. A slice with an empty label is drawn larger, as Mermaid's default `highlightSlice` is empty.
+- [ ] Mermaid's see-through slices — **not applied**; the theme's colors are opaque.
+- [ ] Values at or past 1e21 or below 1e-6, and values too large for a number — **partial**: written in the legend in full and as `+Inf`, not with an exponent and as `Infinity`.
+- [ ] A `<` in a title or a description — **rejected**.
+
+Source: [reading and drawing](../mermaid/internal/pie/doc.go).
+
 ## Shared rendering and limitations
 
 - [x] Top-level front matter `title`; source comments and normalized line endings. [Request source](examples/sequence/request-response.mmd), [preprocessing tests](../mermaid/internal/syntax/front_test.go)
@@ -137,6 +153,6 @@ Source: [reading and drawing](../mermaid/internal/gantt/doc.go).
 
 ## Example coverage
 
-The 17 examples cover every checked common-feature group in the first five diagram sections above; Gantt diagrams have no example yet and link their tests instead. They combine related features rather than repeat one diagram for each syntax spelling. Additional variants and unusual inputs are linked to existing tests or source instead of expanding the gallery.
+The 17 examples cover every checked common-feature group in the first five diagram sections above; Gantt diagrams and pie charts have no example yet and link their tests instead. They combine related features rather than repeat one diagram for each syntax spelling. Additional variants and unusual inputs are linked to existing tests or source instead of expanding the gallery.
 
 This is coverage of this checklist's common scenarios, **not** a measured share of user workloads, a Mermaid syntax compatibility percentage, or a guarantee that every combination works. When adding a supported feature, update its checklist entry and either extend a relevant example or link the behavior test that demonstrates it.

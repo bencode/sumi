@@ -19,6 +19,7 @@ func TestLayout(t *testing.T) {
 		{"a state diagram", "---\ntitle: States\n---\nstateDiagram-v2\n  [*] --> A\n  A --> [*]", "States", 3, 2},
 		{"flowchart-elk, which Mermaid 12 draws as a flowchart", "flowchart-elk TD\n  A --> B", "", 2, 1},
 		{"a gantt diagram", "---\ntitle: Plan\n---\ngantt\ndateFormat YYYY-MM-DD\nA :2014-01-01, 3d", "Plan", 1, 0},
+		{"a pie chart", "---\ntitle: Pets\n---\npie\n  \"Dogs\": 3\n  \"Cats\": 2", "Pets", 0, 0},
 	}
 	for _, tt := range tests {
 		s, err := mermaid.Layout(tt.src, mermaid.Options{})
@@ -61,7 +62,7 @@ func TestLayoutErrors(t *testing.T) {
 		name, src, want string
 		unsupported     bool
 	}{
-		{"an unknown kind", "%% a comment\npie\n  \"a\": 1", `line 2:1: diagram type "pie" is not supported yet`, true},
+		{"an unknown kind", "%% a comment\njourney\n  title T", `line 2:1: diagram type "journey" is not supported yet`, true},
 		{"a mistake, counted from the top of the front matter", "---\ntitle: x\n---\nsequenceDiagram\nloop\nend\nend",
 			`line 7:1: unexpected "end", expected a statement`, false},
 		{"a link to an edge's id, which Mermaid's ELK does not find", "flowchart LR\n  A e1@--> B\n  B --> e1",

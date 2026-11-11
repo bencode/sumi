@@ -4,6 +4,7 @@ import (
 	"math"
 	"slices"
 
+	"github.com/bencode/sumi/mermaid/internal/label"
 	"github.com/bencode/sumi/mermaid/internal/syntax"
 	"github.com/bencode/sumi/scene"
 )
@@ -103,7 +104,7 @@ func turned(it scene.Item, o scene.Point) scene.Item {
 func taskTexts(c chart) []scene.Item {
 	var items []scene.Item
 	for _, t := range c.tasks {
-		s := collapsed([]string{syntax.Decode(t.Text)})[0]
+		s := label.Collapsed([]string{syntax.Decode(t.Text)})[0]
 		if s == "" {
 			continue
 		}
@@ -153,7 +154,7 @@ func textColor(t Task, outside bool) scene.Token {
 // worked out all the same.
 func textAt(t Task, c chart) (float64, scene.Align, bool) {
 	start, end := c.a.x(ms(t.Start)), c.a.x(ms(t.End))
-	width := c.m.Measure(collapsed([]string{syntax.Placeholders(t.Text)})[0], scene.Font{Size: fontSize}).Width
+	width := c.m.Measure(label.Collapsed([]string{syntax.Placeholders(t.Text)})[0], scene.Font{Size: fontSize}).Width
 	place := func(from, to float64) (float64, scene.Align) {
 		if !(width > to-from) {
 			return (to-from)/2 + from + sidePadding, scene.Center
