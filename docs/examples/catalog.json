@@ -119,6 +119,40 @@
           "description": "Grouped entities, a left-to-right direction, cross-group relationships, attributes, and styles applied to entities and groups."
         }
       ]
+    },
+    {
+      "id": "gantt",
+      "title": "Gantt diagrams",
+      "description": "Lay work out over time: sections, dependencies, milestones, and the days that count.",
+      "examples": [
+        {
+          "id": "release-plan",
+          "title": "A release, week by week",
+          "description": "Sections, tasks that follow others, done, active, and critical work, a milestone, and dates on the axis."
+        },
+        {
+          "id": "working-days",
+          "title": "Working days only",
+          "description": "Weekends left out, a tick for every day, a marker on a day, a task that runs until another, and a two-line section title."
+        }
+      ]
+    },
+    {
+      "id": "pie",
+      "title": "Pie charts",
+      "description": "Show how a whole divides, each share written on its slice.",
+      "examples": [
+        {
+          "id": "time-spent",
+          "title": "Where the week goes",
+          "description": "A title, and each value written in the legend."
+        },
+        {
+          "id": "survey",
+          "title": "Thirteen answers",
+          "description": "A front matter title, colors that come round again, and a share too small for the pie that stays in the legend."
+        }
+      ]
     }
   ]
 }

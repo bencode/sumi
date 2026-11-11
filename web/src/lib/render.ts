@@ -16,11 +16,12 @@ export type RenderResult =
   | { ok: true; data: RenderResponse }
   | { ok: false; error: RenderError }
 
-export async function renderSource(source: string, signal: AbortSignal): Promise<RenderResult> {
+// width is how wide a gantt diagram is drawn: the preview's, as Mermaid fills its element.
+export async function renderSource(source: string, width: number, signal: AbortSignal): Promise<RenderResult> {
   const response = await fetch('/api/render', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ source }),
+    body: JSON.stringify({ source, width }),
     signal,
   })
   if (response.ok) return { ok: true, data: await response.json() as RenderResponse }
