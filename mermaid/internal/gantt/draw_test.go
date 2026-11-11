@@ -1,7 +1,9 @@
 package gantt
 
 import (
+	"errors"
 	"math"
+	"reflect"
 	"testing"
 	"time"
 
@@ -129,5 +131,59 @@ func TestTheLastRunOfExcludedDaysIsNotDrawn(t *testing.T) {
 	want := []scene.Rect{{X: 198, Y: 35, W: 247, H: 39}, {X: 1062, Y: 35, W: 246, H: 39}}
 	if len(runs) != len(want) || !nearBox(runs[0], want[0]) || !nearBox(runs[1], want[1]) {
 		t.Errorf("excluded days %v, want %v", runs, want)
+	}
+}
+
+// The color of a task's text follows the !important rules of its classes. Text outside a
+// done bar is on the background, clickable or not, a vert's too, while clickable text in
+// it is a link; an active, crit vert's text is the status's, not the vert's.
+func TestATaskTextIsColoredByItsClasses(t *testing.T) {
+	const link = "\nclick a1 href \"https://example.com\""
+	for _, c := range []struct {
+		src, text string
+		width     float64
+		want      scene.Token
+	}{
+		{"A rather long text that does not fit :done, a1, 2014-01-01, 1d\nB :2014-01-01, 30d" + link,
+			"A rather long text that does not fit", 1200, scene.TextColor},
+		{"Done link :done, a1, 2014-01-01, 30d\nB :2014-01-01, 1d" + link, "Done link", 740, scene.LinkText},
+		{"V :active, crit, vert, v1, 2014-01-10, 0d\nB :2014-01-01, 30d", "V", 740, scene.StatusTaskText},
+		{"V :done, vert, v1, 2014-01-10, 0d\nB :2014-01-01, 30d", "V", 1200, scene.TextColor},
+	} {
+		s := drawn(t, "gantt\ndateFormat YYYY-MM-DD\nsection S\n"+c.src, c.width)
+		if p := textPaint(t, s, c.text); p != scene.Use(c.want) {
+			t.Errorf("%q painted %+v, want token %d", c.text, p, c.want)
+		}
+	}
+}
+
+// textPaint is the paint of the text that reads text.
+func textPaint(t *testing.T, s *scene.Scene, text string) scene.Paint {
+	t.Helper()
+	for _, it := range s.Items {
+		for _, tx := range it.Texts {
+			if len(tx.Lines) == 1 && tx.Lines[0].S == text {
+				return tx.Paint
+			}
+		}
+	}
+	t.Fatalf("no text %q", text)
+	return scene.Paint{}
+}
+
+// todayMarker styles the line at the time now over the theme, its commas semicolons. An
+// opacity sumi does not draw, and says so at the last todayMarker.
+func TestTodayMarkerStylesTheLine(t *testing.T) {
+	s := drawn(t, "gantt\ntodayMarker stroke-width:5px,stroke:#0f0", 1200)
+	want := scene.Stroke{Paint: scene.Fixed(scene.Color{G: 255, A: 255}), Width: 5}
+	// With no title, the line is drawn last.
+	if got := s.Items[len(s.Items)-1].Paths[0].Stroke; !reflect.DeepEqual(got, want) {
+		t.Errorf("today line %+v, want %+v", got, want)
+	}
+	body, title := syntax.Prepare("gantt\ntodayMarker stroke:#0f0\ntodayMarker stroke:#00f,opacity:0.5")
+	_, err := Layout(body, title, scene.Arial, Env{Now: time.Now(), Zone: time.UTC}, 1200)
+	var e *syntax.Error
+	if !errors.As(err, &e) || !e.IsUnsupported() || e.Line != 3 {
+		t.Errorf("opacity: %v, want unsupported at line 3", err)
 	}
 }

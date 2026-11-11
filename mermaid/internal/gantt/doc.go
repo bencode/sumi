@@ -34,4 +34,11 @@
 // the width given and as high as its rows. Where a task's text goes, in its bar or beside
 // it, hangs on its width; the renderer measures it with its entity codes still set aside.
 // Attributes that are NaN, of tasks with no times, are taken as SVG takes them.
+//
+// The colors are the theme's tokens, chosen as Mermaid's stylesheet chooses its variables:
+// a row by the place of its section among the sections, of four styles in three colors; a
+// bar by its status, active over done, crit or not; a task's text by the !important rules
+// of its classes, the more specific and then the later winning. The grid's lines and
+// labels share one token, as currentColor and the ticks' opacity make them alike. What
+// todayMarker sets is drawn over the theme, but not an opacity, which is not supported.
 package gantt

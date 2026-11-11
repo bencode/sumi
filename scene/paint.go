@@ -21,6 +21,27 @@ const (
 	NoteStroke
 	Background // the canvas the diagram is drawn on
 	Highlight  // a background that sets part of a diagram apart: a sequence diagram's rect
+
+	// A gantt diagram's. The sections' rows and the ticks are see-through, over the grid
+	// and the excluded days.
+	SectionFill      // the rows of the first section and every fourth after
+	SectionFill2     // the rows of the third section and every fourth after
+	SectionAltFill   // the rows of the sections between
+	TaskFill         // a task's bar
+	TaskStroke       // the outline of a task's bar
+	ActiveTaskFill   // an active task's bar, crit or not
+	ActiveTaskStroke // the outline of an active task's bar
+	DoneTaskFill     // a done task's bar, crit or not
+	DoneTaskStroke   // the outline of a done task's bar
+	CritTaskFill     // a crit task's bar
+	CritTaskStroke   // the outline of a crit task's bar, active, done or neither
+	TaskText         // the text in a task's bar or a crit task's
+	StatusTaskText   // the text in an active or a done task's bar, and beside an active one's
+	LinkText         // the text of a task a click statement names
+	VertLine         // a vert's line and its text
+	TodayLine        // the line at the time now
+	ExcludeFill      // the days a diagram excludes
+	Tick             // the grid's lines and their labels
 )
 
 // A Paint is how something is filled or stroked: in the theme's color for
@@ -54,6 +75,13 @@ func rgb(hex uint32) Color {
 	return Color{uint8(hex >> 16), uint8(hex >> 8), uint8(hex), 255}
 }
 
+// rgba is the color hex, opacity of 255 opaque.
+func rgba(hex uint32, opacity uint8) Color {
+	c := rgb(hex)
+	c.A = opacity
+	return c
+}
+
 // Light is sumi's own theme on a light background.
 var Light = Palette{
 	TextColor:   rgb(0x1f2328),
@@ -66,6 +94,25 @@ var Light = Palette{
 	NoteStroke:  rgb(0xd4a72c),
 	Background:  rgb(0xffffff),
 	Highlight:   rgb(0xddf4ff),
+
+	SectionFill:      rgba(0x54aeff, 26),
+	SectionFill2:     rgba(0xd4a72c, 26),
+	SectionAltFill:   rgba(0xffffff, 51),
+	TaskFill:         rgb(0x80ccff),
+	TaskStroke:       rgb(0x0969da),
+	ActiveTaskFill:   rgb(0xddf4ff),
+	ActiveTaskStroke: rgb(0x0969da),
+	DoneTaskFill:     rgb(0xd0d7de),
+	DoneTaskStroke:   rgb(0x8c959f),
+	CritTaskFill:     rgb(0xffaba8),
+	CritTaskStroke:   rgb(0xcf222e),
+	TaskText:         rgb(0x1f2328),
+	StatusTaskText:   rgb(0x1f2328),
+	LinkText:         rgb(0x0550ae),
+	VertLine:         rgb(0x8250df),
+	TodayLine:        rgb(0xcf222e),
+	ExcludeFill:      rgb(0xeaeef2),
+	Tick:             rgba(0x1f2328, 204),
 }
 
 // Dark is sumi's own theme on a dark background.
@@ -80,6 +127,25 @@ var Dark = Palette{
 	NoteStroke:  rgb(0x9e6a03),
 	Background:  rgb(0x0d1117),
 	Highlight:   rgb(0x132339),
+
+	SectionFill:      rgba(0x388bfd, 26),
+	SectionFill2:     rgba(0xbb8009, 26),
+	SectionAltFill:   rgba(0x0d1117, 51),
+	TaskFill:         rgb(0x1f6feb),
+	TaskStroke:       rgb(0x58a6ff),
+	ActiveTaskFill:   rgb(0x0c2d6b),
+	ActiveTaskStroke: rgb(0x388bfd),
+	DoneTaskFill:     rgb(0x30363d),
+	DoneTaskStroke:   rgb(0x6e7681),
+	CritTaskFill:     rgb(0x8e1519),
+	CritTaskStroke:   rgb(0xf85149),
+	TaskText:         rgb(0xffffff),
+	StatusTaskText:   rgb(0xe6edf3),
+	LinkText:         rgb(0xa5d6ff),
+	VertLine:         rgb(0xa371f7),
+	TodayLine:        rgb(0xf85149),
+	ExcludeFill:      rgb(0x21262d),
+	Tick:             rgba(0xe6edf3, 204),
 }
 
 // TextOn is black or white, whichever contrasts more with fill: for a label

@@ -18,6 +18,7 @@ func TestLayout(t *testing.T) {
 		{"a flowchart", "---\ntitle: Flow\n---\nflowchart LR\n  A --> B --> C", "Flow", 3, 2},
 		{"a state diagram", "---\ntitle: States\n---\nstateDiagram-v2\n  [*] --> A\n  A --> [*]", "States", 3, 2},
 		{"flowchart-elk, which Mermaid 12 draws as a flowchart", "flowchart-elk TD\n  A --> B", "", 2, 1},
+		{"a gantt diagram", "---\ntitle: Plan\n---\ngantt\ndateFormat YYYY-MM-DD\nA :2014-01-01, 3d", "Plan", 1, 0},
 	}
 	for _, tt := range tests {
 		s, err := mermaid.Layout(tt.src, mermaid.Options{})
@@ -39,6 +40,18 @@ func TestLayout(t *testing.T) {
 		})
 		if !hasTitle || s.Width <= 0 || s.Height <= 0 || tt.nodes > 0 && (count(scene.Node) != tt.nodes || count(scene.Edge) != tt.edges) {
 			t.Errorf("%s: scene %vx%v, %d nodes, %d edges, title shown: %v", tt.name, s.Width, s.Height, count(scene.Node), count(scene.Edge), hasTitle)
+		}
+	}
+}
+
+// A gantt diagram is as wide as the options say, 1200 where they do not.
+func TestGanttWidth(t *testing.T) {
+	for _, w := range []struct{ given, want float64 }{{0, 1200}, {800, 800}} {
+		s, err := mermaid.Layout("gantt\ndateFormat YYYY-MM-DD\nA :2014-01-01, 3d", mermaid.Options{Width: w.given})
+		if err != nil {
+			t.Errorf("width %v: %v", w.given, err)
+		} else if s.Width != w.want {
+			t.Errorf("width %v: scene %v wide, want %v", w.given, s.Width, w.want)
 		}
 	}
 }
