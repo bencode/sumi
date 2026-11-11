@@ -16,7 +16,8 @@ sumi (墨, ink) lays out Mermaid diagrams in pure Go. It returns paths and posit
 - [x] Class diagrams (`classDiagram`, `classDiagram-v2`)
 - [x] Entity relationship diagrams (`erDiagram`)
 - [x] Gantt diagrams (`gantt`)
-- [ ] Pie and other Mermaid diagram types
+- [x] Pie charts (`pie`)
+- [ ] Other Mermaid diagram types
 
 ## Install
 

@@ -4,6 +4,7 @@ import (
 	"math"
 	"time"
 
+	"github.com/bencode/sumi/mermaid/internal/label"
 	"github.com/bencode/sumi/mermaid/internal/syntax"
 	"github.com/bencode/sumi/scene"
 )
@@ -23,7 +24,7 @@ func grid(c chart) []scene.Item {
 		items = append(items, stroked(scene.Point{X: x, Y: bottom}, scene.Point{X: x, Y: gridLineStartPadding},
 			scene.Stroke{Paint: scene.Use(scene.Tick), Width: 1}))
 		// The label is 3 under the axis, and dy 1em takes its baseline an em lower.
-		if s := collapsed([]string{t.Label})[0]; s != "" {
+		if s := label.Collapsed([]string{t.Label})[0]; s != "" {
 			items = append(items, textOf([]scene.Line{line(c.m, s, f, x, scene.Center, bottom+3+f.Size)}, f, c.m, scene.Use(scene.Tick)))
 		}
 	}

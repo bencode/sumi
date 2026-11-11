@@ -42,6 +42,24 @@ const (
 	TodayLine        // the line at the time now
 	ExcludeFill      // the days a diagram excludes
 	Tick             // the grid's lines and their labels
+
+	// A pie chart's. PieFill1 to PieFill12 color the slices in turn, as the sections are
+	// written, and their squares in the legend.
+	PieFill1
+	PieFill2
+	PieFill3
+	PieFill4
+	PieFill5
+	PieFill6
+	PieFill7
+	PieFill8
+	PieFill9
+	PieFill10
+	PieFill11
+	PieFill12
+	PieStroke      // the lines about the slices
+	PieOuterStroke // the circle about the pie
+	PieText        // a slice's percentage
 )
 
 // A Paint is how something is filled or stroked: in the theme's color for
@@ -113,6 +131,22 @@ var Light = Palette{
 	TodayLine:        rgb(0xcf222e),
 	ExcludeFill:      rgb(0xeaeef2),
 	Tick:             rgba(0x1f2328, 204),
+
+	PieFill1:       rgb(0xb6e3ff),
+	PieFill2:       rgb(0xfff8c5),
+	PieFill3:       rgb(0xd8b9ff),
+	PieFill4:       rgb(0xaceebb),
+	PieFill5:       rgb(0xffd8b5),
+	PieFill6:       rgb(0xffcecb),
+	PieFill7:       rgb(0x80ccff),
+	PieFill8:       rgb(0xf8e3a1),
+	PieFill9:       rgb(0xc297ff),
+	PieFill10:      rgb(0x6fdd8b),
+	PieFill11:      rgb(0xffb77c),
+	PieFill12:      rgb(0xffaba8),
+	PieStroke:      rgb(0xffffff),
+	PieOuterStroke: rgb(0x8c959f),
+	PieText:        rgb(0x1f2328),
 }
 
 // Dark is sumi's own theme on a dark background.
@@ -146,6 +180,22 @@ var Dark = Palette{
 	TodayLine:        rgb(0xf85149),
 	ExcludeFill:      rgb(0x21262d),
 	Tick:             rgba(0xe6edf3, 204),
+
+	PieFill1:       rgb(0x0d419d),
+	PieFill2:       rgb(0x693e00),
+	PieFill3:       rgb(0x553098),
+	PieFill4:       rgb(0x0f5323),
+	PieFill5:       rgb(0x762d0a),
+	PieFill6:       rgb(0x8e1519),
+	PieFill7:       rgb(0x1158c7),
+	PieFill8:       rgb(0x845306),
+	PieFill9:       rgb(0x6e40c9),
+	PieFill10:      rgb(0x196c2e),
+	PieFill11:      rgb(0x9b4215),
+	PieFill12:      rgb(0xb62324),
+	PieStroke:      rgb(0x0d1117),
+	PieOuterStroke: rgb(0x6e7681),
+	PieText:        rgb(0xe6edf3),
 }
 
 // TextOn is black or white, whichever contrasts more with fill: for a label

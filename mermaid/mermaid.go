@@ -1,8 +1,8 @@
 // Package mermaid lays out diagrams written in Mermaid's syntax as scenes,
 // drawing what Mermaid v12.3.0 draws. So far it knows sequence diagrams, flowcharts,
-// state diagrams, class diagrams, entity relationship diagrams and gantt diagrams. A
-// gantt diagram is drawn as wide as Options.Width says, in the time zone of time.Local,
-// its line at the time now where time.Now falls. The styles of
+// state diagrams, class diagrams, entity relationship diagrams, gantt diagrams and pie
+// charts. A gantt diagram is drawn as wide as Options.Width says, in the time zone of
+// time.Local, its line at the time now where time.Now falls. The styles of
 // flowcharts, state, class and ER diagrams draw their fills,
 // strokes, widths, dashes and text colors; fonts and the rest of CSS that changes how
 // Chrome draws are not supported.
@@ -28,6 +28,7 @@ import (
 	"github.com/bencode/sumi/mermaid/internal/er"
 	"github.com/bencode/sumi/mermaid/internal/flowchart"
 	"github.com/bencode/sumi/mermaid/internal/gantt"
+	"github.com/bencode/sumi/mermaid/internal/pie"
 	"github.com/bencode/sumi/mermaid/internal/sequence"
 	"github.com/bencode/sumi/mermaid/internal/state"
 	"github.com/bencode/sumi/mermaid/internal/syntax"
@@ -60,6 +61,7 @@ var kinds = map[string]func(body, title string, o Options) (*scene.Scene, error)
 	"stateDiagram":    measured(state.Layout), // stateDiagram-v2 too, as stateDetector-V2 matches
 	"classDiagram":    measured(class.Layout), // classDiagram-v2 too, as classDetector-V2 matches
 	"erDiagram":       measured(er.Layout),
+	"pie":             measured(pie.Layout),
 	"gantt": func(body, title string, o Options) (*scene.Scene, error) {
 		return gantt.Layout(body, title, o.Measurer, gantt.Env{Now: time.Now(), Zone: time.Local}, o.Width)
 	},

@@ -52,3 +52,32 @@ func Extent(m scene.Measurer, f scene.Font) (ascent, descent float64) {
 	met := m.Measure("", f)
 	return math.Round(met.Ascent), math.Round(met.Descent)
 }
+
+// Collapsed is the lines of one text as SVG sets them: a tab or a line break is a space,
+// a space after a space is dropped, from one line to the next too, and so are those at
+// the start and at the end of them all.
+func Collapsed(lines []string) []string {
+	out := make([]string, len(lines))
+	space, last := true, -1
+	for i, s := range lines {
+		var b strings.Builder
+		for _, r := range s {
+			if r == ' ' || r == '\t' || r == '\n' || r == '\r' {
+				if !space {
+					b.WriteByte(' ')
+				}
+				space = true
+				continue
+			}
+			b.WriteRune(r)
+			space = false
+		}
+		if out[i] = b.String(); out[i] != "" {
+			last = i
+		}
+	}
+	if last >= 0 {
+		out[last] = strings.TrimSuffix(out[last], " ")
+	}
+	return out
+}

@@ -192,7 +192,7 @@ func sectionTitles(c chart) []scene.Item {
 		// em lower, and alignment-baseline central sets each line's middle there.
 		y := float64(heights[name]*rowGap/2+before*rowGap+topPadding) - float64(len(rows)-1)/2*sectionFontSize + (ascent-descent)/2
 		var lines []scene.Line
-		for i, s := range collapsed(rows) {
+		for i, s := range label.Collapsed(rows) {
 			if s != "" {
 				lines = append(lines, line(c.m, s, f, 10, scene.Left, y+float64(i)*sectionFontSize))
 			}
@@ -250,41 +250,12 @@ func todayStyle(d *Diagram) (style.Styling, error) {
 
 // drawTitle is the title, centered over the diagram on the title's margin.
 func drawTitle(c chart, title string) []scene.Item {
-	s := collapsed([]string{title})[0]
+	s := label.Collapsed([]string{title})[0]
 	if s == "" {
 		return nil
 	}
 	f := scene.Font{Size: titleSize}
 	return []scene.Item{textOf([]scene.Line{line(c.m, s, f, c.w/2, scene.Center, titleTopMargin)}, f, c.m, scene.Use(scene.TextColor))}
-}
-
-// collapsed is the lines of one text as SVG sets them: a tab or a line break is a space,
-// a space after a space is dropped, from one line to the next too, and so are those at
-// the start and at the end of them all.
-func collapsed(lines []string) []string {
-	out := make([]string, len(lines))
-	space, last := true, -1
-	for i, s := range lines {
-		var b strings.Builder
-		for _, r := range s {
-			if r == ' ' || r == '\t' || r == '\n' || r == '\r' {
-				if !space {
-					b.WriteByte(' ')
-				}
-				space = true
-				continue
-			}
-			b.WriteRune(r)
-			space = false
-		}
-		if out[i] = b.String(); out[i] != "" {
-			last = i
-		}
-	}
-	if last >= 0 {
-		out[last] = strings.TrimSuffix(out[last], " ")
-	}
-	return out
 }
 
 // line is s set in f on baseline, its anchor at x as align says.
