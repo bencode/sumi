@@ -6,7 +6,7 @@ sumi (墨, ink) lays out Mermaid diagrams in pure Go. It returns paths and posit
 - **[Online playground](https://sumi.fmap.dev)** — editable examples of every supported diagram type, rendered by Go; also [run locally](#local-playground).
 - **Integration** — use a custom text measurer and your native drawing backend, or export SVG.
 - **Rendering** — no browser, JavaScript runtime, or external layout service required by the Go library.
-- **Status** — 0.x; the API may change. LaTeX math is planned, not implemented.
+- **Status** — 0.x; the API may change.
 
 ## Supported diagrams
 
