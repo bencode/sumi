@@ -1,0 +1,14 @@
+gantt
+    title Release 2.4
+    dateFormat YYYY-MM-DD
+    axisFormat %b %d
+    section Design
+    Requirements      :done, req, 2024-03-04, 4d
+    API review        :done, api, after req, 3d
+    section Build
+    Server changes    :active, srv, after api, 8d
+    Client changes    :cli, after api, 10d
+    Data migration    :crit, mig, after srv, 3d
+    section Ship
+    Release candidate :milestone, rc, after cli, 0d
+    Rollout           :crit, after rc, 5d

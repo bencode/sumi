@@ -99,7 +99,7 @@ curl --fail https://sumi.fmap.dev/api/render \
 docker compose -f /root/repos/sumi/deploy/compose.yml logs --tail 50
 ```
 
-In a browser, check all 17 initial previews, edit a diagram, switch themes, reset
+In a browser, check every initial preview, edit a diagram, switch themes, reset
 an example, and open the feature checklist (a new GitHub tab). Unknown assets
 under `/assets/` should return 404; built assets have immutable cache headers and
 HTML uses `no-cache`. The API retains its 64 KiB request limit and JSON errors.

@@ -116,6 +116,7 @@ func TestRenderErrors(t *testing.T) {
 		{"wrong source type", `{"source":123}`, 400, 0, 0, false},
 		{"multiple JSON values", `{} {}`, 400, 0, 0, false},
 		{"empty source", `{"source":""}`, 400, 0, 0, false},
+		{"width out of range", `{"source":"pie\n\"a\": 1","width":-1}`, 400, 0, 0, false},
 		{"source error after front matter", `{"source":"---\ntitle: x\n---\nsequenceDiagram\nloop\nend\nend"}`, 400, 7, 1, false},
 		{"unsupported diagram", `{"source":"journey\n  title T"}`, 422, 1, 1, true},
 		{"empty scene", `{"source":"sequenceDiagram"}`, 422, 0, 0, false},
@@ -139,6 +140,20 @@ func TestRenderErrors(t *testing.T) {
 				t.Fatalf("unexpected error details: %+v", failure)
 			}
 		})
+	}
+}
+
+// A gantt diagram is as wide as the request says.
+func TestGanttWidth(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{"source":"gantt\ndateFormat YYYY-MM-DD\nA :2024-01-01, 3d","width":640}`
+	demo.NewHandler().ServeHTTP(w, httptest.NewRequest(http.MethodPost, "/api/render", strings.NewReader(body)))
+	var result struct{ Width float64 }
+	if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil {
+		t.Fatal(err)
+	}
+	if w.Code != http.StatusOK || result.Width != 640 {
+		t.Fatalf("status %d, width %g, want 640: %s", w.Code, result.Width, w.Body)
 	}
 }
 

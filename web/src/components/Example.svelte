@@ -14,6 +14,13 @@
   let composing = false
   let timer: ReturnType<typeof setTimeout> | undefined
   let request: AbortController | undefined
+  let frame: HTMLDivElement
+
+  // The width a diagram has in the preview before it scrolls.
+  function frameWidth() {
+    const style = getComputedStyle(frame)
+    return Math.floor(frame.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight))
+  }
 
   function releasePreviews() {
     if (!previews) return
@@ -57,7 +64,7 @@
     status = 'rendering'
     error = null
     try {
-      const response = await renderSource(source, controller.signal)
+      const response = await renderSource(source, frameWidth(), controller.signal)
       if (current !== generation) return
       if (!response.ok) {
         error = response.error
@@ -146,16 +153,16 @@
           <button onclick={() => { void render() }}>Retry rendering</button>
         </div>
       {/if}
-      {#if previews}
-        {#if status !== 'ready'}<p class="preview-note">Showing the last successful render.</p>{/if}
-        <div class="diagram-scroll" role="region" aria-label={`${example.title} diagram, scroll for full image`}>
+      {#if previews && status !== 'ready'}<p class="preview-note">Showing the last successful render.</p>{/if}
+      <div class="diagram-scroll" role="region" aria-label={`${example.title} diagram, scroll for full image`} bind:this={frame}>
+        {#if previews}
           <a class="diagram-image" href={dark ? previews.dark : previews.light} target="_blank" rel="noreferrer" aria-label={`Open ${example.title} as a full-size SVG`}>
             <img src={dark ? previews.dark : previews.light} alt={`${example.title}. ${example.description}`} width={previews.width} height={previews.height}>
           </a>
-        </div>
-      {:else}
-        <div class="preview-placeholder">{status === 'error' ? 'No preview yet.' : 'Drawing your diagram…'}</div>
-      {/if}
+        {:else}
+          <div class="preview-placeholder">{status === 'error' ? 'No preview yet.' : 'Drawing your diagram…'}</div>
+        {/if}
+      </div>
     </figure>
   </div>
 </article>

@@ -1,6 +1,6 @@
 # Feature checklist
 
-Checked against sumi's implementation at [`806adec`](https://github.com/bencode/sumi/commit/806adecd7f85e60e05d9d5a2a0fdf764d8b31023). The reference is **Mermaid v12.3.0 with default layout settings**, including its ELK-based graph layout and neo shapes. Open the [online playground](https://sumi.fmap.dev/) to edit and render the examples using the Go service.
+Checked against sumi's implementation at [`064fb98`](https://github.com/bencode/sumi/commit/064fb9809585dd77b42bc137b9e413bb8672aaac). The reference is **Mermaid v12.3.0 with default layout settings**, including its ELK-based graph layout and neo shapes. Open the [online playground](https://sumi.fmap.dev/) to edit and render the examples using the Go service.
 
 - `[x]` means the public `mermaid.Layout` → `scene.Scene` → `svg.Render` path draws the feature.
 - `[ ]` identifies a limitation; its description says whether it is **rejected**, **accepted but ignored**, **partial**, or **internal only**.
@@ -103,12 +103,12 @@ Source: [grammar](../mermaid/internal/er/doc.go), [collection](../mermaid/intern
 
 ## Gantt diagrams
 
-- [x] Sections, tasks with ids, start dates, `after` and `until` dependencies, and durations; tasks with no start follow the previous one. [Reading tests](../mermaid/internal/gantt/read_test.go)
+- [x] Sections, tasks with ids, start dates, `after` and `until` dependencies, and durations; tasks with no start follow the previous one. [Release example](https://sumi.fmap.dev/#gantt-release-plan), [reading tests](../mermaid/internal/gantt/read_test.go)
 - [x] `dateFormat` with dayjs's tokens, and start dates in no format read as JavaScript's `new Date` reads them. [Reading tests](../mermaid/internal/gantt/read_test.go)
-- [x] `done`, `active`, and `crit` tasks, milestones, and `vert` markers, each colored by its status. [Drawing tests](../mermaid/internal/gantt/draw_test.go)
-- [x] `excludes` and `includes` with dates, weekdays, and `weekends`; `weekday` and `weekend` choices; `inclusiveEndDates`.
-- [x] `axisFormat` and `tickInterval`, with d3's ticks and en-US labels. [Axis tests](../mermaid/internal/gantt/axis_test.go)
-- [x] `title`, front matter titles, and multi-line section titles with `<br>`.
+- [x] `done`, `active`, and `crit` tasks, milestones, and `vert` markers, each colored by its status. [Release](https://sumi.fmap.dev/#gantt-release-plan), [working days](https://sumi.fmap.dev/#gantt-working-days), [drawing tests](../mermaid/internal/gantt/draw_test.go)
+- [x] `excludes` and `includes` with dates, weekdays, and `weekends`; `weekday` and `weekend` choices; `inclusiveEndDates`. [Working days example](https://sumi.fmap.dev/#gantt-working-days)
+- [x] `axisFormat` and `tickInterval`, with d3's ticks and en-US labels. [Release](https://sumi.fmap.dev/#gantt-release-plan), [working days](https://sumi.fmap.dev/#gantt-working-days), [axis tests](../mermaid/internal/gantt/axis_test.go)
+- [x] `title`, front matter titles, and multi-line section titles with `<br>`. [Working days example](https://sumi.fmap.dev/#gantt-working-days)
 - [x] The line at the time now, `todayMarker off`, and `todayMarker` styles with supported properties. The time now is `time.Now()` in `time.Local`.
 - [x] The chart width from `mermaid.Options.Width`; 0 is 1200.
 - [ ] Compact mode (`displayMode: compact`), `topAxis`, and other `gantt` configuration — **accepted but ignored** in front matter and directives. The `topAxis` statement fails, as in Mermaid 12.3.0.
@@ -121,10 +121,10 @@ Source: [reading and drawing](../mermaid/internal/gantt/doc.go).
 ## Pie charts
 
 - [x] Quoted labels with escapes, and number values; a label written again is passed over, and a negative value fails. [Reading tests](../mermaid/internal/pie/read_test.go)
-- [x] Slices clockwise from the top, each share's percentage on it, and a legend to the right with every section. [Drawing tests](../mermaid/internal/pie/draw_test.go)
-- [x] A section under 1% of the total is left out of the pie but stays in the legend, keeping its color.
-- [x] `showData`, which writes each value after its label in the legend.
-- [x] `title`, front matter titles, and titles wider than the chart, which widen the drawing.
+- [x] Slices clockwise from the top, each share's percentage on it, and a legend to the right with every section. [Week example](https://sumi.fmap.dev/#pie-time-spent), [drawing tests](../mermaid/internal/pie/draw_test.go)
+- [x] A section under 1% of the total is left out of the pie but stays in the legend, keeping its color. [Survey example](https://sumi.fmap.dev/#pie-survey)
+- [x] `showData`, which writes each value after its label in the legend. [Week example](https://sumi.fmap.dev/#pie-time-spent)
+- [x] `title`, front matter titles, and titles wider than the chart, which widen the drawing. [Week](https://sumi.fmap.dev/#pie-time-spent), [survey](https://sumi.fmap.dev/#pie-survey)
 - [x] `accTitle` and `accDescr` — read, not drawn, as for other diagrams.
 - [ ] `textPosition`, `donutHole`, `legendPosition`, `highlightSlice`, and other `pie` configuration — **accepted but ignored** in front matter and directives. A slice with an empty label is drawn larger, as Mermaid's default `highlightSlice` is empty.
 - [ ] Mermaid's see-through slices — **not applied**; the theme's colors are opaque.
@@ -153,6 +153,6 @@ Source: [reading and drawing](../mermaid/internal/pie/doc.go).
 
 ## Example coverage
 
-The 17 examples cover every checked common-feature group in the first five diagram sections above; Gantt diagrams and pie charts have no example yet and link their tests instead. They combine related features rather than repeat one diagram for each syntax spelling. Additional variants and unusual inputs are linked to existing tests or source instead of expanding the gallery.
+The 21 examples cover every checked common-feature group in the diagram sections above. They combine related features rather than repeat one diagram for each syntax spelling. Additional variants and unusual inputs are linked to existing tests or source instead of expanding the gallery.
 
 This is coverage of this checklist's common scenarios, **not** a measured share of user workloads, a Mermaid syntax compatibility percentage, or a guarantee that every combination works. When adding a supported feature, update its checklist entry and either extend a relevant example or link the behavior test that demonstrates it.

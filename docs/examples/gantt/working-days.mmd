@@ -1,0 +1,12 @@
+gantt
+    title Sprint 12, working days only
+    dateFormat YYYY-MM-DD
+    axisFormat %d
+    tickInterval 1day
+    excludes weekends
+    section Team<br>Atlas
+    Planning          :plan, 2024-05-06, 1d
+    Build             :build, after plan, 6d
+    Code freeze       :vert, 2024-05-15, 0d
+    Review            :review, after build, until demo
+    Demo              :milestone, demo, 2024-05-20, 0d
