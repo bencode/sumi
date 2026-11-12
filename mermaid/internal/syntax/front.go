@@ -91,12 +91,13 @@ func closing(line, indent string) bool {
 	return ok && strings.TrimSpace(rest) == ""
 }
 
-// frontTitle is the value of a top-level title: key, on a line of its own,
-// with its quotes taken off.
+// frontTitle is the value of a top-level title key, on a line of its own,
+// with its quotes taken off. As in YAML, the colon after the key is followed
+// by a space, a tab or the line's end: title:F is no key but a string.
 func frontTitle(lines []string, indent string) string {
 	for _, line := range lines {
 		v, ok := strings.CutPrefix(strings.TrimPrefix(line, indent), "title:")
-		if !ok {
+		if !ok || v != "" && !strings.ContainsAny(v[:1], " \t\n") {
 			continue
 		}
 		v = strings.TrimSpace(v)
