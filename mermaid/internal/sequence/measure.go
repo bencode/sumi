@@ -20,13 +20,17 @@ type textBlock struct {
 
 var breaks = regexp.MustCompile(`(?i)<br\s*/?>`)
 
+// svgSpace is whether r is a space SVG text collapses: a space or a tab, not
+// U+0085 or U+00A0.
+func svgSpace(r rune) bool { return r == ' ' || r == '\t' }
+
 func measure(m scene.Measurer, s string, size float64) textBlock {
 	tb := textBlock{font: scene.Font{Size: size}}
 	if s == "" {
 		return tb
 	}
 	for _, l := range breaks.Split(s, -1) {
-		l = strings.Join(strings.Fields(l), " ") // spaces as SVG sets them
+		l = strings.Join(strings.FieldsFunc(l, svgSpace), " ") // spaces as SVG sets them
 		met := m.Measure(l, tb.font)
 		tb.lines = append(tb.lines, l)
 		tb.w = max(tb.w, math.Round(met.Width))
@@ -116,7 +120,10 @@ func wrapLabel(m scene.Measurer, label string, maxWidth, size float64) string {
 	width := func(s string) float64 { return measure(m, s, size).w }
 	var lines []string
 	next := ""
-	for _, word := range strings.Fields(label) {
+	for _, word := range strings.Split(label, " ") {
+		if word == "" {
+			continue
+		}
 		wl, nl := width(word+" "), width(next)
 		switch {
 		case wl > maxWidth:

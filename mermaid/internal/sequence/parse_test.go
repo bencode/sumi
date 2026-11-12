@@ -57,6 +57,12 @@ Bob-->Alice: I am good thanks!`, &Diagram{
 				&Note{Place: RightOf, Of: []string{"Bob"}, Text: "Bob thinks"},
 				msg("Bob", "Alice", "I am good thanks!", Message{Dotted: true, Line: 4}),
 			}}},
+		{"U+0085 is no space to trim", "sequenceDiagram\nparticipant \u0085A\nA->B: \u0085hi\u0085\nNote over A: \u0085n", &Diagram{
+			Participants: ps("\u0085A", "A", "B"),
+			Body: []Stmt{
+				msg("A", "B", "\u0085hi\u0085", Message{Line: 3}),
+				&Note{Place: Over, Of: []string{"A"}, Text: "\u0085n"},
+			}}},
 		{"title, accessibility, semicolons and comments", `---
 title: Front
 ---

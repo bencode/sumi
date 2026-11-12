@@ -37,6 +37,44 @@ func TestPrepare(t *testing.T) {
 	}
 }
 
+// A title is a YAML scalar, as js-yaml reads it and Mermaid shows it: the
+// cases are Mermaid 12.3.0's titles in Chrome.
+func TestFrontTitle(t *testing.T) {
+	tests := []struct{ value, title string }{
+		{"'it''s'", "it's"},
+		{`"q\"x\\y\u00e9\x41\t"`, "q\"x\\yéA\t"},
+		{"Hi # note", "Hi"},
+		{"Hi#x", "Hi#x"},
+		{`"Hi"   # c`, "Hi"},
+		{`"a"#b`, "a"},
+		{"# c", ""},
+		{"  spaced   out  ", "spaced   out"},
+		{"~", ""},
+		{"NULL", ""},
+		{"False", ""},
+		{"00", ""},
+		{".nan", ""},
+		{"''", ""},
+		{"True", "true"},
+		{"12.50", "12.5"},
+		{"0x10", "16"},
+		{"017", "17"},
+		{".inf", "Infinity"},
+		{"1e21", "1e+21"},
+		{"1.5e-7", "1.5e-7"},
+		{"'0'", "0"},
+		{"yes", "yes"},
+		{"1_000", "1_000"},
+		{"2024-01-01", "2024-01-01"},
+		{`"unclosed`, `"unclosed`},
+	}
+	for _, tt := range tests {
+		if _, title := Prepare("---\ntitle: " + tt.value + "\n---\nx"); title != tt.title {
+			t.Errorf("title: %s gives %q, want %q", tt.value, title, tt.title)
+		}
+	}
+}
+
 func TestDecode(t *testing.T) {
 	body, _ := Prepare("#9829; #quot; #nosuch; #0;")
 	if got, want := Decode(body), "\u2665 \" &nosuch; \uFFFD\n"; got != want {

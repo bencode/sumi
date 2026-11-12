@@ -135,13 +135,14 @@ Source: [reading and drawing](../mermaid/internal/pie/doc.go).
 
 ## Shared rendering and limitations
 
-- [x] Top-level front matter `title`; source comments and normalized line endings. [Request source](examples/sequence/request-response.mmd), [preprocessing tests](../mermaid/internal/syntax/front_test.go)
+- [x] Top-level front matter `title`, read as js-yaml reads a scalar on one line: quoted, plain, or followed by a `#` comment. `null`, `false`, `0`, and an empty value give no title, and numbers show as JavaScript prints them (`1.0` is `1`, `0x10` is `16`). Source comments and normalized line endings. [Request source](examples/sequence/request-response.mmd), [preprocessing tests](../mermaid/internal/syntax/front_test.go)
 - [x] Light/dark semantic palettes and custom `scene.Palette` values. Author-specified colors remain fixed across themes. [Gallery](https://sumi.fmap.dev/), [paint contract](../scene/paint.go)
 - [x] Pluggable `scene.Measurer` for native backends; nil uses built-in Arial measurements. [Text contract](../scene/text.go)
 - [x] Positioned paths/text, semantic item IDs, and drawing order in `scene.Scene`; SVG export. [Scene contract](../scene/scene.go), [SVG tests](../svg/svg_test.go)
 - [x] Supported styles: `fill`, `stroke`, `color`, `stroke-width`, and `stroke-dasharray`, with the color/value forms the parser reads. [Styled labels example](https://sumi.fmap.dev/#flowchart-labels-styles)
 - [x] Line/column errors and `IsUnsupported()` for explicitly recognized unsupported features. Not every unrecognized Mermaid construct is classified as unsupported. [API tests](../mermaid/mermaid_test.go)
 - [ ] Front matter `config`, including layout/theme configuration, and `%%{init}%%` directives — **accepted but ignored**. [Preprocessor](../mermaid/internal/syntax/front.go)
+- [ ] Titles in block scalars (`|`, `>`), in flow collections (`[a, b]`), or over several lines, and front matter that is not valid YAML — **drawn with the title as written**; Mermaid fails on invalid YAML. [Preprocessor](../mermaid/internal/syntax/front.go)
 - [ ] Mermaid theme names, custom CSS, and browser font selection through configuration — **not applied**. Select a sumi palette/measurer in Go instead.
 - [ ] Diagram-provided accessibility title/description metadata — **accepted without accessible scene/SVG metadata**; `scene.Scene` has no corresponding fields. The playground provides its own image descriptions.
 - [ ] Arbitrary HTML, label formulas, and Font Awesome icons in labels handled by the shared label reader — **rejected**; `<br>` line breaks are supported. [Label reader](../mermaid/internal/label/label.go)
