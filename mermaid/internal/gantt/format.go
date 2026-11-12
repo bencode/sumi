@@ -471,7 +471,7 @@ func matchWord(s []uint16) (int, int) {
 	return leftmost(s, func(s []uint16, i int) int {
 		j := digitsAt(s, i, len(s))
 		k := j
-		for k < len(s) && !isDigit(s[k]) && !strings.ContainsRune("-_:/,()", rune(s[k])) && !isJSSpace(rune(s[k])) {
+		for k < len(s) && !isDigit(s[k]) && !strings.ContainsRune("-_:/,()", rune(s[k])) && !syntax.IsSpace(rune(s[k])) {
 			k++
 		}
 		if k == j {

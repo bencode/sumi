@@ -11,10 +11,7 @@ import (
 // methodRE is ClassMember's method pattern, with \s and the dot as JavaScript reads them.
 var methodRE = regexp.MustCompile(jsRegexp(`([#+~-])?(.+)\((.*)\)([\s$*])?(.*)([$*])?`))
 
-// isTrimmed is whether JavaScript's trim takes r, as it does all of \s but U+0085.
-func isTrimmed(r rune) bool { return r != '\u0085' && syntax.IsSpace(r) }
-
-func trim(s string) string { return strings.TrimFunc(s, isTrimmed) }
+func trim(s string) string { return strings.TrimFunc(s, syntax.IsSpace) }
 
 func isVisibility(s string) bool { return s == "#" || s == "+" || s == "~" || s == "-" }
 

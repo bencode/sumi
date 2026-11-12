@@ -126,7 +126,7 @@ func parseStatement(ts []syntax.Token) (Stmt, []syntax.Token, error) {
 }
 
 // trim is String.prototype.trim.
-func trim(s string) string { return strings.TrimFunc(s, isSpace) }
+func trim(s string) string { return strings.TrimFunc(s, syntax.IsSpace) }
 
 // separator takes the end of a statement.
 func separator(ts []syntax.Token) ([]syntax.Token, error) {

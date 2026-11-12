@@ -11,8 +11,7 @@ import (
 const themeRadius = 12
 
 // rect is squareRect: 16 to each side of the label and 12 above and below in the
-// neo look. drawRect hands the size it drew to updateNodeBounds, so it is not
-// rounded to float32.
+// neo look.
 func rect(w, h, _ float64) Node {
 	return rectNode(w+16*2, h+12*2, 0)
 }

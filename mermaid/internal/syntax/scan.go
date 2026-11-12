@@ -32,8 +32,9 @@ func (l Lines) Pos(i int) Pos {
 	return Pos{Line: n + 1, Col: utf8.RuneCountInString(l.src[l.starts[n]:i]) + 1}
 }
 
-// IsSpace is whether r is what \s matches in a JavaScript regular expression.
-func IsSpace(r rune) bool { return unicode.IsSpace(r) || r == '\uFEFF' }
+// IsSpace is whether r is what \s matches in a JavaScript regular expression, and
+// what JavaScript's trim takes off: Go's spaces but U+0085, and U+FEFF.
+func IsSpace(r rune) bool { return r != '\u0085' && (unicode.IsSpace(r) || r == '\uFEFF') }
 
 // IsWord is whether b is what \w matches.
 func IsWord(b byte) bool {

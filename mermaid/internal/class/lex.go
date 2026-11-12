@@ -15,7 +15,7 @@ func Lex(src string) ([]syntax.Token, error) {
 	lines := syntax.LinesOf(src)
 	var ts []syntax.Token
 	stack := []mode{initial}
-	for i, done := len(src)-len(strings.TrimLeftFunc(src, isTrimmed)), false; !done; {
+	for i, done := len(src)-len(strings.TrimLeftFunc(src, syntax.IsSpace)), false; !done; {
 		done = i == len(src)
 		r, n := first(stack[len(stack)-1], src[i:])
 		at := lines.Pos(i)

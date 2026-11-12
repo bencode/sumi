@@ -123,7 +123,7 @@ func directionLine(d string) func(string) int {
 
 // linkID is [^\s"[\](){}|]+@(?=[^{"]): an edge's id, and the @ after it.
 func linkID(s string) int {
-	run := strings.IndexFunc(s, func(c rune) bool { return isSpace(c) || strings.ContainsRune(`"[](){}|`, c) })
+	run := strings.IndexFunc(s, func(c rune) bool { return syntax.IsSpace(c) || strings.ContainsRune(`"[](){}|`, c) })
 	if run < 0 {
 		run = len(s)
 	}
@@ -134,9 +134,6 @@ func linkID(s string) int {
 	}
 	return -1
 }
-
-// isSpace is \s in JavaScript, which has all of unicode.IsSpace but U+0085, and U+FEFF.
-func isSpace(c rune) bool { return c != 0x85 && syntax.IsSpace(c) }
 
 // edgeChar is [^-]|-(?!-)+: a character of an edge's text.
 func edgeChar(s string) int {

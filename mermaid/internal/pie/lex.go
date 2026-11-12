@@ -310,18 +310,14 @@ func prefix(s, p string) int {
 
 // spaces is the length of the run of what JavaScript's \s matches at the start of s.
 func spaces(s string) int {
-	return len(s) - len(strings.TrimLeftFunc(s, isJSSpace))
+	return len(s) - len(strings.TrimLeftFunc(s, syntax.IsSpace))
 }
 
 // startsSpace is whether s starts with what JavaScript's \s matches.
 func startsSpace(s string) bool {
 	r, _ := utf8.DecodeRuneInString(s)
-	return isJSSpace(r)
+	return syntax.IsSpace(r)
 }
-
-// isJSSpace is whether r is what JavaScript's \s matches, which syntax.IsSpace is but for
-// U+0085.
-func isJSSpace(r rune) bool { return r != '\u0085' && syntax.IsSpace(r) }
 
 // isLineEnd is whether r ends a line for a JavaScript regular expression.
 func isLineEnd(r rune) bool { return r == '\n' || r == '\r' || r == '\u2028' || r == '\u2029' }

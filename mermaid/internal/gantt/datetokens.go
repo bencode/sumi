@@ -1,6 +1,10 @@
 package gantt
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/bencode/sumi/mermaid/internal/syntax"
+)
 
 // The tokens of V8's date scanner. It reads a string the same way whatever its parser is
 // doing, so the tokens are read up front. A character past U+FFFF is two units to V8 and
@@ -108,7 +112,7 @@ func dateTokens(s string) []dateToken {
 			}
 			k := lookup(rs[i:j])
 			ts = append(ts, dateToken{kind: tWord, value: k.value, length: j - i, word: k.word})
-		case isJSSpace(c):
+		case syntax.IsSpace(c):
 			ts = append(ts, dateToken{kind: tSpace, length: 1})
 		case c == '(':
 			// To the parenthesis that closes it, or the end.
@@ -130,4 +134,4 @@ func dateTokens(s string) []dateToken {
 
 // isBlank is V8's IsWhiteSpace: JavaScript's \s but the ends of lines, which are spaces
 // only between words.
-func isBlank(r rune) bool { return isJSSpace(r) && !strings.ContainsRune("\n\r\u2028\u2029", r) }
+func isBlank(r rune) bool { return syntax.IsSpace(r) && !strings.ContainsRune("\n\r\u2028\u2029", r) }
