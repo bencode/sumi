@@ -4,6 +4,7 @@
   import Example from './components/Example.svelte'
 
   const checklistURL = 'https://github.com/bencode/sumi/blob/main/docs/compatibility.md'
+  const guideURL = 'https://github.com/bencode/sumi/blob/main/docs/integration.md'
 
   let theme = $state<'system' | 'light' | 'dark'>('system')
   let systemDark = $state(false)
@@ -27,6 +28,7 @@
   <a class="wordmark" href="#top" aria-label="sumi, top of page">墨 <span>sumi</span></a>
   <div class="header-actions">
     <a href={checklistURL} target="_blank" rel="noreferrer">Feature checklist <span aria-hidden="true">↗</span></a>
+    <a href={guideURL} target="_blank" rel="noreferrer">Integration guide <span aria-hidden="true">↗</span></a>
     <a href="https://github.com/bencode/sumi">GitHub <span aria-hidden="true">↗</span></a>
     <label class="theme-control">Theme
       <select bind:value={theme} aria-label="Color theme">
