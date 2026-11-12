@@ -23,7 +23,7 @@ func parseParticipant(ts []syntax.Token) (Stmt, []syntax.Token, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	id := strings.TrimSpace(n.Text)
+	id := trim(n.Text)
 	alias := ""
 	if t, rest, ok := syntax.Accept(ts, kConfig); ok {
 		if shape, alias, err = parseSettings(t, shape); err != nil {
@@ -74,7 +74,7 @@ func parseDestroy(ts []syntax.Token) (Stmt, []syntax.Token, error) {
 		return nil, nil, err
 	}
 	_, ts, err = syntax.Expect(ts, syntax.Newline, "the end of the line")
-	return &destroy{id: strings.TrimSpace(n.Text), pos: n.Pos}, ts, err
+	return &destroy{id: trim(n.Text), pos: n.Pos}, ts, err
 }
 
 // parseSettings reads a participant's @{...}: its type, which replaces shape
@@ -124,7 +124,7 @@ func parseSignal(ts []syntax.Token) (Stmt, []syntax.Token, error) {
 		return nil, nil, err
 	}
 	m := arrowOf[strings.ToLower(a.Text)]
-	m.From, m.Line, m.CircleFrom = strings.TrimSpace(from.Text), from.Pos.Line, circleFrom
+	m.From, m.Line, m.CircleFrom = trim(from.Text), from.Pos.Line, circleFrom
 	switch k := ts[0].Kind; {
 	case k == kCentral:
 		m.CircleTo, ts = true, ts[1:]
@@ -138,7 +138,7 @@ func parseSignal(ts []syntax.Token) (Stmt, []syntax.Token, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	m.To = strings.TrimSpace(to.Text)
+	m.To = trim(to.Text)
 	if m.Text, m.Wrap, ts, err = parseText(ts); err != nil {
 		return nil, nil, err
 	}
@@ -185,7 +185,7 @@ func parseNote(ts []syntax.Token) (Stmt, []syntax.Token, error) {
 		if err != nil {
 			return nil, nil, err
 		}
-		n.Of, ts = append(n.Of, strings.TrimSpace(p.Text)), rest
+		n.Of, ts = append(n.Of, trim(p.Text)), rest
 		_, rest, comma := syntax.Accept(ts, kComma)
 		if place != Over || len(n.Of) == 2 || !comma {
 			break
@@ -212,7 +212,7 @@ func parseActivation(ts []syntax.Token) (Stmt, []syntax.Token, error) {
 		return nil, nil, err
 	}
 	_, ts, err = syntax.Expect(ts, syntax.Newline, "the end of the line")
-	return &Activation{ID: strings.TrimSpace(n.Text), On: kw.Kind == kActivate, Line: kw.Pos.Line}, ts, err
+	return &Activation{ID: trim(n.Text), On: kw.Kind == kActivate, Line: kw.Pos.Line}, ts, err
 }
 
 // parseAutonumber reads an autonumber statement.
@@ -247,7 +247,7 @@ func parseText(ts []syntax.Token) (string, bool, []syntax.Token, error) {
 	if err != nil {
 		return "", false, nil, err
 	}
-	s, wrap := label(strings.TrimSpace(t.Text)[1:])
+	s, wrap := label(trim(t.Text)[1:])
 	return s, wrap, ts, nil
 }
 
@@ -257,12 +257,15 @@ func parseText(ts []syntax.Token) (string, bool, []syntax.Token, error) {
 // It tells whether the text asks to be wrapped: wrap: does; nowrap: does
 // not, as no text is wrapped unless it asks.
 func label(s string) (string, bool) {
-	s = strings.TrimSpace(s)
+	s = trim(s)
 	t := strings.TrimPrefix(s, ":")
 	for _, w := range []string{"wrap:", "nowrap:"} {
 		if rest, ok := strings.CutPrefix(t, w); ok {
-			return syntax.Decode(strings.TrimSpace(rest)), w == "wrap:"
+			return syntax.Decode(trim(rest)), w == "wrap:"
 		}
 	}
 	return syntax.Decode(s), false
 }
+
+// trim takes off the spaces JavaScript's trim does, which U+0085 is not.
+func trim(s string) string { return strings.TrimFunc(s, syntax.IsSpace) }
