@@ -16,7 +16,6 @@ Checked against sumi's implementation at [`064fb98`](https://github.com/bencode/
 - [x] [Gantt diagrams](#gantt-diagrams): `gantt`.
 - [x] [Pie charts](#pie-charts): `pie`.
 - [ ] Other diagram types, including Git graphs, mind maps, timelines, and user journeys — **rejected** by public diagram dispatch.
-- [ ] LaTeX math — **not implemented**; neither a public math API nor formula rendering in diagram labels is available.
 
 Source: [public dispatch](../mermaid/mermaid.go).
 
