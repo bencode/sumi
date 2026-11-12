@@ -15,40 +15,13 @@ func cylinder(lw, lh, padding float64) Node {
 	rx := w / 2
 	ry := rx / (2.5 + w/50)
 	h := lh + pad + ry
-	r := cylinderRect(w, h, rx, ry)
 	return Node{
-		W:         float64(r.w),
-		H:         float64(r.h),
+		W:         w,
+		H:         h + 2*ry, // the top ellipse above h, the bottom half below
 		Outline:   cylinderOutline(w, h, rx, ry),
 		Label:     scene.Point{Y: padding / 1.5},
 		Intersect: meetCylinder(rx, ry),
 	}
-}
-
-// cylinderRect is the getBBox of the path createCylinderPathD draws at 0, 0:
-// its numbers as Blink reads them and its arcs as Skia's conics.
-func cylinderRect(w, h, rx, ry float64) rectF {
-	w32, rx32, ry32 := svg(w), svg(rx), svg(ry)
-	at := pt{0, ry32}
-	b := newBox(at)
-	arcBy := func(dx float32) {
-		to := at.add(pt{dx, 0})
-		for _, c := range arc(at, to, rx32, ry32, false, false) {
-			b.addConic(c)
-		}
-		b.add(to) // the arc's end, also when arc gives no conics for a line
-		at = to
-	}
-	lineBy := func(dy float32) {
-		at = at.add(pt{0, dy})
-		b.add(at)
-	}
-	arcBy(w32)
-	arcBy(svg(-w))
-	lineBy(svg(h))
-	arcBy(w32)
-	lineBy(svg(-h))
-	return boundingRect(b)
 }
 
 // cylinderOutline is createCylinderPathD's path about the node's center: the

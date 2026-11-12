@@ -18,6 +18,7 @@ func TestPrepare(t *testing.T) {
 		{"CRLF", "---\r\ntitle: T\r\n---\r\nx\r\ny", "\n\n\nx\ny\n", "T"},
 		{"comment", "a\n  %% note\nb: c %% d\ne", "a\n\nb: c %% d\ne\n", ""},
 		{"a comment on the last line goes", "a\n%% b", "a\n\n", ""},
+		{"U+0085 before %% is no space", "a\n\u0085%% b", "a\n\u0085%% b\n", ""},
 		{"directive", "%%{init: {\n'theme': 'dark'}}%%\nx", "\n\nx\n", ""},
 		{"a %%{ with no word after it stays", "A %%{ -\nB", "A %%{ -\nB\n", ""},
 		{"a directive without its close runs on", "%%{a: {1\nb", "\n\n", ""},

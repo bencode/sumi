@@ -94,7 +94,7 @@ func TestSet(t *testing.T) {
 	}
 	for _, tt := range tests {
 		n := Set(tt.kind, tt.w, tt.h, 15)
-		if n.W != tt.W || n.H != tt.H {
+		if math.Abs(n.W-tt.W) > 1e-3 || math.Abs(n.H-tt.H) > 1e-3 { // Chrome's are float32
 			t.Errorf("%v %v x %v: size %v x %v, want %v x %v", tt.kind, tt.w, tt.h, n.W, n.H, tt.W, tt.H)
 		}
 		if got := (scene.Point{X: n.Label.X - tt.w/2, Y: n.Label.Y - tt.h/2}); got != tt.label {

@@ -9,10 +9,7 @@ import (
 	"github.com/bencode/sumi/mermaid/internal/syntax"
 )
 
-// isJSSpace is whether JavaScript's \s takes r, as its trim does: Go's spaces but U+0085.
-func isJSSpace(r rune) bool { return r != '\u0085' && syntax.IsSpace(r) }
-
-func trim(s string) string { return strings.TrimFunc(s, isJSSpace) }
+func trim(s string) string { return strings.TrimFunc(s, syntax.IsSpace) }
 
 // undefined is the id of a task with none, and the task before the first: a key of an
 // object in JavaScript, which reads undefined as this.

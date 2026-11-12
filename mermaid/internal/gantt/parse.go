@@ -76,7 +76,7 @@ func parseStatement(ts []syntax.Token) (Stmt, []syntax.Token, error) {
 		return SetStmt{t.Pos, t.Kind, string([]rune(t.Text)[n:])}, ts[1:], nil
 	}
 	if t.Kind == kWeekday || t.Kind == kWeekend {
-		f := strings.FieldsFunc(t.Text, isJSSpace)
+		f := strings.FieldsFunc(t.Text, syntax.IsSpace)
 		return SetStmt{t.Pos, t.Kind, strings.ToLower(f[len(f)-1])}, ts[1:], nil
 	}
 	if t.Kind == kInclusiveEndDates || t.Kind == kAccMultiValue {

@@ -161,7 +161,7 @@ func comment(s string) int {
 }
 
 func trim(s string) string {
-	return strings.TrimFunc(s, func(r rune) bool { return r != '\u0085' && syntax.IsSpace(r) })
+	return strings.TrimFunc(s, syntax.IsSpace)
 }
 
 // without trims s of its last n bytes and then of its spaces.

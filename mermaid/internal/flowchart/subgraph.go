@@ -33,7 +33,7 @@ func (t *tables) addSubgraph(s *Subgraph) (string, error) {
 		return "", err
 	}
 	id := trim(s.ID.Text)
-	if s.ID == s.Title && strings.IndexFunc(s.Title.Text, isSpace) >= 0 {
+	if s.ID == s.Title && strings.IndexFunc(s.Title.Text, syntax.IsSpace) >= 0 {
 		id = fmt.Sprintf("subGraph%d", t.subCount)
 	}
 	if id == "" { // a Parent of "" is the root, so this would be a child of itself
@@ -96,5 +96,5 @@ func trimTitle(s string) string {
 	if !strings.Contains(s, "<") {
 		return trim(s)
 	}
-	return strings.TrimFunc(s, func(c rune) bool { return c != '\u00a0' && isSpace(c) })
+	return strings.TrimFunc(s, func(c rune) bool { return c != '\u00a0' && syntax.IsSpace(c) })
 }

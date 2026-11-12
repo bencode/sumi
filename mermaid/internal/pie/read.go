@@ -169,7 +169,7 @@ func metaValue(t syntax.Token) string {
 		}
 		s = s[1:]
 	}
-	return oneSpace(strings.TrimFunc(s, isJSSpace))
+	return oneSpace(strings.TrimFunc(s, syntax.IsSpace))
 }
 
 // trimLineStarts is s.replace(/^\s*/gm, ""): each run of \s that starts a line goes, line

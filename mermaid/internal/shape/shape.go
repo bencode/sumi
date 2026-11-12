@@ -3,9 +3,8 @@
 // size, its outline, where its label goes, and where a line toward the node
 // meets its outline.
 //
-// Mermaid takes most shapes' sizes from the getBBox of the element it draws, so
-// such a size is a float32 Chrome worked out from the strings JS wrote: Set
-// follows those steps, so that layout gets the very size Mermaid's does.
+// Mermaid takes most shapes' sizes from the getBBox of the element it draws;
+// here a size is the box of the shape's geometry.
 package shape
 
 import "github.com/bencode/sumi/scene"
@@ -38,7 +37,7 @@ const (
 
 // A Node is a label box set in a shape.
 type Node struct {
-	W, H    float64     // the size, as Chrome's getBBox gives it
+	W, H    float64     // the size of the shape's box
 	Outline []scene.Seg // about the node's center
 	Label   scene.Point // the label box's center, from the node's center
 

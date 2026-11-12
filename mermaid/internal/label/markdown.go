@@ -37,9 +37,6 @@ var (
 
 const entityBeside = "an entity code beside Markdown"
 
-// isSpace is \s as marked sees it: JavaScript's, which leaves out U+0085.
-func isSpace(c rune) bool { return c != 0x85 && syntax.IsSpace(c) }
-
 // sanitized reports whether DOMPurify changes what marked sees in s. It leaves text with
 // no < alone. Else it reads entity codes, and writes a no-break space, a space to marked,
 // as &nbsp;, punctuation.
@@ -182,7 +179,7 @@ func mask(s []rune) []rune { return []rune(escaped.ReplaceAllString(string(s), "
 
 func isPunct(c rune) bool { return unicode.IsPunct(c) || unicode.IsSymbol(c) }
 
-func isPunctSpace(c rune) bool { return isPunct(c) || isSpace(c) }
+func isPunctSpace(c rune) bool { return isPunct(c) || syntax.IsSpace(c) }
 
 // opens is emStrongLDelim and the test on what comes before it: the length of the run of
 // delimiters at the start of s, or 0 if it opens nothing.
@@ -195,7 +192,7 @@ func opens(s []rune, prev rune) int {
 	for n < len(s) && s[n] == d {
 		n++
 	}
-	if n == len(s) || isSpace(s[n]) {
+	if n == len(s) || syntax.IsSpace(s[n]) {
 		return 0
 	}
 	punct := isPunct(s[n])
@@ -315,9 +312,9 @@ func runAt(t []rune, i int, d rune) (run, bool) {
 	punct := c != d && isPunct(c)
 	word := !isPunctSpace(c)
 	switch {
-	case punct && (end || isSpace(next)), word && (end || isPunctSpace(next)):
+	case punct && (end || syntax.IsSpace(next)), word && (end || isPunctSpace(next)):
 		r.side = rightRun
-	case c != d && isPunctSpace(c) && !end && !isPunctSpace(next), isSpace(c) && !end && isPunct(next):
+	case c != d && isPunctSpace(c) && !end && !isPunctSpace(next), syntax.IsSpace(c) && !end && isPunct(next):
 		r.side = leftRun
 	case punct && !end && isPunct(next), d == '*' && word && !end && !isPunctSpace(next):
 		r.side = bothRun
