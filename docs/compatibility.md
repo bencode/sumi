@@ -103,7 +103,8 @@ Source: [grammar](../mermaid/internal/er/doc.go), [collection](../mermaid/intern
 ## Gantt diagrams
 
 - [x] Sections, tasks with ids, start dates, `after` and `until` dependencies, and durations; tasks with no start follow the previous one. [Release example](https://sumi.fmap.dev/#gantt-release-plan), [reading tests](../mermaid/internal/gantt/read_test.go)
-- [x] `dateFormat` with dayjs's tokens, and start dates in no format read as JavaScript's `new Date` reads them. [Reading tests](../mermaid/internal/gantt/read_test.go)
+- [x] `dateFormat` with dayjs's tokens, and start dates in no format read in ECMAScript's date time string format (ISO 8601). [Reading tests](../mermaid/internal/gantt/read_test.go)
+- [ ] Other date strings, such as `Jan 10 2014` — **errors**. Mermaid hands them to the browser's `Date`, which reads them differently in each browser.
 - [x] `done`, `active`, and `crit` tasks, milestones, and `vert` markers, each colored by its status. [Release](https://sumi.fmap.dev/#gantt-release-plan), [working days](https://sumi.fmap.dev/#gantt-working-days), [drawing tests](../mermaid/internal/gantt/draw_test.go)
 - [x] `excludes` and `includes` with dates, weekdays, and `weekends`; `weekday` and `weekend` choices; `inclusiveEndDates`. [Working days example](https://sumi.fmap.dev/#gantt-working-days)
 - [x] `axisFormat` and `tickInterval`, with d3's ticks and en-US labels. [Release](https://sumi.fmap.dev/#gantt-release-plan), [working days](https://sumi.fmap.dev/#gantt-working-days), [axis tests](../mermaid/internal/gantt/axis_test.go)
