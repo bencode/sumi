@@ -18,9 +18,9 @@
 // Go's time: a date in the diagram's format is read and written with dayjs's tokens,
 // months and years are added as dayjs adds them, keeping the day where the month has
 // it, a local time a change of offset skips or repeats takes the offset from before the
-// change, and a start in no format falls back to new Date, read as V8 reads it, its
-// legacy rules too. A time Mermaid would make and JavaScript cannot hold is not
-// supported.
+// change, and a start in no format falls back to the date time string format of
+// ECMAScript, the one form new Date must read. A time Mermaid would make and JavaScript
+// cannot hold is not supported.
 //
 // axisOf lays out the time axis as ganttRenderer does with d3: the scale from the
 // earliest start to the latest end, and the ticks of the tickInterval or d3's own, with

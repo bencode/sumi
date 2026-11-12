@@ -24,13 +24,9 @@ func TestReadDates(t *testing.T) {
 		{"two days into summer time are 47 hours", newYork, ymd + "A :2025-03-08, 2d", 1741410000000, 1741579200000, 0},
 		{"a skipped local time takes the offset before", newYork, "gantt\nA :2025-03-09T02:30, 1d", 1741505400000, 1741591800000, 0},
 		{"a repeated one takes it too", newYork, "gantt\nA :2025-11-02T01:30, 1d", 1762061400000, 1762151400000, 0},
-		{"February 30 does not read back, so new Date reads it", shanghai, ymd + "A :2014-02-30, 3d", 1393718400000, 1393977600000, 0},
+		{"a time with an offset", shanghai, "gantt\nA :2014-01-01T10:00+05:30, 1d", 1388550600000, 1388637000000, 0},
 		{"after a task written later", shanghai, ymd + "B :b1, after a1, 2d\nA :a1, 2014-01-01, 3d", 1388764800000, 1388937600000, 0},
 		{"excluded weekends move the end", shanghai, ymd + "excludes weekends\nweekend friday\nA :2014-01-01, 7d", 1388505600000, 1389456000000, 1389283200000},
-		{"V8's legacy rules read a named month as local", shanghai, "gantt\nA :Jan 10 2014, 3d", 1389283200000, 1389542400000, 0},
-		{"a month and a day alone are of 2001", shanghai, "gantt\nA :Jan 8, 3d", 978883200000, 979142400000, 0},
-		{"an offset with a time", shanghai, "gantt\nA :Fri Jan 10 2014 10:00:00 GMT+0800 (China Standard Time), 3d", 1389319200000, 1389578400000, 0},
-		{"an offset's seconds wrap in 32 bits", shanghai, "gantt\nA :Jan 10 2014 10:00 +1193047:, 3d", 1389346096000, 1389605296000, 0},
 	}
 	for _, c := range cases {
 		zone, err := time.LoadLocation(c.zone)
@@ -54,12 +50,16 @@ func TestReadDates(t *testing.T) {
 	}
 }
 
-// A word right before the first number makes the date invalid, which Mermaid throws.
+// A start in no format and not in ECMAScript's date time string format is an invalid
+// date, which Mermaid throws. Mermaid hands such a string to the browser's Date, which
+// reads some of them its own way: these Chrome reads.
 func TestReadInvalidDate(t *testing.T) {
-	body, _ := syntax.Prepare("gantt\nA :x5 Jan 2014, 3d")
-	_, err := Read(body, Env{Now: time.Now(), Zone: time.UTC})
-	if se, ok := err.(*syntax.Error); !ok || se.IsUnsupported() || se.Msg != "Invalid date:x5 Jan 2014" {
-		t.Errorf("got %v, want Invalid date:x5 Jan 2014", err)
+	for _, s := range []string{"x5 Jan 2014", "Jan 10 2014", "2014-02-30", "2014/01/08"} {
+		body, _ := syntax.Prepare("gantt\nA :" + s + ", 3d")
+		_, err := Read(body, Env{Now: time.Now(), Zone: time.UTC})
+		if se, ok := err.(*syntax.Error); !ok || se.IsUnsupported() || se.Msg != "Invalid date:"+s {
+			t.Errorf("%s: got %v, want Invalid date:%s", s, err, s)
+		}
 	}
 }
 

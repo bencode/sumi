@@ -88,7 +88,7 @@ func (a Axis) x(t float64) float64 {
 	if b := d1 - d0; b != 0 {
 		u = (t - d0) / b
 	}
-	return jsRound(float64(r0*(1-u)) + float64(r1*u))
+	return jsRound(r0*(1-u) + r1*u)
 }
 
 var (
