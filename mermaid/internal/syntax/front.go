@@ -91,20 +91,21 @@ func closing(line, indent string) bool {
 	return ok && strings.TrimSpace(rest) == ""
 }
 
-// frontTitle is the value of a top-level title key, on a line of its own,
-// with its quotes taken off. As in YAML, the colon after the key is followed
-// by a space, a tab or the line's end: title:F is no key but a string.
+// frontTitle is the title a top-level title key gives, its value on its line
+// read as a YAML scalar. As in YAML, the colon after the key is followed by a
+// space, a tab or the line's end: title:F is no key but a string. A value
+// js-yaml does not read, which fails in Mermaid, is the title as written.
 func frontTitle(lines []string, indent string) string {
 	for _, line := range lines {
 		v, ok := strings.CutPrefix(strings.TrimPrefix(line, indent), "title:")
 		if !ok || v != "" && !strings.ContainsAny(v[:1], " \t\n") {
 			continue
 		}
-		v = strings.TrimSpace(v)
-		if len(v) >= 2 && (v[0] == '"' || v[0] == '\'') && v[len(v)-1] == v[0] {
-			v = v[1 : len(v)-1]
+		v = strings.TrimSuffix(v, "\n")
+		if s, ok := scalar(v); ok {
+			return s
 		}
-		return v
+		return strings.Trim(v, " \t")
 	}
 	return ""
 }
