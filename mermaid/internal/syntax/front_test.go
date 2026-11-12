@@ -8,6 +8,8 @@ func TestPrepare(t *testing.T) {
 	}{
 		{"no front matter", "sequenceDiagram\nA->>B: hi", "sequenceDiagram\nA->>B: hi\n", ""},
 		{"title", "---\ntitle: Hello\n---\nsequenceDiagram", "\n\n\nsequenceDiagram\n", "Hello"},
+		{"a tab after the colon", "---\ntitle:\tT\n---\nx", "\n\n\nx\n", "T"},
+		{"no space after the colon is no key", "---\ntitle:F\n---\nx", "\n\n\nx\n", ""},
 		{"quoted title", "---\ntitle: \"Hi: there\"\n---\nx", "\n\n\nx\n", "Hi: there"},
 		{"nested config", "---\nconfig:\n  sequence:\n    mirrorActors: false\ntitle: T\n---\nx", "\n\n\n\n\n\nx\n", "T"},
 		{"indented fences", "  ---\n  title: T\n  ---\nx", "\n\n\nx\n", "T"},
