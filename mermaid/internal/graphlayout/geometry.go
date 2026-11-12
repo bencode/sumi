@@ -110,7 +110,7 @@ func ensureTrulyOutside(b Box, p elk.Vec) elk.Vec {
 		return p
 	}
 	dx, dy := p.X-b.X, p.Y-b.Y
-	length := math.Sqrt(float64(dx*dx) + float64(dy*dy))
+	length := math.Hypot(dx, dy)
 	if length <= 0 {
 		return p
 	}

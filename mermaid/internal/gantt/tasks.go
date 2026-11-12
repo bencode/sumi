@@ -79,7 +79,7 @@ func turned(it scene.Item, o scene.Point) scene.Item {
 	k := 0.8 * math.Sqrt2 / 2
 	at := func(p scene.Point) scene.Point {
 		dx, dy := p.X-o.X, p.Y-o.Y
-		return scene.Point{X: o.X + float64(k*dx) - float64(k*dy), Y: o.Y + float64(k*dx) + float64(k*dy)}
+		return scene.Point{X: o.X + k*dx - k*dy, Y: o.Y + k*dx + k*dy}
 	}
 	p := it.Paths[0]
 	p.Segs = slices.Clone(p.Segs)

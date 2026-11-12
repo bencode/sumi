@@ -172,7 +172,7 @@ func projectLabel(label elk.Vec, runs []movedRun) elk.Vec {
 		t := paramOnSegment(label, r.oldA, r.oldB)
 		old := pointAt(r.oldA, r.oldB, t)
 		dx, dy := old.X-label.X, old.Y-label.Y
-		if d := float64(dx*dx) + float64(dy*dy); d < best {
+		if d := dx*dx + dy*dy; d < best {
 			best, projected = d, pointAt(r.newA, r.newB, t)
 		}
 	}
@@ -182,7 +182,7 @@ func projectLabel(label elk.Vec, runs []movedRun) elk.Vec {
 // paramOnSegment gives where p falls along a-b, from 0 to 1.
 func paramOnSegment(p, a, b elk.Vec) float64 {
 	abx, aby := b.X-a.X, b.Y-a.Y
-	lengthSquared := float64(abx*abx) + float64(aby*aby)
+	lengthSquared := abx*abx + aby*aby
 	if lengthSquared == 0 {
 		return 0
 	}

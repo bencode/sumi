@@ -79,7 +79,7 @@ func clipGroupEnd(points []elk.Vec, b Box, atStart bool) ([]elk.Vec, bool) {
 	if dy != 0 {
 		t = min(t, (b.Y+sign(dy)*b.Height/2-inside.Y)/dy)
 	}
-	crossing := elk.Vec{X: inside.X + float64(t*dx), Y: inside.Y + float64(t*dy)}
+	crossing := elk.Vec{X: inside.X + t*dx, Y: inside.Y + t*dy}
 	if atStart {
 		return slices.Concat([]elk.Vec{crossing}, points[i:]), true
 	}
@@ -169,7 +169,7 @@ func cutter(points []elk.Vec, start, end frame) []elk.Vec {
 
 	if n := len(points); n > 1 {
 		dx, dy := points[n-1].X-points[n-2].X, points[n-1].Y-points[n-2].Y
-		if math.Sqrt(float64(dx*dx)+float64(dy*dy)) < 2 {
+		if math.Hypot(dx, dy) < 2 {
 			points = points[:n-1]
 		}
 	}
