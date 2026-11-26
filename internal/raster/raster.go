@@ -7,6 +7,7 @@ import (
 	"image/color"
 	"image/draw"
 	"math"
+	"unicode"
 
 	"github.com/srwiley/rasterx"
 	"golang.org/x/image/font"
@@ -173,6 +174,11 @@ func (r *renderer) text(t scene.Text, p scene.Palette) error {
 	for _, l := range t.Lines {
 		x, y := r.fix(l.X), r.fix(l.Baseline)
 		for _, ch := range l.S {
+			// Controls and format characters, as a soft hyphen or a zero-width
+			// space, show nothing and take no width, as scene.Arial measures them.
+			if unicode.In(ch, unicode.Cc, unicode.Cf) {
+				continue
+			}
 			face, g := r.glyph(chain, ch)
 			segs, err := face.LoadGlyph(&r.buf, g, ppem, nil)
 			if err != nil {
