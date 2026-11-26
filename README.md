@@ -59,6 +59,23 @@ func main() {
 - `mermaid.Options.Measurer` accepts a `scene.Measurer`; nil uses built-in Arial measurements. Match the font metrics of your native renderer.
 - `svg.Render` uses `scene.Light`, `scene.Dark`, or your own palette. Theme changes do not require layout again; explicit author colors remain fixed.
 
+## Command line
+
+`sumi` checks diagrams and renders them as images, for people and coding agents who write Mermaid:
+
+```sh
+go install github.com/bencode/sumi/cmd/sumi@latest
+
+sumi check doc.md                # every mermaid code block of a Markdown file
+sumi check flow.mmd              # any other file is one diagram
+sumi render doc.md -o out        # out/doc-01.png, out/doc-02.png, ...
+```
+
+- `check` reports errors as `doc.md:44:9: message` in the file's own lines, with the line and a caret under the column. It exits 1 when a diagram has an error, 2 when it cannot run.
+- `render` checks first and writes nothing unless every diagram is good. For each image it prints its number, the line its source starts on, its path, and its size in CSS pixels. `-scale N` sets the PNG's pixels per CSS pixel (default 2); `-format svg` writes SVG instead.
+- PNGs are drawn in Go with the system's fonts: Arial, Menlo, and Hiragino Sans GB or Arial Unicode for CJK on macOS; Liberation Sans, DejaVu Sans Mono and Noto Sans CJK on Linux.
+- [`skills/mermaid`](skills/mermaid/SKILL.md) is a skill for Claude Code and Codex: link it into their skills directories (`~/.claude/skills`, `~/.agents/skills`) and agents check and look at the diagrams they write.
+
 ## Local playground
 
 Requires Go 1.27+, Node 24, and pnpm 11.23.0. From the repository root, run the Go service in one terminal:
