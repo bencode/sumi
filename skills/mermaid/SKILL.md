@@ -53,4 +53,6 @@ Each block reports its first error. Exit status 1 means a diagram has an error; 
 - `end` in lower case cannot name a node; use `End` or `e[end]`.
 - In a sequence diagram, `;` ends the statement, cutting a message short. Write it as `#59;`.
 - `<br/>` breaks a line in a label.
+- Nodes with no edge between them share a rank, so in a `LR` flowchart or subgraph they stack top to bottom, not always in the order written. To put them side by side, chain them with an invisible link: `L ~~~ R`.
+- A self message (`A->>A: text`) has its text centred on the lifeline, which runs through it. Keep that text short and put the detail in `Note right of A: ...`.
 - A passing check says the syntax is right, not the diagram. A node with the same id as a subgraph, for instance, checks fine, but there is no such node: its edges end at the subgraph's box. Look at the image.
